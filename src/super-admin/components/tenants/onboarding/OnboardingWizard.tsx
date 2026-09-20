@@ -170,10 +170,10 @@ export const OnboardingWizard: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl mx-auto py-2">
       {/* Wizard Progress Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 pb-5">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Enterprise Tenant Onboarding</h1>
-          <p className="text-zinc-400 text-sm mt-0.5">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Enterprise Tenant Onboarding</h1>
+          <p className="text-slate-500 text-sm mt-0.5">
             Provision new enterprise lab accounts with PostgreSQL multi-tenant isolation.
           </p>
         </div>
@@ -193,25 +193,25 @@ export const OnboardingWizard: React.FC = () => {
               key={s.num}
               className={`p-3 rounded-lg border flex items-center gap-3 transition-colors ${
                 isCurrent
-                  ? 'bg-zinc-900 border-zinc-700 text-zinc-100'
+                  ? 'bg-indigo-50/80 border-indigo-200 text-indigo-900 shadow-xs'
                   : isDone
-                  ? 'bg-zinc-950 border-zinc-800 text-emerald-400'
-                  : 'bg-zinc-950/40 border-zinc-850 text-zinc-500'
+                  ? 'bg-emerald-50/80 border-emerald-200 text-emerald-800'
+                  : 'bg-white border-slate-200 text-slate-400'
               }`}
             >
               <div
                 className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-semibold ${
                   isCurrent
-                    ? 'bg-zinc-100 text-zinc-900'
+                    ? 'bg-indigo-600 text-white'
                     : isDone
-                    ? 'bg-emerald-500/10 text-emerald-400'
-                    : 'bg-zinc-800 text-zinc-400'
+                    ? 'bg-emerald-200/60 text-emerald-800'
+                    : 'bg-slate-100 text-slate-400'
                 }`}
               >
                 {isDone ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
               </div>
               <div>
-                <div className="text-[10px] uppercase font-bold tracking-wider text-zinc-500">
+                <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
                   Step {s.num}
                 </div>
                 <div className="text-xs font-medium">{s.label}</div>
@@ -222,21 +222,21 @@ export const OnboardingWizard: React.FC = () => {
       </div>
 
       {errorMessage && (
-        <div className="p-4 rounded-lg bg-red-950/30 border border-red-900/50 text-red-400 text-xs flex items-center gap-3">
+        <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-3">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      <Card className="border-zinc-800 bg-zinc-900/50">
+      <Card className="border-slate-200 bg-white shadow-xs">
         <form onSubmit={handleSubmit}>
           <CardContent className="p-6 md:p-8 space-y-6">
             {/* STEP 1: Tenant Information */}
             {step === 1 && (
               <div className="space-y-5 animate-fadeIn">
-                <div className="border-b border-zinc-800/80 pb-3">
-                  <h3 className="text-base font-semibold text-zinc-100">Step 1: Tenant Organization Details</h3>
-                  <p className="text-xs text-zinc-400 mt-0.5">Specify legal identity, unique code, and enterprise classification</p>
+                <div className="border-b border-slate-200 pb-3">
+                  <h3 className="text-base font-semibold text-slate-900">Step 1: Tenant Organization Details</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Specify legal identity, unique code, and enterprise classification</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -259,13 +259,13 @@ export const OnboardingWizard: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-zinc-400">
+                    <label className="text-xs font-medium text-slate-700">
                       Tenant Type (Dynamic from DB) *
                     </label>
                     <select
                       value={formData.tenantType}
                       onChange={(e) => handleChange('tenantType', e.target.value)}
-                      className="bg-zinc-950 border border-zinc-800 rounded-md px-3.5 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500 focus:border-zinc-500 transition"
+                      className="bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition"
                     >
                       {tenantTypes.map((t) => (
                         <option key={t.code} value={t.code}>
@@ -304,9 +304,9 @@ export const OnboardingWizard: React.FC = () => {
             {/* STEP 2: Address & Regional */}
             {step === 2 && (
               <div className="space-y-5 animate-fadeIn">
-                <div className="border-b border-zinc-800/80 pb-3">
-                  <h3 className="text-base font-semibold text-zinc-100">Step 2: Address & Regional Configuration</h3>
-                  <p className="text-xs text-zinc-400 mt-0.5">Dynamic countries, currencies, and timezones from database configuration</p>
+                <div className="border-b border-slate-200 pb-3">
+                  <h3 className="text-base font-semibold text-slate-900">Step 2: Address & Regional Configuration</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Dynamic countries, currencies, and timezones from database configuration</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -351,13 +351,13 @@ export const OnboardingWizard: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-zinc-400">
+                    <label className="text-xs font-medium text-slate-700">
                       Country (Dynamic from DB) *
                     </label>
                     <select
                       value={formData.country}
                       onChange={(e) => handleChange('country', e.target.value)}
-                      className="bg-zinc-950 border border-zinc-800 rounded-md px-3.5 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500 focus:border-zinc-500 transition"
+                      className="bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition"
                     >
                       {countries.map((c) => (
                         <option key={c.code} value={c.label}>
@@ -368,13 +368,13 @@ export const OnboardingWizard: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-zinc-400">
+                    <label className="text-xs font-medium text-slate-700">
                       Currency (Dynamic from DB) *
                     </label>
                     <select
                       value={formData.currency}
                       onChange={(e) => handleChange('currency', e.target.value)}
-                      className="bg-zinc-950 border border-zinc-800 rounded-md px-3.5 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500 focus:border-zinc-500 transition"
+                      className="bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition"
                     >
                       {currencies.map((curr) => (
                         <option key={curr.code} value={curr.code}>
@@ -385,13 +385,13 @@ export const OnboardingWizard: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-zinc-400">
+                    <label className="text-xs font-medium text-slate-700">
                       Timezone (Dynamic from DB) *
                     </label>
                     <select
                       value={formData.timezone}
                       onChange={(e) => handleChange('timezone', e.target.value)}
-                      className="bg-zinc-950 border border-zinc-800 rounded-md px-3.5 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500 focus:border-zinc-500 transition"
+                      className="bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition"
                     >
                       {timezones.map((tz) => (
                         <option key={tz.code} value={tz.code}>
@@ -407,9 +407,9 @@ export const OnboardingWizard: React.FC = () => {
             {/* STEP 3: Branch / Lab Infrastructure */}
             {step === 3 && (
               <div className="space-y-5 animate-fadeIn">
-                <div className="border-b border-zinc-800/80 pb-3">
-                  <h3 className="text-base font-semibold text-zinc-100">Step 3: Branch & Calibration Facilities Setup</h3>
-                  <p className="text-xs text-zinc-400 mt-0.5">Configure initial organization tier capacity</p>
+                <div className="border-b border-slate-200 pb-3">
+                  <h3 className="text-base font-semibold text-slate-900">Step 3: Branch & Calibration Facilities Setup</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Configure initial organization tier capacity</p>
                 </div>
 
                 <div className="max-w-md">
@@ -422,8 +422,8 @@ export const OnboardingWizard: React.FC = () => {
                     onChange={(e) => handleChange('branchesCount', parseInt(e.target.value, 10) || 1)}
                     required
                   />
-                  <p className="text-xs text-zinc-500 mt-2">
-                    The tenant will be marked as <strong className="text-zinc-200">ACTIVE</strong> or <strong className="text-zinc-200">PENDING_ORG</strong> until the tenant administrator configures their first laboratory branch.
+                  <p className="text-xs text-slate-500 mt-2">
+                    The tenant will be marked as <strong className="text-slate-800">ACTIVE</strong> or <strong className="text-slate-800">PENDING_ORG</strong> until the tenant administrator configures their first laboratory branch.
                   </p>
                 </div>
               </div>
@@ -432,9 +432,9 @@ export const OnboardingWizard: React.FC = () => {
             {/* STEP 4: Initial Administrator Account */}
             {step === 4 && (
               <div className="space-y-5 animate-fadeIn">
-                <div className="border-b border-zinc-800/80 pb-3">
-                  <h3 className="text-base font-semibold text-zinc-100">Step 4: Initial Tenant Administrator</h3>
-                  <p className="text-xs text-zinc-400 mt-0.5">Primary administrative account credentials and invite mechanism</p>
+                <div className="border-b border-slate-200 pb-3">
+                  <h3 className="text-base font-semibold text-slate-900">Step 4: Initial Tenant Administrator</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Primary administrative account credentials and invite mechanism</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -464,15 +464,15 @@ export const OnboardingWizard: React.FC = () => {
                     value={formData.adminPassword}
                     onChange={(e) => handleChange('adminPassword', e.target.value)}
                   />
-                  <p className="text-xs text-zinc-500 mt-1.5">
-                    Upon onboarding, the tenant admin is provisioned and recorded into <code className="text-zinc-300 font-mono">platform_audit_logs</code>.
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    Upon onboarding, the tenant admin is provisioned and recorded into <code className="text-slate-800 font-mono">platform_audit_logs</code>.
                   </p>
                 </div>
               </div>
             )}
 
             {/* Wizard Action Buttons */}
-            <div className="flex items-center justify-between pt-6 border-t border-zinc-800">
+            <div className="flex items-center justify-between pt-6 border-t border-slate-200">
               <div>
                 {step > 1 && (
                   <Button variant="secondary" type="button" onClick={handlePrev}>
