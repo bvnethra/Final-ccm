@@ -8,6 +8,7 @@ import {
   Building2, 
   MapPin, 
   Layers, 
+  UserCheck, 
   ChevronRight, 
   ChevronLeft, 
   CheckCircle2, 
@@ -47,6 +48,10 @@ export const OnboardingWizard: React.FC = () => {
     currency: '',
     // Step 3: Branch / Lab Infrastructure
     branchesCount: 1,
+    // Step 4: Administrator Account
+    adminName: '',
+    adminEmail: '',
+    adminPassword: '',
   });
 
   // Set default values once config loads if not already chosen
@@ -95,6 +100,16 @@ export const OnboardingWizard: React.FC = () => {
         return false;
       }
     }
+    if (currentStep === 4) {
+      if (!formData.adminName.trim()) {
+        setErrorMessage('Primary Administrator Name is required.');
+        return false;
+      }
+      if (!formData.adminEmail.trim()) {
+        setErrorMessage('Primary Administrator Email is required.');
+        return false;
+      }
+    }
     return true;
   };
 
@@ -111,7 +126,7 @@ export const OnboardingWizard: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateStep(1) || !validateStep(2)) return;
+    if (!validateStep(4)) return;
 
     onboardMutation.mutate(
       {
@@ -130,6 +145,9 @@ export const OnboardingWizard: React.FC = () => {
         timezone: formData.timezone,
         currency: formData.currency,
         branchesCount: Number(formData.branchesCount || 1),
+        adminName: formData.adminName,
+        adminEmail: formData.adminEmail,
+        adminPassword: formData.adminPassword,
       },
       {
         onSuccess: (newTenant) => {
@@ -146,6 +164,7 @@ export const OnboardingWizard: React.FC = () => {
     { num: 1, label: 'Tenant Info', icon: Building2 },
     { num: 2, label: 'Address & Regional', icon: MapPin },
     { num: 3, label: 'Infrastructure', icon: Layers },
+    { num: 4, label: 'Initial Admin', icon: UserCheck },
   ];
 
   return (
@@ -164,7 +183,7 @@ export const OnboardingWizard: React.FC = () => {
       </div>
 
       {/* Step Indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {stepIndicators.map((s) => {
           const Icon = s.icon;
           const isCurrent = s.num === step;
@@ -404,7 +423,49 @@ export const OnboardingWizard: React.FC = () => {
                     required
                   />
                   <p className="text-xs text-slate-500 mt-2">
-                    The tenant will be marked as <strong className="text-slate-800">ACTIVE</strong> or <strong className="text-slate-800">PENDING_ORG</strong> until the first laboratory branch is configured.
+                    The tenant will be marked as <strong className="text-slate-800">ACTIVE</strong> or <strong className="text-slate-800">PENDING_ORG</strong> until the tenant administrator configures their first laboratory branch.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: Initial Administrator Account */}
+            {step === 4 && (
+              <div className="space-y-5 animate-fadeIn">
+                <div className="border-b border-slate-200 pb-3">
+                  <h3 className="text-base font-semibold text-slate-900">Step 4: Initial Tenant Administrator</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Primary administrative account credentials and invite mechanism</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Administrator Full Name *"
+                    placeholder="e.g. Dr. Ramesh Sundaram"
+                    value={formData.adminName}
+                    onChange={(e) => handleChange('adminName', e.target.value)}
+                    required
+                  />
+
+                  <Input
+                    type="email"
+                    label="Administrator Email *"
+                    placeholder="admin@apexmetrology.com"
+                    value={formData.adminEmail}
+                    onChange={(e) => handleChange('adminEmail', e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="max-w-md">
+                  <Input
+                    type="password"
+                    label="Temporary Password (Optional)"
+                    placeholder="Leave empty for automated invite link"
+                    value={formData.adminPassword}
+                    onChange={(e) => handleChange('adminPassword', e.target.value)}
+                  />
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    Upon onboarding, the tenant admin is provisioned and recorded into <code className="text-slate-800 font-mono">platform_audit_logs</code>.
                   </p>
                 </div>
               </div>
@@ -421,7 +482,7 @@ export const OnboardingWizard: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                {step < 3 ? (
+                {step < 4 ? (
                   <Button variant="default" type="button" onClick={handleNext}>
                     Continue <ChevronRight className="w-4 h-4 ml-1.5" />
                   </Button>
