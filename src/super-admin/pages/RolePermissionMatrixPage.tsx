@@ -160,6 +160,20 @@ export default function RolePermissionMatrixPage() {
     );
   }
 
+  if (!isSuperAdmin) {
+    return (
+      <div className="py-24 text-center max-w-md mx-auto space-y-4">
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-[8px] text-rose-800 text-xs space-y-1.5">
+          <div className="font-bold text-sm text-rose-900">Access Restricted</div>
+          <div>Only Platform Super Administrators are authorized to access and configure the Role & Permission Matrix.</div>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => navigate('/users')}>
+          Back to Platform Users
+        </Button>
+      </div>
+    );
+  }
+
   if (error || !data) {
     return (
       <div className="p-6 rounded-[8px] bg-rose-50 border border-rose-200 text-rose-700 text-sm max-w-lg mx-auto text-center space-y-4">

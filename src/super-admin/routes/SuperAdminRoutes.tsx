@@ -41,8 +41,22 @@ export const SuperAdminRoutes: React.FC = () => {
           />
           <Route path="tenants/:id" element={<TenantDetailPage />} />
           <Route path="users" element={<PlatformUsersPage />} />
-          <Route path="users/permissions" element={<RolePermissionMatrixPage />} />
-          <Route path="permissions" element={<RolePermissionMatrixPage />} />
+          <Route
+            path="users/permissions"
+            element={
+              <PlatformRouteGuard requireSuperAdmin>
+                <RolePermissionMatrixPage />
+              </PlatformRouteGuard>
+            }
+          />
+          <Route
+            path="permissions"
+            element={
+              <PlatformRouteGuard requireSuperAdmin>
+                <RolePermissionMatrixPage />
+              </PlatformRouteGuard>
+            }
+          />
           <Route
             path="users/new"
             element={
@@ -74,8 +88,22 @@ export const SuperAdminRoutes: React.FC = () => {
           />
           <Route path="super-admin/tenants/:id" element={<TenantDetailPage />} />
           <Route path="super-admin/users" element={<PlatformUsersPage />} />
-          <Route path="super-admin/users/permissions" element={<RolePermissionMatrixPage />} />
-          <Route path="super-admin/permissions" element={<RolePermissionMatrixPage />} />
+          <Route
+            path="super-admin/users/permissions"
+            element={
+              <PlatformRouteGuard requireSuperAdmin>
+                <RolePermissionMatrixPage />
+              </PlatformRouteGuard>
+            }
+          />
+          <Route
+            path="super-admin/permissions"
+            element={
+              <PlatformRouteGuard requireSuperAdmin>
+                <RolePermissionMatrixPage />
+              </PlatformRouteGuard>
+            }
+          />
           <Route
             path="super-admin/users/new"
             element={
