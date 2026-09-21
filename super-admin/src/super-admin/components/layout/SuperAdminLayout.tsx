@@ -12,9 +12,11 @@ import {
   Users2, 
   FileText, 
   ShieldCheck,
-  LogOut
+  LogOut,
+  ExternalLink,
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { openOperationalApp } from '../../../services/crossAppNav';
 
 export const SuperAdminLayout: React.FC = () => {
   const { data: platformSession } = usePlatformAuth();
@@ -102,6 +104,18 @@ export const SuperAdminLayout: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openOperationalApp()}
+            className="text-xs h-8 gap-1.5 border-[#b8dcff] bg-[#E6F2FF] text-[#0274BB] hover:bg-[#d0e7ff] font-semibold shadow-xs cursor-pointer"
+            title="Open Connected Operational Application on localhost:5174"
+          >
+            <ExternalLink className="size-3.5" />
+            <span className="hidden sm:inline">Operational App</span>
+            <span className="text-[10px] font-mono bg-white px-1.5 py-0.5 rounded border border-[#b8dcff] text-[#0274BB]">5174</span>
+          </Button>
+
           <div className="flex items-center gap-3">
             <div className="size-8 rounded-full bg-[#003B8C] text-white flex items-center justify-center font-semibold text-xs shadow-xs">
               {getInitials(displayName)}
@@ -147,6 +161,15 @@ export const SuperAdminLayout: React.FC = () => {
           <NavLink to="/audit" className={sidebarIconClasses} title="Audit Trail">
             <FileText className="size-4" />
           </NavLink>
+          <div className="mt-auto pb-2">
+            <button
+              onClick={() => openOperationalApp()}
+              className="p-2 rounded-[4px] text-[#0274BB] hover:bg-[#E6F2FF] transition flex items-center justify-center cursor-pointer"
+              title="Launch Connected Operational App (localhost:5174)"
+            >
+              <ExternalLink className="size-4" />
+            </button>
+          </div>
         </aside>
 
         {/* Main Workspace */}

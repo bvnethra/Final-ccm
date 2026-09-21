@@ -12,9 +12,11 @@ import {
   Gauge,
   CalendarClock,
   Shield,
+  ExternalLink,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { openSuperAdminApp } from '../../services/crossAppNav';
 
 interface NavItem {
   label: string;
@@ -142,7 +144,21 @@ export const AppSidebar: React.FC = () => {
         </div>
       </div>
 
-      <div className="pt-4 border-t border-[#E5E7EB]">
+      <div className="pt-4 border-t border-[#E5E7EB] space-y-3">
+        {(isAdmin || user?.isSuperAdmin) && (
+          <button
+            onClick={() => openSuperAdminApp()}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-[4px] text-xs font-semibold text-[#0274BB] bg-[#E6F2FF] hover:bg-[#d0e7ff] border border-[#b8dcff] transition cursor-pointer shadow-xs"
+            title="Open Connected Super Admin Portal on localhost:5173"
+          >
+            <div className="flex items-center gap-2">
+              <Shield className="size-3.5 text-[#0274BB]" />
+              <span>Super Admin Portal</span>
+            </div>
+            <ExternalLink className="size-3.5 text-[#0274BB]" />
+          </button>
+        )}
+
         <div className="p-3 bg-[#F5F7FA] rounded-[4px] border border-[#E5E7EB]">
           <span className="text-xs font-semibold text-[#111827] block">Nethra CCM v2.0</span>
           <span className="text-[11px] text-[#6B7280] block mt-0.5">Metrology Commercial System</span>

@@ -30,8 +30,10 @@ import {
   ChevronDown,
   Pencil,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  ExternalLink,
 } from 'lucide-react';
+import { openOperationalApp } from '../../services/crossAppNav';
 
 export default function TenantDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -301,6 +303,16 @@ export default function TenantDetailPage() {
             >
               <Plus className="size-3.5 text-slate-600" />
               <span>Add Organization</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openOperationalApp('/', tenant.id)}
+              className="text-xs gap-1.5 border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 rounded-[4px] shadow-xs cursor-pointer font-semibold"
+              title="Launch and enter this Tenant's workspace in Operational App on localhost:5174"
+            >
+              <ExternalLink className="size-3.5 text-emerald-700" />
+              <span>Launch App (5174)</span>
             </Button>
             <Button
               variant="default"

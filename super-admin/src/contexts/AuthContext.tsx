@@ -21,21 +21,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // 1. Initial Session Check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        getCurrentUserProfile(session.user.id)
-          .then(setUser)
-          .catch(() => setUser(null))
-          .finally(() => setIsLoading(false));
-      } else {
+    // 0. Check for cross-app SSO handoff from localhost:5174
+    const urlParams = new URLSearchParams(window.location.search);
+    const crossAccessToken = urlParams.get('access_token');
+    const crossRefreshToken = urlParams.get('refresh_token');
+
+    const initAuth = async () => {
+      if (crossAccessToken && crossRefreshToken) {
+        try {
+          const { data } = await supabase.auth.setSession({
+            access_token: crossAccessToken,
+            refresh_token: crossRefreshToken,
+          });
+          urlParams.delete('access_token');
+          urlParams.delete('refresh_token');
+          const cleanUrl =
+            window.location.pathname + (urlParams.toString() ? `?${urlParams.toString()}` : '');
+          window.history.replaceState({}, '', cleanUrl);
+
+          if (data?.session?.user) {
+            const profile = await getCurrentUserProfile(data.session.user.id);
+            setUser(profile);
+            setIsLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to set cross-app session:', err);
+        }
+      }
+
+      // 1. Initial Session Check
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          const profile = await getCurrentUserProfile(session.user.id);
+          setUser(profile);
+        } else {
+          setUser(null);
+        }
+      } catch {
         setUser(null);
+      } finally {
         setIsLoading(false);
       }
-    });
+    };
+
+    initAuth();
 
     // 2. Auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         getCurrentUserProfile(session.user.id).then(setUser).catch(() => setUser(null));
       } else {
