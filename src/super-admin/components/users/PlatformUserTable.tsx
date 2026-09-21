@@ -28,24 +28,20 @@ export const PlatformUserTable: React.FC = () => {
   const [deleteError, setDeleteError] = React.useState('');
 
   const [roleChangeTarget, setRoleChangeTarget] = React.useState<{ user: PlatformUser; targetRole: PlatformRole } | null>(null);
-  const [roleChangeReason, setRoleChangeReason] = React.useState('');
   const [roleChangeError, setRoleChangeError] = React.useState('');
 
   const [statusChangeTarget, setStatusChangeTarget] = React.useState<{ user: PlatformUser; targetStatus: PlatformUserStatus } | null>(null);
-  const [statusChangeReason, setStatusChangeReason] = React.useState('');
   const [statusChangeError, setStatusChangeError] = React.useState('');
 
   const handleOpenRoleModal = (u: PlatformUser) => {
     const targetRole: PlatformRole = u.role === 'SUPER_ADMIN' ? 'PLATFORM_SUPPORT' : 'SUPER_ADMIN';
     setRoleChangeTarget({ user: u, targetRole });
-    setRoleChangeReason(`Role changed to ${targetRole} for access governance`);
     setRoleChangeError('');
   };
 
   const handleOpenStatusModal = (u: PlatformUser) => {
     const targetStatus: PlatformUserStatus = u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     setStatusChangeTarget({ user: u, targetStatus });
-    setStatusChangeReason(`Operator marked as ${targetStatus} by Super Admin`);
     setStatusChangeError('');
   };
 
@@ -303,7 +299,6 @@ export const PlatformUserTable: React.FC = () => {
                     ...roleChangeTarget,
                     targetRole: newRole,
                   });
-                  setRoleChangeReason(`Role changed to ${newRole} for access governance`);
                   setRoleChangeError('');
                 }}
                 className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-2 text-xs text-[#111827] font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
@@ -318,19 +313,6 @@ export const PlatformUserTable: React.FC = () => {
                 {roleChangeError}
               </div>
             )}
-
-            <div>
-              <label className="block text-[11px] font-semibold text-[#374151] uppercase tracking-wider mb-1">
-                Audit Compliance Reason
-              </label>
-              <input
-                type="text"
-                value={roleChangeReason}
-                onChange={(e) => setRoleChangeReason(e.target.value)}
-                placeholder="Reason for role change..."
-                className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-1.5 text-xs text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
-              />
-            </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
               <Button
@@ -352,15 +334,11 @@ export const PlatformUserTable: React.FC = () => {
                     setRoleChangeError(`Operator already has the '${roleChangeTarget.targetRole}' role. Please select a different role.`);
                     return;
                   }
-                  if (!roleChangeReason.trim()) {
-                    setRoleChangeError('An audit reason is required.');
-                    return;
-                  }
                   updateRoleMutation.mutate(
                     {
                       userId: roleChangeTarget.user.id,
                       role: roleChangeTarget.targetRole,
-                      reason: roleChangeReason.trim(),
+                      reason: `Role changed to ${roleChangeTarget.targetRole} by Super Admin`,
                     },
                     {
                       onSuccess: () => {
@@ -417,19 +395,6 @@ export const PlatformUserTable: React.FC = () => {
               </div>
             )}
 
-            <div>
-              <label className="block text-[11px] font-semibold text-[#374151] uppercase tracking-wider mb-1">
-                Audit Compliance Reason
-              </label>
-              <input
-                type="text"
-                value={statusChangeReason}
-                onChange={(e) => setStatusChangeReason(e.target.value)}
-                placeholder="Reason for status change..."
-                className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-1.5 text-xs text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
-              />
-            </div>
-
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
               <Button
                 variant="outline"
@@ -450,15 +415,11 @@ export const PlatformUserTable: React.FC = () => {
                 }`}
                 disabled={updateStatusMutation.isPending}
                 onClick={() => {
-                  if (!statusChangeReason.trim()) {
-                    setStatusChangeError('An audit reason is required.');
-                    return;
-                  }
                   updateStatusMutation.mutate(
                     {
                       userId: statusChangeTarget.user.id,
                       status: statusChangeTarget.targetStatus,
-                      reason: statusChangeReason.trim(),
+                      reason: `Status changed to ${statusChangeTarget.targetStatus} by Super Admin`,
                     },
                     {
                       onSuccess: () => {
