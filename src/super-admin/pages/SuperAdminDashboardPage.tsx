@@ -119,7 +119,7 @@ export default function SuperAdminDashboardPage() {
                       <Link to={`/tenants/${t.id}`}>{t.name}</Link>
                     </div>
                     <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                      {t.code} &bull; <span className="text-slate-400">{t.adminEmail}</span>
+                      {t.code} {t.adminEmail ? <>&bull; <span className="text-slate-400">{t.adminEmail}</span></> : null}
                     </div>
                   </div>
 

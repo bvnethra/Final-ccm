@@ -155,8 +155,8 @@ export async function onboardTenant(payload: OnboardTenantPayload): Promise<Plat
     registration_number: payload.registrationNumber?.trim() || null,
     gst_number: payload.gstNumber?.trim().toUpperCase() || null,
     phone: payload.phone?.trim() || null,
-    admin_name: payload.adminName.trim(),
-    admin_email: payload.adminEmail.trim().toLowerCase(),
+    admin_name: payload.adminName?.trim() || null,
+    admin_email: payload.adminEmail?.trim().toLowerCase() || null,
     address_line1: payload.addressLine1?.trim() || null,
     address_line2: payload.addressLine2?.trim() || null,
     city: payload.city?.trim() || null,
@@ -187,7 +187,7 @@ export async function onboardTenant(payload: OnboardTenantPayload): Promise<Plat
     metadata: {
       tenantType: tenant.tenant_type,
       branchesCount: tenant.branches_count,
-      adminEmail: tenant.admin_email,
+      ...(tenant.admin_email ? { adminEmail: tenant.admin_email } : {}),
     },
   });
 

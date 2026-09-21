@@ -129,8 +129,8 @@ export interface OnboardTenantPayload {
   registrationNumber?: string;
   gstNumber?: string;
   phone?: string;
-  adminName: string;
-  adminEmail: string;
+  adminName?: string;
+  adminEmail?: string;
   adminPassword?: string;
   addressLine1?: string;
   addressLine2?: string;

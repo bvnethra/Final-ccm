@@ -362,11 +362,11 @@ export default function TenantDetailPage() {
             <div className="space-y-3 text-xs">
               <div>
                 <span className="text-slate-500 block mb-0.5">Full Name</span>
-                <strong className="text-slate-800">{tenant.adminName || 'Admin'}</strong>
+                <strong className="text-slate-800">{tenant.adminName || 'Not provisioned'}</strong>
               </div>
               <div>
                 <span className="text-slate-500 block mb-0.5">Email Address</span>
-                <div className="text-slate-700 font-mono">{tenant.adminEmail}</div>
+                <div className="text-slate-700 font-mono">{tenant.adminEmail || 'Not provisioned'}</div>
               </div>
             </div>
           </Card>
