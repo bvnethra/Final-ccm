@@ -84,14 +84,18 @@ print(f"Already existing clients in DB: {len(existing_names)}")
 
 values = []
 for i, name in enumerate(clients, 1):
-    if name in existing_names:
+    cleaned_name = re.sub(r'[\s\-_/]+CAL[\s\-_/]*CHEE?\b.*$', '', name, flags=re.IGNORECASE).strip()
+    cleaned_name = re.sub(r'\bCAL[\s\-_/]+CHEE?\b', '', cleaned_name, flags=re.IGNORECASE).strip()
+    cleaned_name = re.sub(r'[\s\-_,]+$', '', cleaned_name).strip()
+
+    if cleaned_name in existing_names:
         continue
-    escaped_name = name.replace("'", "''")
+    escaped_name = cleaned_name.replace("'", "''")
     code = f"CLI-2026-{i:05d}"
     gst = f"33AAACN{i:04d}Z1Z5"
     address = "Chennai Industrial Estate, Tamil Nadu"
     contact = "Quality / Metrology Manager"
-    clean_slug = re.sub(r'[^a-zA-Z0-9]', '', name.lower())[:15]
+    clean_slug = re.sub(r'[^a-zA-Z0-9]', '', cleaned_name.lower())[:15]
     email = f"contact@{clean_slug}.nethra.in"
     phone = f"+91 98400 {i:05d}"
     
