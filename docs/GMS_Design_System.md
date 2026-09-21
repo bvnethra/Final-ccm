@@ -1,4 +1,4 @@
-# Design System — Calispec GMS
+# Design System — Nethra CCM
 
 > **Calispec.ai** is a Next-Generation SaaS Platform Purpose-Built for Managing the Entire Lifecycle of Gauges, Calibration Events, Inspection Processes, and Metrology Studies in a Single, Intelligent Interface.
 
@@ -47,7 +47,7 @@ A purpose-driven color system designed for clarity, compliance, and operational 
 ## 2. Typography Scale
 
 **Typeface:** Inter  
-Inter is the primary typeface across the Calispec GMS. Designed for clarity, readability, and high-density enterprise interfaces across dashboards, tables, forms, reports, and compliance workflows.
+Inter is the primary typeface across the Nethra CCM. Designed for clarity, readability, and high-density enterprise interfaces across dashboards, tables, forms, reports, and compliance workflows.
 
 ### 2.1 Display
 
@@ -85,7 +85,7 @@ Inter is the primary typeface across the Calispec GMS. Designed for clarity, rea
 
 ## 3. Button Variants
 
-Buttons drive operational workflows throughout Calispec GMS. Each button type represents a specific action priority and should maintain consistent behavior across all modules.
+Buttons drive operational workflows throughout Nethra CCM. Each button type represents a specific action priority and should maintain consistent behavior across all modules.
 
 ### 3.1 Variants
 
@@ -117,7 +117,7 @@ Buttons drive operational workflows throughout Calispec GMS. Each button type re
 
 ## 4. Cards & Containers
 
-Cards organize operational data, metrics, workflows, and analytics throughout Calispec GMS. Every card follows a consistent structure to improve scanability, hierarchy, and decision-making across all modules.
+Cards organize operational data, metrics, workflows, and analytics throughout Nethra CCM. Every card follows a consistent structure to improve scanability, hierarchy, and decision-making across all modules.
 
 ### 4.1 Card Types
 
@@ -137,7 +137,7 @@ Cards organize operational data, metrics, workflows, and analytics throughout Ca
 
 ## 5. Form Elements
 
-Forms are the foundation of operational workflows in Calispec GMS. Every input should follow a consistent pattern to improve accuracy, reduce errors, and support audit-ready data entry.
+Forms are the foundation of operational workflows in Nethra CCM. Every input should follow a consistent pattern to improve accuracy, reduce errors, and support audit-ready data entry.
 
 ### 5.1 Input Types
 
@@ -159,7 +159,7 @@ Forms are the foundation of operational workflows in Calispec GMS. Every input s
 
 ## 6. Layout & Spacing System
 
-A consistent **8px base grid** ensures predictable layouts across all screens. Every screen in Calispec GMS should follow the same spacing rhythm to improve readability, scanning, and usability.
+A consistent **8px base grid** ensures predictable layouts across all screens. Every screen in Nethra CCM should follow the same spacing rhythm to improve readability, scanning, and usability.
 
 ### 6.1 Spacing Tokens
 
@@ -199,7 +199,7 @@ Cards, dashboards, modals, drawers, and analytics containers use softer corners 
 
 ## 8. Module Reference
 
-The design system applies consistently across the following GMS modules:
+The design system applies consistently across the following CCM modules:
 
 - **Inventory** — Gauge listing, tracking, and status management
 - **MSA (Measurement System Analysis)** — Trends, reports, analytics
@@ -209,4 +209,4 @@ The design system applies consistently across the following GMS modules:
 
 ---
 
-*Last updated: July 2026 · Source: GMS_Design_System.pdf*
+*Last updated: July 2026 · Source: CCM_Design_System.pdf*
