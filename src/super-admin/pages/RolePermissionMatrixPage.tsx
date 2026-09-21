@@ -415,7 +415,7 @@ export default function RolePermissionMatrixPage() {
                       <div className="text-xs font-bold text-[#111827]">{role.name}</div>
                       <div className="text-[10px] font-mono text-[#6B7280]">{role.code}</div>
                       {/* Allow deleting custom non-seed roles */}
-                      {!['COLLECTION_AGENT', 'LAB_ENTRY_PERSON', 'LAB_APPROVER', 'ADMIN'].includes(role.code) && isSuperAdmin && (
+                      {!role.isSystem && isSuperAdmin && (
                         <button
                           onClick={() => handleDeleteRole(role.id, role.name)}
                           title="Delete custom role"

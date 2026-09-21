@@ -29,7 +29,7 @@ export async function logPlatformEvent(params: {
 
     await supabase.from('platform_audit_logs').insert([{
       actor_id: user?.id || null,
-      actor_email: user?.email || 'system@nethra.com',
+      actor_email: user?.email || 'system-automated',
       actor_role: actorRole,
       action: params.action,
       reference_id: params.referenceId || null,

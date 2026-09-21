@@ -17,6 +17,7 @@ export interface RoleWithPermissions {
   code: string;
   description?: string;
   status: string;
+  isSystem: boolean;
   permissions: Record<string, PermissionLevel>;
 }
 
@@ -46,7 +47,7 @@ export async function fetchRolesWithPermissions(): Promise<{
 
   const { data: rolesData, error: rolesError } = await supabase
     .from('roles')
-    .select('id, name, code, description, status')
+    .select('id, name, code, description, status, is_system')
     .order('created_at', { ascending: true });
 
   if (rolesError) {
@@ -84,6 +85,7 @@ export async function fetchRolesWithPermissions(): Promise<{
       code: r.code,
       description: r.description,
       status: r.status,
+      isSystem: Boolean(r.is_system),
       permissions: rolePerms,
     };
   });
@@ -186,6 +188,7 @@ export async function createCustomRole(payload: {
     code: newRole.code,
     description: newRole.description,
     status: newRole.status,
+    isSystem: false,
     permissions: finalPermissions,
   };
 }

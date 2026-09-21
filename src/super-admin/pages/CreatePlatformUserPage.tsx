@@ -22,6 +22,10 @@ export default function CreatePlatformUserPage() {
       setErrorMsg('Full name and email address are required.');
       return;
     }
+    if (!password.trim()) {
+      setErrorMsg('An initial provisioning password is required.');
+      return;
+    }
 
     setErrorMsg('');
     createMutation.mutate(
@@ -29,7 +33,7 @@ export default function CreatePlatformUserPage() {
         fullName: fullName.trim(),
         email: email.trim().toLowerCase(),
         role,
-        password: password.trim() || 'Platform@12345',
+        password: password.trim(),
       },
       {
         onSuccess: () => {
@@ -100,7 +104,7 @@ export default function CreatePlatformUserPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="user@nethra.com"
+                placeholder="operator@company.com"
               />
               <FieldDescription>The user will log into the Super Admin platform with this email.</FieldDescription>
             </Field>
@@ -124,16 +128,17 @@ export default function CreatePlatformUserPage() {
             <Field>
               <FieldLabel htmlFor="user-password" className="flex items-center gap-1.5">
                 <Lock className="size-3 text-slate-400" />
-                <span>Temporary Provisioning Password</span>
+                <span>Initial Account Password *</span>
               </FieldLabel>
               <Input
                 id="user-password"
                 type="password"
+                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Leave blank for default (Platform@12345)"
+                placeholder="Enter secure initial password"
               />
-              <FieldDescription>Defaults to Platform@12345 if not specified.</FieldDescription>
+              <FieldDescription>The operator will use this password to sign in initially.</FieldDescription>
             </Field>
           </FieldGroup>
 
