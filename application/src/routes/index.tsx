@@ -1,7 +1,13 @@
 // application/src/routes/index.tsx
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { ProtectedRoute, DisallowCollectionAgentRoute, DashboardRoute } from './RouteGuards';
+import {
+  ProtectedRoute,
+  DisallowCollectionAgentRoute,
+  DisallowLabEntryRoute,
+  RequireMasterEditRoute,
+  DashboardRoute,
+} from './RouteGuards';
 import { AppLayout } from '../components/layout/AppLayout';
 
 const LoginPage = lazy(() => import('../pages/LoginPage'));
@@ -54,7 +60,7 @@ export const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         >
-          {/* Dashboard: Redirects Collection Agent to /requests */}
+          {/* Dashboard: Redirects Collection Agent to /requests, Lab Entry to /lab/queue */}
           <Route
             index
             element={
@@ -69,18 +75,18 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="masters/clients/new"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireMasterEditRoute>
                 <ClientCreatePage />
-              </DisallowCollectionAgentRoute>
+              </RequireMasterEditRoute>
             }
           />
           <Route path="masters/clients/:id" element={<ClientDetailPage />} />
           <Route
             path="masters/clients/:id/edit"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireMasterEditRoute>
                 <ClientEditPage />
-              </DisallowCollectionAgentRoute>
+              </RequireMasterEditRoute>
             }
           />
 
@@ -89,44 +95,76 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="masters/vendors/new"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireMasterEditRoute>
                 <VendorCreatePage />
-              </DisallowCollectionAgentRoute>
+              </RequireMasterEditRoute>
             }
           />
           <Route path="masters/vendors/:id" element={<VendorDetailPage />} />
           <Route
             path="masters/vendors/:id/edit"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireMasterEditRoute>
                 <VendorEditPage />
-              </DisallowCollectionAgentRoute>
+              </RequireMasterEditRoute>
             }
           />
 
-          {/* Master Data: Item Master */}
-          <Route path="masters/items" element={<ItemMasterListPage />} />
+          {/* Master Data: Item Master (Hidden/Blocked for Lab Entry Person) */}
+          <Route
+            path="masters/items"
+            element={
+              <DisallowLabEntryRoute>
+                <ItemMasterListPage />
+              </DisallowLabEntryRoute>
+            }
+          />
           <Route
             path="masters/items/new"
             element={
-              <DisallowCollectionAgentRoute>
-                <ItemMasterCreatePage />
-              </DisallowCollectionAgentRoute>
+              <RequireMasterEditRoute>
+                <DisallowLabEntryRoute>
+                  <ItemMasterCreatePage />
+                </DisallowLabEntryRoute>
+              </RequireMasterEditRoute>
             }
           />
-          <Route path="masters/items/:id" element={<ItemMasterDetailPage />} />
+          <Route
+            path="masters/items/:id"
+            element={
+              <DisallowLabEntryRoute>
+                <ItemMasterDetailPage />
+              </DisallowLabEntryRoute>
+            }
+          />
           <Route
             path="masters/items/:id/edit"
             element={
-              <DisallowCollectionAgentRoute>
-                <ItemMasterEditPage />
-              </DisallowCollectionAgentRoute>
+              <RequireMasterEditRoute>
+                <DisallowLabEntryRoute>
+                  <ItemMasterEditPage />
+                </DisallowLabEntryRoute>
+              </RequireMasterEditRoute>
             }
           />
 
-          {/* Process 1: Equipment Inward (Allowed for Collection Agent) */}
-          <Route path="requests" element={<RequestListPage />} />
-          <Route path="requests/new" element={<NewRequestPage />} />
+          {/* Process 1: Equipment Inward (Blocked for Lab Entry Person) */}
+          <Route
+            path="requests"
+            element={
+              <DisallowLabEntryRoute>
+                <RequestListPage />
+              </DisallowLabEntryRoute>
+            }
+          />
+          <Route
+            path="requests/new"
+            element={
+              <DisallowLabEntryRoute>
+                <NewRequestPage />
+              </DisallowLabEntryRoute>
+            }
+          />
           <Route path="requests/:id" element={<RequestDetailPage />} />
 
           {/* Process 2 & 3: Lab Inspection & Calibration */}
@@ -168,7 +206,9 @@ export const AppRoutes: React.FC = () => {
             path="commercial/quotations"
             element={
               <DisallowCollectionAgentRoute>
-                <QuotationListPage />
+                <DisallowLabEntryRoute>
+                  <QuotationListPage />
+                </DisallowLabEntryRoute>
               </DisallowCollectionAgentRoute>
             }
           />
@@ -176,7 +216,9 @@ export const AppRoutes: React.FC = () => {
             path="commercial/quotations/new"
             element={
               <DisallowCollectionAgentRoute>
-                <QuotationBuilderPage />
+                <DisallowLabEntryRoute>
+                  <QuotationBuilderPage />
+                </DisallowLabEntryRoute>
               </DisallowCollectionAgentRoute>
             }
           />
@@ -194,7 +236,9 @@ export const AppRoutes: React.FC = () => {
             path="logistics/dispatches"
             element={
               <DisallowCollectionAgentRoute>
-                <DispatchListPage />
+                <DisallowLabEntryRoute>
+                  <DispatchListPage />
+                </DisallowLabEntryRoute>
               </DisallowCollectionAgentRoute>
             }
           />
@@ -202,7 +246,9 @@ export const AppRoutes: React.FC = () => {
             path="logistics/dispatch"
             element={
               <DisallowCollectionAgentRoute>
-                <DispatchListPage />
+                <DisallowLabEntryRoute>
+                  <DispatchListPage />
+                </DisallowLabEntryRoute>
               </DisallowCollectionAgentRoute>
             }
           />
@@ -210,7 +256,9 @@ export const AppRoutes: React.FC = () => {
             path="logistics/dispatch/new"
             element={
               <DisallowCollectionAgentRoute>
-                <DispatchBuilderPage />
+                <DisallowLabEntryRoute>
+                  <DispatchBuilderPage />
+                </DisallowLabEntryRoute>
               </DisallowCollectionAgentRoute>
             }
           />

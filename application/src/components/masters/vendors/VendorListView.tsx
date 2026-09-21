@@ -51,7 +51,8 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
   onToggleStatus,
   isTogglingId,
 }) => {
-  const { isCollectionAgent } = useAuthContext();
+  const { isCollectionAgent, isLabEntryPerson } = useAuthContext();
+  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson;
 
   return (
     <div className="space-y-6">
@@ -67,11 +68,11 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
             </h1>
           </div>
           <p className="text-sm text-[#6B7280] mt-1">
-            Authorized Calibration Laboratories, Tool Suppliers & Outsource Vendors {isCollectionAgent && '(View Only)'}
+            Authorized Calibration Laboratories, Tool Suppliers & Outsource Vendors {isViewOnlyMaster && '(View Only)'}
           </p>
         </div>
 
-        {!isCollectionAgent && (
+        {!isViewOnlyMaster && (
           <Link to="/masters/vendors/new">
             <Button variant="warning">
               <Plus className="size-4" /> Add New Vendor
@@ -259,7 +260,7 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                       </td>
 
                       <td className="px-5 py-4">
-                        {isCollectionAgent ? (
+                        {isViewOnlyMaster ? (
                           <Badge variant={vendor.status === 'ACTIVE' ? 'success' : 'outline'}>
                             {vendor.status}
                           </Badge>
@@ -313,7 +314,7 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                               <Eye className="size-4" />
                             </button>
                           </Link>
-                          {!isCollectionAgent && (
+                          {!isViewOnlyMaster && (
                             <Link to={`/masters/vendors/${vendor.id}/edit`}>
                               <button
                                 className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"

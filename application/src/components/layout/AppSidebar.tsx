@@ -38,12 +38,28 @@ const masterDataItems: NavItem[] = [
 ];
 
 export const AppSidebar: React.FC = () => {
-  const { isCollectionAgent } = useAuthContext();
+  const { isCollectionAgent, isLabEntryPerson } = useAuthContext();
 
-  // Collection Agent only has access to Inward Requests (to create and view requests)
-  const visibleOperationalItems = isCollectionAgent
-    ? operationalItems.filter((item) => item.to === '/requests')
-    : operationalItems;
+  // Role-based operational items filtering:
+  // - Collection Agent: Inward Requests only
+  // - Lab Entry Person: Lab Verification & Queue, Calibration Due List, Tax Invoices
+  let visibleOperationalItems = operationalItems;
+  if (isCollectionAgent) {
+    visibleOperationalItems = operationalItems.filter((item) => item.to === '/requests');
+  } else if (isLabEntryPerson) {
+    visibleOperationalItems = operationalItems.filter((item) =>
+      ['/lab/queue', '/lab/due-list', '/commercial/invoices'].includes(item.to)
+    );
+  }
+
+  // Master Data filtering:
+  // - Lab Entry Person: View only Client and Vendor Master
+  let visibleMasterDataItems = masterDataItems;
+  if (isLabEntryPerson) {
+    visibleMasterDataItems = masterDataItems.filter((item) =>
+      ['/masters/clients', '/masters/vendors'].includes(item.to)
+    );
+  }
 
   return (
     <aside className="w-64 bg-white border-r border-[#E5E7EB] min-h-[calc(100vh-4rem)] p-4 flex flex-col justify-between shrink-0">
@@ -82,7 +98,7 @@ export const AppSidebar: React.FC = () => {
             Master Data
           </span>
           <nav className="mt-2 space-y-1">
-            {masterDataItems.map((item) => {
+            {visibleMasterDataItems.map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink

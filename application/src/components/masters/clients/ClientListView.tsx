@@ -44,7 +44,8 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
   onToggleStatus,
   isTogglingId,
 }) => {
-  const { isCollectionAgent } = useAuthContext();
+  const { isCollectionAgent, isLabEntryPerson } = useAuthContext();
+  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson;
 
   return (
     <div className="space-y-6">
@@ -60,11 +61,11 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
             </h1>
           </div>
           <p className="text-sm text-[#6B7280] mt-1">
-            Enterprise Client Registry & Commercial Billing Profiles {isCollectionAgent && '(View Only)'}
+            Enterprise Client Registry & Commercial Billing Profiles {isViewOnlyMaster && '(View Only)'}
           </p>
         </div>
 
-        {!isCollectionAgent && (
+        {!isViewOnlyMaster && (
           <Link to="/masters/clients/new">
             <Button variant="primary">
               <Plus className="size-4" /> Add New Client
@@ -223,7 +224,7 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
                       </td>
 
                       <td className="px-5 py-4">
-                        {isCollectionAgent ? (
+                        {isViewOnlyMaster ? (
                           <Badge variant={client.status === 'ACTIVE' ? 'success' : 'outline'}>
                             {client.status}
                           </Badge>
@@ -277,7 +278,7 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
                               <Eye className="size-4" />
                             </button>
                           </Link>
-                          {!isCollectionAgent && (
+                          {!isViewOnlyMaster && (
                             <Link to={`/masters/clients/${client.id}/edit`}>
                               <button
                                 className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"

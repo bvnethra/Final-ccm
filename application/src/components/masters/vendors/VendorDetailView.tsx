@@ -31,7 +31,8 @@ interface VendorDetailViewProps {
 }
 
 export const VendorDetailView: React.FC<VendorDetailViewProps> = ({ vendor }) => {
-  const { isCollectionAgent } = useAuthContext();
+  const { isCollectionAgent, isLabEntryPerson } = useAuthContext();
+  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson;
   const phoneNumbers = vendor.phone_numbers || [vendor.phone];
   const emailAddresses = vendor.email_addresses || [vendor.email];
 
@@ -60,7 +61,7 @@ export const VendorDetailView: React.FC<VendorDetailViewProps> = ({ vendor }) =>
           </div>
         </div>
 
-        {!isCollectionAgent && (
+        {!isViewOnlyMaster && (
           <Link to={`/masters/vendors/${vendor.id}/edit`}>
             <Button variant="warning">
               <Edit2 className="size-4" /> Edit Vendor Record

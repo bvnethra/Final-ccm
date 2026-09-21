@@ -40,10 +40,12 @@ import {
   Square,
   FileCheck,
 } from 'lucide-react';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 export const RequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isLabEntryPerson } = useAuthContext();
   const { data: request, isLoading, error } = useCalibrationRequest(id);
   const { data: certificates = [] } = useCertificates(id);
   const { data: repairs = [] } = useRepairs(id);
@@ -253,9 +255,9 @@ export const RequestDetailPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link to="/requests">
+          <Link to={isLabEntryPerson ? "/lab/queue" : "/requests"}>
             <Button variant="secondary" size="sm">
-              <ArrowLeft className="size-4" /> Back to Requests
+              <ArrowLeft className="size-4" /> {isLabEntryPerson ? 'Back to Lab Queue' : 'Back to Requests'}
             </Button>
           </Link>
           <div>

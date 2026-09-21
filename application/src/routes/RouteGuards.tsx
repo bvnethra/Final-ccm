@@ -66,15 +66,57 @@ export const DisallowCollectionAgentRoute: React.FC<{ children: React.ReactNode 
 };
 
 /**
- * Root dashboard redirect for Collection Agent directly to Inward Requests
+ * Route guard that prevents Lab Entry Person from accessing screens outside
+ * their designated role scope (only Client, Vendor, Calibration Due List view, Lab Queue/Verification,
+ * Record Calibration, Invoices, Service Flag, Outsource PO).
  */
-export const DashboardRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isCollectionAgent, isLoading } = useAuthContext();
+export const DisallowLabEntryRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isLabEntryPerson, isLoading } = useAuthContext();
+
+  if (isLoading) return null;
+
+  if (isLabEntryPerson) {
+    return <Navigate to="/lab/queue" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+/**
+ * Route guard preventing view-only roles (Collection Agent, Lab Entry Person)
+ * from accessing Master creation or editing screens.
+ */
+export const RequireMasterEditRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isCollectionAgent, isLabEntryPerson, isLoading } = useAuthContext();
 
   if (isLoading) return null;
 
   if (isCollectionAgent) {
     return <Navigate to="/requests" replace />;
+  }
+  if (isLabEntryPerson) {
+    return <Navigate to="/lab/queue" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+/**
+ * Root dashboard redirect:
+ * - Collection Agent -> /requests
+ * - Lab Entry Person -> /lab/queue
+ * - Others -> DashboardPage
+ */
+export const DashboardRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isCollectionAgent, isLabEntryPerson, isLoading } = useAuthContext();
+
+  if (isLoading) return null;
+
+  if (isCollectionAgent) {
+    return <Navigate to="/requests" replace />;
+  }
+  if (isLabEntryPerson) {
+    return <Navigate to="/lab/queue" replace />;
   }
 
   return <>{children}</>;

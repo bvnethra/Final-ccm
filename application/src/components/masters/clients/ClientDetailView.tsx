@@ -31,7 +31,8 @@ interface ClientDetailViewProps {
 }
 
 export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ client }) => {
-  const { isCollectionAgent } = useAuthContext();
+  const { isCollectionAgent, isLabEntryPerson } = useAuthContext();
+  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson;
   const phoneNumbers = client.phone_numbers || [client.phone];
   const emailAddresses = client.email_addresses || [client.email];
 
@@ -60,7 +61,7 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ client }) =>
           </div>
         </div>
 
-        {!isCollectionAgent && (
+        {!isViewOnlyMaster && (
           <Link to={`/masters/clients/${client.id}/edit`}>
             <Button variant="primary">
               <Edit2 className="size-4" /> Edit Client Profile
