@@ -10,6 +10,7 @@ import {
   Truck,
   Building2,
   Gauge,
+  CalendarClock,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -23,6 +24,7 @@ const operationalItems: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard },
   { label: 'Intake Requests', to: '/requests', icon: ClipboardList },
   { label: 'Lab & Calibration', to: '/lab/queue', icon: CheckCircle2 },
+  { label: 'Calibration Due List', to: '/lab/due-list', icon: CalendarClock },
   { label: 'Commercial Billing', to: '/commercial/quotations', icon: FileText },
   { label: 'Tax Invoices', to: '/commercial/invoices', icon: Receipt },
   { label: 'Logistics & Dispatch', to: '/logistics/dispatches', icon: Truck },

@@ -256,6 +256,7 @@ export interface Certificate {
   organization_id: string;
   request_id: string;
   calibration_id: string;
+  request_item_id?: string;
   certificate_number: string;
   issued_at: string;
   valid_until: string;
@@ -330,9 +331,11 @@ export interface OutsourcePO {
   received_date?: string;
   vendor_cost?: number;
   vendor_certificate_number?: string;
+  next_due_date?: string;
   remarks?: string;
   status: 'SENT' | 'RETURNED' | 'ACCEPTED';
   created_at: string;
+  updated_at?: string;
 }
 
 export type InvoiceType = 'PARTIAL' | 'ACTUAL';
@@ -409,3 +412,28 @@ export interface Delivery {
   remarks?: string;
   created_at: string;
 }
+
+export interface CalibrationDueItem {
+  id: string;
+  itemMasterId: string;
+  itemName: string;
+  itemCode?: string;
+  itemCategory?: string;
+  serialNumber: string;
+  clientId: string;
+  clientName: string;
+  clientCode: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  requestId: string;
+  requestNumber: string;
+  certificateNumber?: string;
+  lastCalibratedDate: string;
+  nextDueDate: string;
+  daysRemaining: number;
+  urgencyStatus: 'OVERDUE' | 'DUE_7_DAYS' | 'DUE_15_DAYS' | 'DUE_30_DAYS' | 'UPCOMING';
+  isOutsourced: boolean;
+  vendorName?: string;
+  vendorCertificateNumber?: string;
+}
+

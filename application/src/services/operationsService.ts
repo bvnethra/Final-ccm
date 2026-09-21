@@ -21,6 +21,7 @@ import type {
   Invoice,
   InvoiceType,
   InvoiceItem,
+  CalibrationDueItem,
 } from '../types/domain';
 
 // ============================================================================
@@ -1481,3 +1482,139 @@ export async function recordDelivery(payload: RecordDeliveryPayload): Promise<De
 
   return newDelivery;
 }
+
+// ============================================================================
+// Section 8: Calibration Due List (FR-DUE-01 to FR-DUE-06)
+// ============================================================================
+
+export async function getCalibrationDueList(
+  tenantId: string,
+  organizationId?: string
+): Promise<CalibrationDueItem[]> {
+  if (!tenantId) return [];
+
+  const [requests, certs, outsources] = await Promise.all([
+    getCalibrationRequests(tenantId, organizationId),
+    getCertificates(tenantId),
+    getOutsourcePOs(tenantId),
+  ]);
+
+  const dueItems: CalibrationDueItem[] = [];
+  const processedKeys = new Set<string>();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // 1. Process from In-House Certificates
+  for (const cert of certs) {
+    if (!cert.valid_until) continue;
+    const req = requests.find((r) => r.id === cert.request_id);
+    if (!req) continue;
+
+    const reqItem = (req.request_items || []).find((it) => it.id === cert.request_item_id) || req.request_items?.[0];
+    const key = `${cert.request_id}_${reqItem?.id || cert.certificate_number}`;
+    if (processedKeys.has(key)) continue;
+    processedKeys.add(key);
+
+    const outsource = outsources.find(
+      (po) =>
+        po.id === cert.calibration_id ||
+        (po.request_id === req.id && (po.request_item_id === reqItem?.id || po.request_item_id === cert.request_item_id))
+    );
+
+    const dueDate = new Date(cert.valid_until);
+    dueDate.setHours(0, 0, 0, 0);
+    const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    let urgencyStatus: CalibrationDueItem['urgencyStatus'] = 'UPCOMING';
+    if (daysDiff < 0) {
+      urgencyStatus = 'OVERDUE';
+    } else if (daysDiff <= 7) {
+      urgencyStatus = 'DUE_7_DAYS';
+    } else if (daysDiff <= 15) {
+      urgencyStatus = 'DUE_15_DAYS';
+    } else if (daysDiff <= 30) {
+      urgencyStatus = 'DUE_30_DAYS';
+    }
+
+    dueItems.push({
+      id: cert.id,
+      itemMasterId: reqItem?.item_master_id || reqItem?.item_masters?.id || 'item-gauge',
+      itemName: reqItem?.item_masters?.item_name || 'Precision Gauge',
+      itemCode: reqItem?.item_masters?.item_code,
+      itemCategory: reqItem?.item_masters?.item_category || reqItem?.item_masters?.item_type || 'General Metrology',
+      serialNumber: reqItem?.serial_number || 'SN-N/A',
+      clientId: req.client_id,
+      clientName: req.clients?.client_name || 'Client',
+      clientCode: req.clients?.client_code || 'CL-N/A',
+      clientEmail: req.clients?.email,
+      clientPhone: req.clients?.phone,
+      requestId: req.id,
+      requestNumber: req.request_number,
+      certificateNumber: cert.certificate_number,
+      lastCalibratedDate: cert.issued_at || cert.created_at || req.created_at,
+      nextDueDate: cert.valid_until,
+      daysRemaining: daysDiff,
+      urgencyStatus,
+      isOutsourced: Boolean(outsource || cert.certificate_number?.startsWith('VCERT')),
+      vendorName: outsource?.vendor_name,
+      vendorCertificateNumber: outsource?.vendor_certificate_number,
+    });
+  }
+
+  // 2. Process Outsource POs returned with next_due_date not captured above
+  for (const po of outsources) {
+    if (po.status === 'ACCEPTED' && po.next_due_date) {
+      const req = requests.find((r) => r.id === po.request_id);
+      if (!req) continue;
+
+      const reqItem = (req.request_items || []).find((it) => it.id === po.request_item_id);
+      const key = `${po.request_id}_${po.request_item_id || po.id}`;
+      if (processedKeys.has(key)) continue;
+      processedKeys.add(key);
+
+      const dueDate = new Date(po.next_due_date);
+      dueDate.setHours(0, 0, 0, 0);
+      const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      let urgencyStatus: CalibrationDueItem['urgencyStatus'] = 'UPCOMING';
+      if (daysDiff < 0) {
+        urgencyStatus = 'OVERDUE';
+      } else if (daysDiff <= 7) {
+        urgencyStatus = 'DUE_7_DAYS';
+      } else if (daysDiff <= 15) {
+        urgencyStatus = 'DUE_15_DAYS';
+      } else if (daysDiff <= 30) {
+        urgencyStatus = 'DUE_30_DAYS';
+      }
+
+      dueItems.push({
+        id: po.id,
+        itemMasterId: reqItem?.item_master_id || 'item-outsource',
+        itemName: reqItem?.item_masters?.item_name || 'Outsourced Metrology Item',
+        itemCode: reqItem?.item_masters?.item_code,
+        itemCategory: reqItem?.item_masters?.item_category || 'External Vendor',
+        serialNumber: reqItem?.serial_number || 'SN-EXT',
+        clientId: req.client_id,
+        clientName: req.clients?.client_name || 'Client',
+        clientCode: req.clients?.client_code || 'CL-N/A',
+        clientEmail: req.clients?.email,
+        clientPhone: req.clients?.phone,
+        requestId: req.id,
+        requestNumber: req.request_number,
+        certificateNumber: po.vendor_certificate_number,
+        lastCalibratedDate: po.updated_at || po.created_at,
+        nextDueDate: po.next_due_date,
+        daysRemaining: daysDiff,
+        urgencyStatus,
+        isOutsourced: true,
+        vendorName: po.vendor_name,
+        vendorCertificateNumber: po.vendor_certificate_number,
+      });
+    }
+  }
+
+  // Sort by daysRemaining ascending (most urgent / overdue first)
+  return dueItems.sort((a, b) => a.daysRemaining - b.daysRemaining);
+}
+

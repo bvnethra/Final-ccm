@@ -12,6 +12,7 @@ const RequestDetailPage = lazy(() => import('../pages/requests/RequestDetailPage
 const LabQueuePage = lazy(() => import('../pages/lab/LabQueuePage'));
 const VerificationPage = lazy(() => import('../pages/lab/VerificationPage'));
 const CalibrationPage = lazy(() => import('../pages/lab/CalibrationPage'));
+const CalibrationDueListPage = lazy(() => import('../pages/lab/CalibrationDueListPage'));
 const QuotationListPage = lazy(() => import('../pages/commercial/QuotationListPage'));
 const QuotationBuilderPage = lazy(() => import('../pages/commercial/QuotationBuilderPage'));
 const InvoiceListPage = lazy(() => import('../pages/commercial/InvoiceListPage'));
@@ -82,6 +83,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="lab/queue" element={<LabQueuePage />} />
           <Route path="lab/verification/:requestId" element={<VerificationPage />} />
           <Route path="lab/calibration/:requestId" element={<CalibrationPage />} />
+          <Route path="lab/due-list" element={<CalibrationDueListPage />} />
 
           {/* Process 4: Commercial Quotations & Billing */}
           <Route path="commercial/quotations" element={<QuotationListPage />} />
@@ -90,6 +92,7 @@ export const AppRoutes: React.FC = () => {
 
           {/* Process 5: Logistics & Gate Pass Dispatch */}
           <Route path="logistics/dispatches" element={<DispatchListPage />} />
+          <Route path="logistics/dispatch" element={<DispatchListPage />} />
           <Route path="logistics/dispatch/new" element={<DispatchBuilderPage />} />
 
           {/* Fallback */}

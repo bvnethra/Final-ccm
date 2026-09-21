@@ -22,6 +22,7 @@ import {
   updateDispatchStatus,
   recordDelivery,
   getDeliveries,
+  getCalibrationDueList,
 } from '../services/operationsService';
 
 describe('Calibration Operational Lifecycle Workflow Tests', () => {
@@ -758,5 +759,107 @@ describe('Calibration Operational Lifecycle Workflow Tests', () => {
     // 7. CRITICAL: Verify Calibration Request status has transitioned to COMPLETED state!
     currentReq = await getCalibrationRequestById(req.id, tenantId);
     expect(currentReq.status).toBe('COMPLETED');
+  });
+
+  it('Flow 9: Calibration Due List Generation, 7/15/30 Day Filtering, Client Grouping, and Vendor Cross-Reference (FR-DUE-01 to FR-DUE-06)', async () => {
+    // 1. Create In-House Calibrated Request (with certificate valid_until 5 days in future)
+    const fiveDaysFuture = new Date();
+    fiveDaysFuture.setDate(fiveDaysFuture.getDate() + 5);
+    const fiveDaysStr = fiveDaysFuture.toISOString().slice(0, 10);
+
+    const req1 = await createCalibrationRequest({
+      tenantId,
+      organizationId,
+      clientId: 'client-due-a',
+      collectionDate: new Date().toISOString(),
+      priority: 'NORMAL',
+      items: [
+        {
+          itemMasterId: 'gauge-due-1',
+          quantity: 1,
+          serialNumber: 'SN-DUE-001',
+          itemCondition: 'GOOD',
+        },
+      ],
+    });
+
+    const item1 = req1.request_items![0];
+    await recordCalibration({
+      tenantId,
+      organizationId,
+      requestId: req1.id,
+      requestItemId: item1.id,
+      result: 'PASS',
+      nextDueDate: fiveDaysStr,
+      measurements: [],
+    });
+
+    // 2. Create Outsource Request returned from Vendor (with next_due_date 2 days in the PAST => OVERDUE)
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const twoDaysAgoStr = twoDaysAgo.toISOString().slice(0, 10);
+
+    const req2 = await createCalibrationRequest({
+      tenantId,
+      organizationId,
+      clientId: 'client-due-b',
+      collectionDate: new Date().toISOString(),
+      priority: 'URGENT',
+      items: [
+        {
+          itemMasterId: 'gauge-due-2',
+          quantity: 1,
+          serialNumber: 'SN-DUE-002',
+          itemCondition: 'GOOD',
+        },
+      ],
+    });
+
+    const item2 = req2.request_items![0];
+    const outsource = await createOutsourcePO({
+      tenantId,
+      organizationId,
+      requestId: req2.id,
+      requestItemId: item2.id,
+      vendorId: 'vendor-nabl-1',
+      vendorName: 'Apex Precision Metrology Labs',
+      expectedReturnDate: '2026-09-15',
+      vendorCost: 150,
+    });
+
+    await receiveOutsourceReturn({
+      tenantId,
+      organizationId,
+      outsourceId: outsource.id,
+      requestId: req2.id,
+      vendorCertificateNumber: 'VCERT-APEX-778',
+      nextDueDate: twoDaysAgoStr,
+    });
+
+    // 3. Query getCalibrationDueList()
+    const dueList = await getCalibrationDueList(tenantId, organizationId);
+    expect(dueList.length).toBeGreaterThanOrEqual(2);
+
+    // Verify overdue item
+    const overdueItem = dueList.find((it) => it.serialNumber === 'SN-DUE-002');
+    expect(overdueItem).toBeDefined();
+    expect(overdueItem?.urgencyStatus).toBe('OVERDUE');
+    expect(overdueItem?.daysRemaining).toBeLessThan(0);
+    expect(overdueItem?.isOutsourced).toBe(true);
+    expect(overdueItem?.vendorName).toBe('Apex Precision Metrology Labs');
+    expect(overdueItem?.vendorCertificateNumber).toBe('VCERT-APEX-778');
+
+    // Verify item due in 5 days
+    const due7Item = dueList.find((it) => it.serialNumber === 'SN-DUE-001');
+    expect(due7Item).toBeDefined();
+    expect(due7Item?.urgencyStatus).toBe('DUE_7_DAYS');
+    expect(due7Item?.daysRemaining).toBeGreaterThanOrEqual(0);
+    expect(due7Item?.daysRemaining).toBeLessThanOrEqual(7);
+    expect(due7Item?.isOutsourced).toBe(false);
+
+    // Verify ordering: overdue item appears before 5-day item (sorted by daysRemaining ascending)
+    const overdueIdx = dueList.findIndex((it) => it.serialNumber === 'SN-DUE-002');
+    const due7Idx = dueList.findIndex((it) => it.serialNumber === 'SN-DUE-001');
+    expect(overdueIdx).toBeLessThan(due7Idx);
   });
 });

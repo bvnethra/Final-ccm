@@ -26,6 +26,7 @@ import {
   updateDispatchStatus,
   getDeliveries,
   recordDelivery,
+  getCalibrationDueList,
   type CreateRequestPayload,
   type RecordVerificationPayload,
   type RecordCalibrationPayload,
@@ -330,3 +331,14 @@ export function useCreateInvoice() {
     },
   });
 }
+
+export function useCalibrationDueList() {
+  const { tenantId, organizationId } = useAuthContext();
+
+  return useQuery({
+    queryKey: ['calibrationDueList', tenantId, organizationId],
+    queryFn: () => getCalibrationDueList(tenantId!, organizationId),
+    enabled: Boolean(tenantId),
+  });
+}
+
