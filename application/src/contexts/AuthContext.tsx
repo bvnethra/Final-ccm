@@ -8,6 +8,7 @@ interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isCollectionAgent: boolean;
   tenantId: string | undefined;
   organizationId: string | undefined;
   hasPermission: (permissionCode: string) => boolean;
@@ -20,6 +21,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const isCollectionAgent = Boolean(user?.roles?.includes('COLLECTION_AGENT') && !user?.isSuperAdmin);
 
   useEffect(() => {
     // 1. Initial Session Check directly from live Supabase Auth
@@ -77,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isLoading,
         isAuthenticated: Boolean(user),
+        isCollectionAgent,
         tenantId: user?.tenantId,
         organizationId: user?.organizationId,
         hasPermission,

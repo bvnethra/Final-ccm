@@ -24,6 +24,7 @@ import {
   IndianRupee,
 } from 'lucide-react';
 import { ITEM_METROLOGY_CATEGORIES } from '../../../services/itemMasterService';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface ItemMasterListViewProps {
   items: ItemMaster[];
@@ -50,6 +51,8 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
   onToggleStatus,
   isTogglingId,
 }) => {
+  const { isCollectionAgent } = useAuthContext();
+
   return (
     <div className="space-y-6">
       {/* Header Bar */}
@@ -64,15 +67,17 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
             </h1>
           </div>
           <p className="text-sm text-[#6B7280] mt-1">
-            Metrology Instruments & Measurement Equipment Catalog for Inward, Testing & Commercial Billing
+            Metrology Instruments & Measurement Equipment Catalog for Inward, Testing & Commercial Billing {isCollectionAgent && '(View Only)'}
           </p>
         </div>
 
-        <Link to="/masters/items/new">
-          <Button variant="primary">
-            <Plus className="size-4" /> Add New Item
-          </Button>
-        </Link>
+        {!isCollectionAgent && (
+          <Link to="/masters/items/new">
+            <Button variant="primary">
+              <Plus className="size-4" /> Add New Item
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
@@ -230,24 +235,30 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
                       </td>
 
                       <td className="px-5 py-4">
-                        <button
-                          onClick={() => onToggleStatus(item.id)}
-                          disabled={isToggling}
-                          className="flex items-center gap-1 text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50"
-                          title="Click to toggle status"
-                        >
-                          {item.status === 'ACTIVE' ? (
-                            <>
-                              <ToggleRight className="size-5 text-[#16A34A]" />
-                              <Badge variant="success">ACTIVE</Badge>
-                            </>
-                          ) : (
-                            <>
-                              <ToggleLeft className="size-5 text-[#9CA3AF]" />
-                              <Badge variant="outline">INACTIVE</Badge>
-                            </>
-                          )}
-                        </button>
+                        {isCollectionAgent ? (
+                          <Badge variant={item.status === 'ACTIVE' ? 'success' : 'outline'}>
+                            {item.status}
+                          </Badge>
+                        ) : (
+                          <button
+                            onClick={() => onToggleStatus(item.id)}
+                            disabled={isToggling}
+                            className="flex items-center gap-1 text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50"
+                            title="Click to toggle status"
+                          >
+                            {item.status === 'ACTIVE' ? (
+                              <>
+                                <ToggleRight className="size-5 text-[#16A34A]" />
+                                <Badge variant="success">ACTIVE</Badge>
+                              </>
+                            ) : (
+                              <>
+                                <ToggleLeft className="size-5 text-[#9CA3AF]" />
+                                <Badge variant="outline">INACTIVE</Badge>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </td>
 
                       <td className="px-5 py-4 text-xs text-[#6B7280]">
@@ -278,14 +289,16 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
                               <Eye className="size-4" />
                             </button>
                           </Link>
-                          <Link to={`/masters/items/${item.id}/edit`}>
-                            <button
-                              className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"
-                              title="Edit Instrument Master"
-                            >
-                              <Edit2 className="size-4" />
-                            </button>
-                          </Link>
+                          {!isCollectionAgent && (
+                            <Link to={`/masters/items/${item.id}/edit`}>
+                              <button
+                                className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"
+                                title="Edit Instrument Master"
+                              >
+                                <Edit2 className="size-4" />
+                              </button>
+                            </Link>
+                          )}
                         </div>
                       </td>
                     </tr>

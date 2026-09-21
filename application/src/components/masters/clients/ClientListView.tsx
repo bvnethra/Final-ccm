@@ -1,7 +1,7 @@
-// application/src/components/masters/clients/ClientListView.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Client } from '../../../types/domain';
+import { useAuthContext } from '../../../contexts/AuthContext';
 import {
   Card,
   CardContent,
@@ -44,6 +44,8 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
   onToggleStatus,
   isTogglingId,
 }) => {
+  const { isCollectionAgent } = useAuthContext();
+
   return (
     <div className="space-y-6">
       {/* Header Bar */}
@@ -58,15 +60,17 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
             </h1>
           </div>
           <p className="text-sm text-[#6B7280] mt-1">
-            Enterprise Client Registry & Commercial Billing Profiles
+            Enterprise Client Registry & Commercial Billing Profiles {isCollectionAgent && '(View Only)'}
           </p>
         </div>
 
-        <Link to="/masters/clients/new">
-          <Button variant="primary">
-            <Plus className="size-4" /> Add New Client
-          </Button>
-        </Link>
+        {!isCollectionAgent && (
+          <Link to="/masters/clients/new">
+            <Button variant="primary">
+              <Plus className="size-4" /> Add New Client
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
@@ -219,24 +223,30 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
                       </td>
 
                       <td className="px-5 py-4">
-                        <button
-                          onClick={() => onToggleStatus(client.id)}
-                          disabled={isToggling}
-                          className="flex items-center gap-1 text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50"
-                          title="Click to toggle status"
-                        >
-                          {client.status === 'ACTIVE' ? (
-                            <>
-                              <ToggleRight className="size-5 text-[#16A34A]" />
-                              <Badge variant="success">ACTIVE</Badge>
-                            </>
-                          ) : (
-                            <>
-                              <ToggleLeft className="size-5 text-[#9CA3AF]" />
-                              <Badge variant="outline">INACTIVE</Badge>
-                            </>
-                          )}
-                        </button>
+                        {isCollectionAgent ? (
+                          <Badge variant={client.status === 'ACTIVE' ? 'success' : 'outline'}>
+                            {client.status}
+                          </Badge>
+                        ) : (
+                          <button
+                            onClick={() => onToggleStatus(client.id)}
+                            disabled={isToggling}
+                            className="flex items-center gap-1 text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50"
+                            title="Click to toggle status"
+                          >
+                            {client.status === 'ACTIVE' ? (
+                              <>
+                                <ToggleRight className="size-5 text-[#16A34A]" />
+                                <Badge variant="success">ACTIVE</Badge>
+                              </>
+                            ) : (
+                              <>
+                                <ToggleLeft className="size-5 text-[#9CA3AF]" />
+                                <Badge variant="outline">INACTIVE</Badge>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </td>
 
                       <td className="px-5 py-4 text-xs text-[#6B7280]">
@@ -267,14 +277,16 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
                               <Eye className="size-4" />
                             </button>
                           </Link>
-                          <Link to={`/masters/clients/${client.id}/edit`}>
-                            <button
-                              className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"
-                              title="Edit Client Master"
-                            >
-                              <Edit2 className="size-4" />
-                            </button>
-                          </Link>
+                          {!isCollectionAgent && (
+                            <Link to={`/masters/clients/${client.id}/edit`}>
+                              <button
+                                className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"
+                                title="Edit Client Master"
+                              >
+                                <Edit2 className="size-4" />
+                              </button>
+                            </Link>
+                          )}
                         </div>
                       </td>
                     </tr>

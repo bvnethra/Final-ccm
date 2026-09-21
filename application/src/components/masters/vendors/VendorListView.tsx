@@ -24,6 +24,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { METROLOGY_SERVICE_CATEGORIES } from '../../../services/vendorMasterService';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface VendorListViewProps {
   vendors: Vendor[];
@@ -50,6 +51,8 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
   onToggleStatus,
   isTogglingId,
 }) => {
+  const { isCollectionAgent } = useAuthContext();
+
   return (
     <div className="space-y-6">
       {/* Header Bar */}
@@ -64,15 +67,17 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
             </h1>
           </div>
           <p className="text-sm text-[#6B7280] mt-1">
-            Authorized Calibration Laboratories, Tool Suppliers & Outsource Vendors
+            Authorized Calibration Laboratories, Tool Suppliers & Outsource Vendors {isCollectionAgent && '(View Only)'}
           </p>
         </div>
 
-        <Link to="/masters/vendors/new">
-          <Button variant="warning">
-            <Plus className="size-4" /> Add New Vendor
-          </Button>
-        </Link>
+        {!isCollectionAgent && (
+          <Link to="/masters/vendors/new">
+            <Button variant="warning">
+              <Plus className="size-4" /> Add New Vendor
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
@@ -254,24 +259,30 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                       </td>
 
                       <td className="px-5 py-4">
-                        <button
-                          onClick={() => onToggleStatus(vendor.id)}
-                          disabled={isToggling}
-                          className="flex items-center gap-1 text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50"
-                          title="Click to toggle status"
-                        >
-                          {vendor.status === 'ACTIVE' ? (
-                            <>
-                              <ToggleRight className="size-5 text-[#16A34A]" />
-                              <Badge variant="success">ACTIVE</Badge>
-                            </>
-                          ) : (
-                            <>
-                              <ToggleLeft className="size-5 text-[#9CA3AF]" />
-                              <Badge variant="outline">INACTIVE</Badge>
-                            </>
-                          )}
-                        </button>
+                        {isCollectionAgent ? (
+                          <Badge variant={vendor.status === 'ACTIVE' ? 'success' : 'outline'}>
+                            {vendor.status}
+                          </Badge>
+                        ) : (
+                          <button
+                            onClick={() => onToggleStatus(vendor.id)}
+                            disabled={isToggling}
+                            className="flex items-center gap-1 text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50"
+                            title="Click to toggle status"
+                          >
+                            {vendor.status === 'ACTIVE' ? (
+                              <>
+                                <ToggleRight className="size-5 text-[#16A34A]" />
+                                <Badge variant="success">ACTIVE</Badge>
+                              </>
+                            ) : (
+                              <>
+                                <ToggleLeft className="size-5 text-[#9CA3AF]" />
+                                <Badge variant="outline">INACTIVE</Badge>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </td>
 
                       <td className="px-5 py-4 text-xs text-[#6B7280]">
@@ -302,14 +313,16 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                               <Eye className="size-4" />
                             </button>
                           </Link>
-                          <Link to={`/masters/vendors/${vendor.id}/edit`}>
-                            <button
-                              className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"
-                              title="Edit Vendor Record"
-                            >
-                              <Edit2 className="size-4" />
-                            </button>
-                          </Link>
+                          {!isCollectionAgent && (
+                            <Link to={`/masters/vendors/${vendor.id}/edit`}>
+                              <button
+                                className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"
+                                title="Edit Vendor Record"
+                              >
+                                <Edit2 className="size-4" />
+                              </button>
+                            </Link>
+                          )}
                         </div>
                       </td>
                     </tr>

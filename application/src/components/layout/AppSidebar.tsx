@@ -13,6 +13,7 @@ import {
   CalendarClock,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 interface NavItem {
   label: string;
@@ -37,6 +38,13 @@ const masterDataItems: NavItem[] = [
 ];
 
 export const AppSidebar: React.FC = () => {
+  const { isCollectionAgent } = useAuthContext();
+
+  // Collection Agent only has access to Inward Requests (to create and view requests)
+  const visibleOperationalItems = isCollectionAgent
+    ? operationalItems.filter((item) => item.to === '/requests')
+    : operationalItems;
+
   return (
     <aside className="w-64 bg-white border-r border-[#E5E7EB] min-h-[calc(100vh-4rem)] p-4 flex flex-col justify-between shrink-0">
       <div className="space-y-6">
@@ -45,7 +53,7 @@ export const AppSidebar: React.FC = () => {
             Operational Workflows
           </span>
           <nav className="mt-2 space-y-1">
-            {operationalItems.map((item) => {
+            {visibleOperationalItems.map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink

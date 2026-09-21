@@ -24,11 +24,14 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
+import { useAuthContext } from '../../../contexts/AuthContext';
+
 interface VendorDetailViewProps {
   vendor: Vendor;
 }
 
 export const VendorDetailView: React.FC<VendorDetailViewProps> = ({ vendor }) => {
+  const { isCollectionAgent } = useAuthContext();
   const phoneNumbers = vendor.phone_numbers || [vendor.phone];
   const emailAddresses = vendor.email_addresses || [vendor.email];
 
@@ -57,11 +60,13 @@ export const VendorDetailView: React.FC<VendorDetailViewProps> = ({ vendor }) =>
           </div>
         </div>
 
-        <Link to={`/masters/vendors/${vendor.id}/edit`}>
-          <Button variant="warning">
-            <Edit2 className="size-4" /> Edit Vendor Record
-          </Button>
-        </Link>
+        {!isCollectionAgent && (
+          <Link to={`/masters/vendors/${vendor.id}/edit`}>
+            <Button variant="warning">
+              <Edit2 className="size-4" /> Edit Vendor Record
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Grid: Identification & Location */}

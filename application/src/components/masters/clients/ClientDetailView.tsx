@@ -24,11 +24,14 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
+import { useAuthContext } from '../../../contexts/AuthContext';
+
 interface ClientDetailViewProps {
   client: Client;
 }
 
 export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ client }) => {
+  const { isCollectionAgent } = useAuthContext();
   const phoneNumbers = client.phone_numbers || [client.phone];
   const emailAddresses = client.email_addresses || [client.email];
 
@@ -57,11 +60,13 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ client }) =>
           </div>
         </div>
 
-        <Link to={`/masters/clients/${client.id}/edit`}>
-          <Button variant="primary">
-            <Edit2 className="size-4" /> Edit Client Profile
-          </Button>
-        </Link>
+        {!isCollectionAgent && (
+          <Link to={`/masters/clients/${client.id}/edit`}>
+            <Button variant="primary">
+              <Edit2 className="size-4" /> Edit Client Profile
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Grid: Primary Info & Commercial Terms */}

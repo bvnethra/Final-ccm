@@ -23,11 +23,15 @@ import {
   Info,
 } from 'lucide-react';
 
+import { useAuthContext } from '../../../contexts/AuthContext';
+
 interface ItemMasterDetailViewProps {
   item: ItemMaster;
 }
 
 export const ItemMasterDetailView: React.FC<ItemMasterDetailViewProps> = ({ item }) => {
+  const { isCollectionAgent } = useAuthContext();
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       {/* Top Action Bar */}
@@ -53,11 +57,13 @@ export const ItemMasterDetailView: React.FC<ItemMasterDetailViewProps> = ({ item
           </div>
         </div>
 
-        <Link to={`/masters/items/${item.id}/edit`}>
-          <Button variant="primary">
-            <Edit2 className="size-4" /> Edit Instrument Master
-          </Button>
-        </Link>
+        {!isCollectionAgent && (
+          <Link to={`/masters/items/${item.id}/edit`}>
+            <Button variant="primary">
+              <Edit2 className="size-4" /> Edit Instrument Master
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Grid: Specifications & Commercial Terms */}

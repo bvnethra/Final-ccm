@@ -48,3 +48,34 @@ export const PermissionRoute: React.FC<{
 
   return <>{children}</>;
 };
+
+/**
+ * Route guard that prevents Collection Agent from accessing screens outside
+ * their designated role scope (only Client, Vendor, Item Master view, and Create/View Requests).
+ */
+export const DisallowCollectionAgentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isCollectionAgent, isLoading } = useAuthContext();
+
+  if (isLoading) return null;
+
+  if (isCollectionAgent) {
+    return <Navigate to="/requests" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+/**
+ * Root dashboard redirect for Collection Agent directly to Inward Requests
+ */
+export const DashboardRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isCollectionAgent, isLoading } = useAuthContext();
+
+  if (isLoading) return null;
+
+  if (isCollectionAgent) {
+    return <Navigate to="/requests" replace />;
+  }
+
+  return <>{children}</>;
+};
