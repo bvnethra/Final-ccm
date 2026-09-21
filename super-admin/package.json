@@ -1,23 +1,13 @@
 {
-  "name": "final-ccm-monorepo",
+  "name": "ccm-super-admin",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "workspaces": [
-    "super-admin",
-    "application"
-  ],
   "scripts": {
-    "dev": "npm --prefix application run dev",
-    "dev:admin": "npm --prefix super-admin run dev",
-    "dev:app": "npm --prefix application run dev",
-    "build:admin": "npm --prefix super-admin run build",
-    "build:app": "npm --prefix application run build",
-    "build": "npm run build:admin && npm run build:app",
-    "test:admin": "npm --prefix super-admin test",
-    "test:app": "npm --prefix application test",
-    "test": "npm run test:admin && npm run test:app",
-    "test:db": "node scripts/test-db-connection.js"
+    "dev": "vite --port 5173",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
