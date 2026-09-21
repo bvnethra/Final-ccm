@@ -45,7 +45,7 @@ import { useAuthContext } from '../../contexts/AuthContext';
 export const RequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isLabEntryPerson, isLabApprover } = useAuthContext();
+  const { isLabEntryPerson, isLabApprover, isAdmin } = useAuthContext();
   const { data: request, isLoading, error } = useCalibrationRequest(id);
   const { data: certificates = [] } = useCertificates(id);
   const { data: repairs = [] } = useRepairs(id);
@@ -318,13 +318,13 @@ export const RequestDetailPage: React.FC = () => {
             </Link>
           )}          {(request.status === 'CALIBRATED' || request.status === 'PARTIALLY_INVOICED') && (
             <div className="flex items-center gap-2">
-              {!isLabApprover && (
+              {!isLabApprover && !isAdmin && (
                 <Button variant="primary" onClick={handleOpenDirectInvoice}>
                   <Receipt className="size-4" />
                   {request.status === 'PARTIALLY_INVOICED' ? 'Invoice Remaining Items' : 'Generate Tax Invoice Directly'}
                 </Button>
               )}
-              {!isLabApprover ? (
+              {!isLabApprover && !isAdmin ? (
                 <Link to="/commercial/quotations/new">
                   <Button variant="outlineInk">
                     <FileText className="size-4" /> Create Quotation (Optional)
@@ -341,7 +341,7 @@ export const RequestDetailPage: React.FC = () => {
           )}
           {request.status === 'QUOTATION' && (
             <div className="flex items-center gap-2">
-              {!isLabApprover && (
+              {!isLabApprover && !isAdmin && (
                 <Button variant="primary" onClick={handleOpenDirectInvoice}>
                   <Receipt className="size-4" /> Generate Tax Invoice Directly
                 </Button>
@@ -355,7 +355,7 @@ export const RequestDetailPage: React.FC = () => {
           )}
           {request.status === 'APPROVED' && (
             <div className="flex items-center gap-2">
-              {!isLabApprover && (
+              {!isLabApprover && !isAdmin && (
                 <Button variant="primary" onClick={handleOpenDirectInvoice}>
                   <Receipt className="size-4" /> Generate Tax Invoice
                 </Button>

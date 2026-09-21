@@ -11,6 +11,7 @@ import {
   Building2,
   Gauge,
   CalendarClock,
+  Shield,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuthContext } from '../../contexts/AuthContext';
@@ -35,15 +36,17 @@ const masterDataItems: NavItem[] = [
   { label: 'Client Master', to: '/masters/clients', icon: Building2 },
   { label: 'Vendor Master', to: '/masters/vendors', icon: Truck },
   { label: 'Item Master', to: '/masters/items', icon: Gauge },
+  { label: 'Role & Permissions', to: '/roles', icon: Shield },
 ];
 
 export const AppSidebar: React.FC = () => {
-  const { isCollectionAgent, isLabEntryPerson, isLabApprover } = useAuthContext();
+  const { user, isCollectionAgent, isLabEntryPerson, isLabApprover, isAdmin } = useAuthContext();
 
   // Role-based operational items filtering:
   // - Collection Agent: Inward Requests only
   // - Lab Entry Person: Lab Verification & Queue, Calibration Due List, Tax Invoices
   // - Lab Approver: Inward Requests, Lab & Calibration, Commercial Quotations, Tax Invoices
+  // - Admin: Inward Requests, Lab & Calibration, Calibration Due List, Commercial Quotations, Tax Invoices (Logistics hidden)
   let visibleOperationalItems = operationalItems;
   if (isCollectionAgent) {
     visibleOperationalItems = operationalItems.filter((item) => item.to === '/requests');
@@ -55,16 +58,27 @@ export const AppSidebar: React.FC = () => {
     visibleOperationalItems = operationalItems.filter((item) =>
       ['/requests', '/lab/queue', '/commercial/quotations', '/commercial/invoices'].includes(item.to)
     );
+  } else if (isAdmin) {
+    visibleOperationalItems = operationalItems.filter((item) =>
+      ['/requests', '/lab/queue', '/lab/due-list', '/commercial/quotations', '/commercial/invoices'].includes(item.to)
+    );
   }
 
   // Master Data filtering:
-  // - Lab Entry Person: View only Client and Vendor Master (Item Master hidden)
-  // - Collection Agent & Lab Approver & Admin: View all 3 (Client, Vendor, Item)
+  // - Lab Entry Person: View only Client and Vendor Master (Item Master & Roles hidden)
+  // - Collection Agent & Lab Approver: View Client, Vendor, Item (Roles hidden)
+  // - Admin & Super Admin: View and manage all: Client, Vendor, Item, and Role & Permissions
   let visibleMasterDataItems = masterDataItems;
   if (isLabEntryPerson) {
     visibleMasterDataItems = masterDataItems.filter((item) =>
       ['/masters/clients', '/masters/vendors'].includes(item.to)
     );
+  } else if (isCollectionAgent || isLabApprover) {
+    visibleMasterDataItems = masterDataItems.filter((item) =>
+      ['/masters/clients', '/masters/vendors', '/masters/items'].includes(item.to)
+    );
+  } else if (!isAdmin && !user?.isSuperAdmin) {
+    visibleMasterDataItems = masterDataItems.filter((item) => item.to !== '/roles');
   }
 
   return (

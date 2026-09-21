@@ -59,7 +59,7 @@ interface MeasurementFormState {
 
 export const CalibrationPage: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
-  const { tenantId, organizationId, isLabApprover } = useAuthContext();
+  const { tenantId, organizationId, isLabApprover, isAdmin } = useAuthContext();
   const { data: request, isLoading } = useCalibrationRequest(requestId);
   const { data: vendors = [] } = useVendors();
   const { data: requestRepairs = [] } = useRepairs(requestId);
@@ -800,7 +800,7 @@ export const CalibrationPage: React.FC = () => {
                       Cancel
                     </Button>
                   </Link>
-                  {!isLabApprover ? (
+                  {!isLabApprover && !isAdmin ? (
                     <Button
                       variant="primary"
                       type="submit"
@@ -813,7 +813,7 @@ export const CalibrationPage: React.FC = () => {
                     </Button>
                   ) : (
                     <span className="text-xs text-[#6B7280] self-center">
-                      Lab Approver Review Mode (Calibration Records Read-Only)
+                      {isAdmin ? 'Admin View Mode (Calibration Records Read-Only)' : 'Lab Approver Review Mode (Calibration Records Read-Only)'}
                     </span>
                   )}
                 </div>
@@ -909,14 +909,16 @@ export const CalibrationPage: React.FC = () => {
                         onChange={(e) => setClientPoForRepair(e.target.value)}
                         className="max-w-md"
                       />
-                      <Button
-                        variant="primary"
-                        type="button"
-                        onClick={() => handleApproveRepair(currentItemRepair.id)}
-                        disabled={approveRepairMutation.isPending}
-                      >
-                        <Check className="size-4" /> Authorize &amp; Begin Repair
-                      </Button>
+                      {!isAdmin && (
+                        <Button
+                          variant="primary"
+                          type="button"
+                          onClick={() => handleApproveRepair(currentItemRepair.id)}
+                          disabled={approveRepairMutation.isPending}
+                        >
+                          <Check className="size-4" /> Authorize &amp; Begin Repair
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -936,16 +938,18 @@ export const CalibrationPage: React.FC = () => {
                       onChange={(e) => setTechnicianRepairNotes(e.target.value)}
                       rows={2}
                     />
-                    <div className="flex justify-end">
-                      <Button
-                        variant="primary"
-                        type="button"
-                        onClick={() => handleCompleteRepair(currentItemRepair.id)}
-                        disabled={completeRepairMutation.isPending}
-                      >
-                        <CheckCircle2 className="size-4" /> Complete Service &amp; Re-Calibrate
-                      </Button>
-                    </div>
+                    {!isAdmin && !isLabApprover && (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="primary"
+                          type="button"
+                          onClick={() => handleCompleteRepair(currentItemRepair.id)}
+                          disabled={completeRepairMutation.isPending}
+                        >
+                          <CheckCircle2 className="size-4" /> Complete Service &amp; Re-Calibrate
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1025,7 +1029,7 @@ export const CalibrationPage: React.FC = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-3 p-4 bg-[#F9FAFB] border-t border-[#E5E7EB]">
-                  {!isLabApprover && (
+                  {!isLabApprover && !isAdmin && (
                     <Button
                       variant="primary"
                       type="submit"
@@ -1129,16 +1133,18 @@ export const CalibrationPage: React.FC = () => {
                       </Field>
                     </div>
 
-                    <div className="flex justify-end">
-                      <Button
-                        variant="primary"
-                        type="button"
-                        onClick={() => handleReceiveOutsourceReturn(currentItemOutsource.id)}
-                        disabled={receiveOutsourceMutation.isPending}
-                      >
-                        <CheckCircle2 className="size-4" /> Accept Return &amp; Trigger Certificate
-                      </Button>
-                    </div>
+                    {!isAdmin && !isLabApprover && (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="primary"
+                          type="button"
+                          onClick={() => handleReceiveOutsourceReturn(currentItemOutsource.id)}
+                          disabled={receiveOutsourceMutation.isPending}
+                        >
+                          <CheckCircle2 className="size-4" /> Accept Return &amp; Trigger Certificate
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1219,7 +1225,7 @@ export const CalibrationPage: React.FC = () => {
                   </Field>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-3 p-4 bg-[#F9FAFB] border-t border-[#E5E7EB]">
-                  {!isLabApprover && (
+                  {!isLabApprover && !isAdmin && (
                     <Button
                       variant="primary"
                       type="submit"

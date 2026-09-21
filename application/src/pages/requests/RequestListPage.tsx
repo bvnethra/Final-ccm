@@ -16,7 +16,7 @@ import { Plus, ArrowRight, Clock, AlertCircle } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
 
 export const RequestListPage: React.FC = () => {
-  const { isLabApprover } = useAuthContext();
+  const { isLabApprover, isAdmin } = useAuthContext();
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const { data: requests = [], isLoading, error } = useCalibrationRequests(activeTab);
 
@@ -62,7 +62,7 @@ export const RequestListPage: React.FC = () => {
           </p>
         </div>
 
-        {!isLabApprover && (
+        {!isLabApprover && !isAdmin && (
           <Link to="/requests/new">
             <Button variant="primary">
               <Plus className="size-4" /> New Inward Request

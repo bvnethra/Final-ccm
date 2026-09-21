@@ -33,7 +33,7 @@ import {
 
 export const QuotationListPage: React.FC = () => {
   const navigate = useNavigate();
-  const { tenantId, organizationId, isLabApprover } = useAuthContext();
+  const { tenantId, organizationId, isLabApprover, isAdmin } = useAuthContext();
   const { data: quotations = [], isLoading, error } = useQuotations();
   const approveQuotationMutation = useApproveQuotation();
   const createInvoiceMutation = useCreateInvoice();
@@ -190,7 +190,7 @@ export const QuotationListPage: React.FC = () => {
               <Receipt className="size-4" /> View Invoices (Step 11)
             </Button>
           </Link>
-          {!isLabApprover && (
+          {!isLabApprover && !isAdmin && (
             <Link to="/commercial/quotations/new">
               <Button variant="primary">
                 <Plus className="size-4" /> Create Quotation
@@ -326,7 +326,7 @@ export const QuotationListPage: React.FC = () => {
                         </td>
                         <td className="px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {!isFullyInvoiced && q.status !== 'REJECTED' && (
+                            {!isFullyInvoiced && q.status !== 'REJECTED' && !isAdmin && (
                               <Button
                                 variant={isApproved ? 'primary' : isPartiallyInvoiced ? 'secondary' : 'primary'}
                                 size="sm"
@@ -341,7 +341,7 @@ export const QuotationListPage: React.FC = () => {
                                   : 'Generate Invoice'}
                               </Button>
                             )}
-                            {isDraft && (
+                            {isDraft && !isAdmin && (
                               <Button
                                 variant="outlineInk"
                                 size="sm"

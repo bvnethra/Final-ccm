@@ -47,7 +47,8 @@ function formatBytes(bytes: number, decimals = 1) {
 export const VerificationPage: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
-  const { tenantId, organizationId, user, isLabApprover } = useAuthContext();
+  const { tenantId, organizationId, user, isLabApprover, isAdmin } = useAuthContext();
+  const isViewOnly = isLabApprover || isAdmin;
   const { data: request, isLoading } = useCalibrationRequest(requestId);
   const recordVerificationMutation = useRecordVerification();
 
@@ -493,8 +494,8 @@ export const VerificationPage: React.FC = () => {
               </CardContent>
               <CardFooter className="flex items-center justify-between p-6 bg-[#F9FAFB] border-t border-[#E5E7EB]">
                 <span className="text-xs text-[#6B7280]">
-                  {isLabApprover
-                    ? 'Lab Approver Review Mode — Viewing physical verification and client proof documents (Read Only).'
+                  {isViewOnly
+                    ? 'Review Mode — Viewing physical verification and client proof documents (Read Only).'
                     : selectedItemIndex < items.length - 1
                     ? `Item ${selectedItemIndex + 1} of ${items.length}. Submitting will advance to next item.`
                     : 'Final item in batch. Submitting completes request verification.'}
@@ -505,7 +506,7 @@ export const VerificationPage: React.FC = () => {
                       Back to Queue
                     </Button>
                   </Link>
-                  {!isLabApprover && (
+                  {!isViewOnly && (
                     <Button
                       variant="primary"
                       type="submit"

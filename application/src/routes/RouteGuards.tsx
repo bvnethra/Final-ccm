@@ -101,6 +101,22 @@ export const DisallowLabApproverRoute: React.FC<{ children: React.ReactNode }> =
 };
 
 /**
+ * Route guard that prevents Admin from accessing operational creation workflows
+ * (New Request, New Quotation, Logistics & Dispatch) where Admin is view-only or unauthorized.
+ */
+export const DisallowAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAdmin, isLoading } = useAuthContext();
+
+  if (isLoading) return null;
+
+  if (isAdmin) {
+    return <Navigate to="/requests" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+/**
  * Route guard preventing view-only roles (Collection Agent, Lab Entry Person, Lab Approver)
  * from accessing Master creation or editing screens.
  */

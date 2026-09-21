@@ -6,6 +6,7 @@ import {
   DisallowCollectionAgentRoute,
   DisallowLabEntryRoute,
   DisallowLabApproverRoute,
+  DisallowAdminRoute,
   RequireMasterEditRoute,
   DashboardRoute,
 } from './RouteGuards';
@@ -13,6 +14,7 @@ import { AppLayout } from '../components/layout/AppLayout';
 
 const LoginPage = lazy(() => import('../pages/LoginPage'));
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
+const RolePermissionPage = lazy(() => import('../pages/roles/RolePermissionPage'));
 const RequestListPage = lazy(() => import('../pages/requests/RequestListPage'));
 const NewRequestPage = lazy(() => import('../pages/requests/NewRequestPage'));
 const RequestDetailPage = lazy(() => import('../pages/requests/RequestDetailPage'));
@@ -149,7 +151,10 @@ export const AppRoutes: React.FC = () => {
             }
           />
 
-          {/* Process 1: Equipment Inward (Blocked for Lab Entry Person, Creation blocked for Lab Approver) */}
+          {/* Master Data: Role & Permission Management (Admin & Super Admin) */}
+          <Route path="roles" element={<RolePermissionPage />} />
+
+          {/* Process 1: Equipment Inward (Blocked for Lab Entry Person, Creation blocked for Lab Approver & Admin) */}
           <Route
             path="requests"
             element={
@@ -163,7 +168,9 @@ export const AppRoutes: React.FC = () => {
             element={
               <DisallowLabEntryRoute>
                 <DisallowLabApproverRoute>
-                  <NewRequestPage />
+                  <DisallowAdminRoute>
+                    <NewRequestPage />
+                  </DisallowAdminRoute>
                 </DisallowLabApproverRoute>
               </DisallowLabEntryRoute>
             }
@@ -223,7 +230,9 @@ export const AppRoutes: React.FC = () => {
               <DisallowCollectionAgentRoute>
                 <DisallowLabEntryRoute>
                   <DisallowLabApproverRoute>
-                    <QuotationBuilderPage />
+                    <DisallowAdminRoute>
+                      <QuotationBuilderPage />
+                    </DisallowAdminRoute>
                   </DisallowLabApproverRoute>
                 </DisallowLabEntryRoute>
               </DisallowCollectionAgentRoute>
@@ -238,41 +247,47 @@ export const AppRoutes: React.FC = () => {
             }
           />
 
-          {/* Process 5: Logistics & Gate Pass Dispatch */}
+          {/* Process 5: Logistics & Gate Pass Dispatch (Blocked for Admin, Collection Agent, Lab Entry, Lab Approver) */}
           <Route
             path="logistics/dispatches"
             element={
-              <DisallowCollectionAgentRoute>
-                <DisallowLabEntryRoute>
-                  <DisallowLabApproverRoute>
-                    <DispatchListPage />
-                  </DisallowLabApproverRoute>
-                </DisallowLabEntryRoute>
-              </DisallowCollectionAgentRoute>
+              <DisallowAdminRoute>
+                <DisallowCollectionAgentRoute>
+                  <DisallowLabEntryRoute>
+                    <DisallowLabApproverRoute>
+                      <DispatchListPage />
+                    </DisallowLabApproverRoute>
+                  </DisallowLabEntryRoute>
+                </DisallowCollectionAgentRoute>
+              </DisallowAdminRoute>
             }
           />
           <Route
             path="logistics/dispatch"
             element={
-              <DisallowCollectionAgentRoute>
-                <DisallowLabEntryRoute>
-                  <DisallowLabApproverRoute>
-                    <DispatchListPage />
-                  </DisallowLabApproverRoute>
-                </DisallowLabEntryRoute>
-              </DisallowCollectionAgentRoute>
+              <DisallowAdminRoute>
+                <DisallowCollectionAgentRoute>
+                  <DisallowLabEntryRoute>
+                    <DisallowLabApproverRoute>
+                      <DispatchListPage />
+                    </DisallowLabApproverRoute>
+                  </DisallowLabEntryRoute>
+                </DisallowCollectionAgentRoute>
+              </DisallowAdminRoute>
             }
           />
           <Route
             path="logistics/dispatch/new"
             element={
-              <DisallowCollectionAgentRoute>
-                <DisallowLabEntryRoute>
-                  <DisallowLabApproverRoute>
-                    <DispatchBuilderPage />
-                  </DisallowLabApproverRoute>
-                </DisallowLabEntryRoute>
-              </DisallowCollectionAgentRoute>
+              <DisallowAdminRoute>
+                <DisallowCollectionAgentRoute>
+                  <DisallowLabEntryRoute>
+                    <DisallowLabApproverRoute>
+                      <DispatchBuilderPage />
+                    </DisallowLabApproverRoute>
+                  </DisallowLabEntryRoute>
+                </DisallowCollectionAgentRoute>
+              </DisallowAdminRoute>
             }
           />
 
