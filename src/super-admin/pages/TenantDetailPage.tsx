@@ -7,6 +7,7 @@ import {
   useTenantOrganizations, 
   useUpdateTenantStatus,
   useUpdateTenantDetails,
+  useDeleteTenant,
 } from '../hooks/useTenants';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { usePlatformAuth } from '../hooks/usePlatformAuth';
@@ -27,7 +28,9 @@ import {
   Network,
   X,
   ChevronDown,
-  Pencil
+  Pencil,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function TenantDetailPage() {
@@ -42,12 +45,18 @@ export default function TenantDetailPage() {
   const triggerInviteMutation = useTriggerAdminInvite();
   const updateStatusMutation = useUpdateTenantStatus();
   const updateTenantMutation = useUpdateTenantDetails();
+  const deleteTenantMutation = useDeleteTenant();
 
   // Dynamic configuration lists for editing selects
   const { data: tenantTypes = [] } = usePlatformConfig('tenant_types');
   const { data: countries = [] } = usePlatformConfig('countries');
   const { data: currencies = [] } = usePlatformConfig('currencies');
   const { data: timezones = [] } = usePlatformConfig('timezones');
+
+  // Delete modal state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('Deleted by Super Admin');
+  const [deleteError, setDeleteError] = useState('');
 
   // In-Page Status Governance Panel State (Zero Modal Architecture)
   const [isStatusPanelOpen, setIsStatusPanelOpen] = useState(false);
@@ -274,6 +283,19 @@ export default function TenantDetailPage() {
             >
               <Mail className="size-3.5" />
               <span>{triggerInviteMutation.isPending ? 'Dispatching...' : 'Invite Admin'}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsDeleteDialogOpen(true);
+                setDeleteError('');
+              }}
+              className="text-xs gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 rounded-[4px] shadow-xs"
+              title="Delete Enterprise Tenant"
+            >
+              <Trash2 className="size-3.5 text-rose-600" />
+              <span>Delete</span>
             </Button>
           </div>
         )}
@@ -899,6 +921,92 @@ export default function TenantDetailPage() {
           </div>
         )}
       </Card>
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-50 rounded-[6px] text-[#DC2626]">
+                  <AlertTriangle className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#111827]">Delete Enterprise Tenant</h3>
+                  <p className="text-xs text-[#6B7280]">Permanent removal from platform</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDeleteDialogOpen(false)}
+                className="text-[#9CA3AF] hover:text-[#374151] p-1 rounded transition"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#4B5563] leading-relaxed">
+              Are you sure you want to permanently delete <strong className="text-[#111827]">{tenant.name}</strong> (<span className="font-mono">{tenant.code}</span>)?
+              This will immediately remove the tenant, all associated branches, organizations, and tenant data. This action <strong className="text-[#DC2626]">cannot be undone</strong>.
+            </p>
+
+            {deleteError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-[4px] text-xs text-rose-700">
+                {deleteError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[11px] font-semibold text-[#374151] uppercase tracking-wider mb-1">
+                Audit Reason
+              </label>
+              <input
+                type="text"
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Reason for deletion..."
+                className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-1.5 text-xs text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#DC2626] focus-visible:border-[#DC2626]"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs border-[#E5E7EB] text-[#374151] hover:bg-[#F5F7FA]"
+                disabled={deleteTenantMutation.isPending}
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="text-xs bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-[4px]"
+                disabled={deleteTenantMutation.isPending}
+                onClick={() => {
+                  if (!deleteReason.trim()) {
+                    setDeleteError('A reason is required for audit compliance.');
+                    return;
+                  }
+                  deleteTenantMutation.mutate(
+                    { tenantId: tenant.id, reason: deleteReason.trim() },
+                    {
+                      onSuccess: () => {
+                        navigate('/tenants');
+                      },
+                      onError: (err: any) => {
+                        setDeleteError(err.message || 'Failed to delete tenant');
+                      },
+                    }
+                  );
+                }}
+              >
+                {deleteTenantMutation.isPending ? 'Deleting...' : 'Permanently Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   createPlatformUser,
   updatePlatformUserStatus,
   updatePlatformUserRole,
+  deletePlatformUser,
 } from '../services/platformUserService';
 import type { PlatformRole, PlatformUserStatus } from '../types/superAdmin';
 
@@ -49,3 +50,17 @@ export function useUpdatePlatformUserRole() {
     },
   });
 }
+
+export function useDeletePlatformUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, reason }: { userId: string; reason: string }) =>
+      deletePlatformUser(userId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['platformUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['platformAuditLogs'] });
+      queryClient.invalidateQueries({ queryKey: ['superAdminDashboardMetrics'] });
+    },
+  });
+}
+

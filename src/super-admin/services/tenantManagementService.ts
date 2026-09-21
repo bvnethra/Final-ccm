@@ -399,3 +399,29 @@ export async function createTenantOrganization(payload: CreateOrganizationPayloa
     updatedAt: data.updated_at,
   };
 }
+
+export async function deleteTenant(tenantId: string, reason?: string): Promise<void> {
+  const previous = await fetchTenantById(tenantId);
+
+  const { error } = await supabase
+    .from('tenants')
+    .delete()
+    .eq('id', tenantId);
+
+  if (error) {
+    throw new Error(`Failed to delete tenant: ${error.message}`);
+  }
+
+  // Log Immutable Platform Audit Event
+  await logPlatformEvent({
+    action: 'TENANT_DELETED',
+    referenceId: tenantId,
+    previousState: previous,
+    reason: reason?.trim() || `Permanently deleted enterprise tenant '${previous.name}' (${previous.code})`,
+    metadata: {
+      tenantName: previous.name,
+      tenantCode: previous.code,
+    },
+  });
+}
+

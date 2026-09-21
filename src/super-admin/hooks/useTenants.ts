@@ -9,6 +9,7 @@ import {
   triggerAdminInvite,
   fetchTenantOrganizations,
   createTenantOrganization,
+  deleteTenant,
 } from '../services/tenantManagementService';
 import type { 
   TenantFilters, 
@@ -102,3 +103,17 @@ export function useTriggerAdminInvite() {
     },
   });
 }
+
+export function useDeleteTenant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tenantId, reason }: { tenantId: string; reason?: string }) =>
+      deleteTenant(tenantId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['platformTenants'] });
+      queryClient.invalidateQueries({ queryKey: ['superAdminDashboardMetrics'] });
+      queryClient.invalidateQueries({ queryKey: ['platformAuditLogs'] });
+    },
+  });
+}
+

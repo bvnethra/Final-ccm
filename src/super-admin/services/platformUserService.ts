@@ -124,3 +124,26 @@ export async function updatePlatformUserRole(userId: string, role: PlatformRole,
     reason: reason.trim() || `Platform user role changed to ${role}`,
   });
 }
+
+export async function deletePlatformUser(userId: string, reason?: string): Promise<void> {
+  const { data: previous } = await supabase.from('platform_users').select('*').eq('id', userId).single();
+
+  const { error } = await supabase
+    .from('platform_users')
+    .delete()
+    .eq('id', userId);
+
+  if (error) throw new Error(`Failed to delete platform user: ${error.message}`);
+
+  await logPlatformEvent({
+    action: 'PLATFORM_USER_DELETED',
+    referenceId: userId,
+    previousState: previous,
+    reason: reason?.trim() || `Permanently deleted platform operator '${previous?.full_name}' (${previous?.email})`,
+    metadata: {
+      deletedEmail: previous?.email,
+      deletedRole: previous?.role,
+    },
+  });
+}
+

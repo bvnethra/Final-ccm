@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Card, Button, Badge } from '../../../components/ui/UIPrimitives';
-import { useTenants, useTriggerAdminInvite } from '../../hooks/useTenants';
+import { useTenants, useTriggerAdminInvite, useDeleteTenant } from '../../hooks/useTenants';
 import { usePlatformConfig } from '../../hooks/usePlatformConfig';
 import { usePlatformAuth } from '../../hooks/usePlatformAuth';
 import type { PlatformTenant } from '../../types/superAdmin';
@@ -12,7 +12,10 @@ import {
   Mail, 
   ChevronLeft, 
   ChevronRight,
-  ArrowUpRight
+  ArrowUpRight,
+  Trash2,
+  AlertTriangle,
+  X
 } from 'lucide-react';
 
 export const TenantTable: React.FC = () => {
@@ -53,7 +56,11 @@ export const TenantTable: React.FC = () => {
   });
 
   const triggerInviteMutation = useTriggerAdminInvite();
+  const deleteTenantMutation = useDeleteTenant();
   const [inviteSuccessMsg, setInviteSuccessMsg] = useState('');
+  const [tenantToDelete, setTenantToDelete] = useState<PlatformTenant | null>(null);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   const handleTriggerInvite = (tenant: PlatformTenant) => {
     triggerInviteMutation.mutate(tenant.id, {
@@ -200,15 +207,30 @@ export const TenantTable: React.FC = () => {
                           <ArrowUpRight className="size-3" />
                         </Button>
                         {!isSupport && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs h-7 px-2 text-[#9CA3AF] hover:text-[#111827]"
-                            onClick={() => handleTriggerInvite(t)}
-                            title="Dispatch Admin Invite"
-                          >
-                            <Mail className="size-3.5" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs h-7 px-2 text-[#9CA3AF] hover:text-[#111827]"
+                              onClick={() => handleTriggerInvite(t)}
+                              title="Dispatch Admin Invite"
+                            >
+                              <Mail className="size-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs h-7 px-2 text-[#9CA3AF] hover:text-[#DC2626] hover:bg-rose-50"
+                              onClick={() => {
+                                setTenantToDelete(t);
+                                setDeleteReason('Removed by Super Admin');
+                                setDeleteError('');
+                              }}
+                              title="Delete Tenant"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -248,6 +270,92 @@ export const TenantTable: React.FC = () => {
           </div>
         )}
       </Card>
+
+      {/* Delete Confirmation Modal */}
+      {tenantToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-50 rounded-[6px] text-[#DC2626]">
+                  <AlertTriangle className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#111827]">Delete Enterprise Tenant</h3>
+                  <p className="text-xs text-[#6B7280]">Permanent removal from platform</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTenantToDelete(null)}
+                className="text-[#9CA3AF] hover:text-[#374151] p-1 rounded transition"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#4B5563] leading-relaxed">
+              Are you sure you want to permanently delete <strong className="text-[#111827]">{tenantToDelete.name}</strong> (<span className="font-mono">{tenantToDelete.code}</span>)?
+              This will immediately remove the tenant, their branches, organizations, and all tenant-scoped data. This action <strong className="text-[#DC2626]">cannot be undone</strong>.
+            </p>
+
+            {deleteError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-[4px] text-xs text-rose-700">
+                {deleteError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[11px] font-semibold text-[#374151] uppercase tracking-wider mb-1">
+                Audit Reason
+              </label>
+              <input
+                type="text"
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Reason for deletion..."
+                className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-1.5 text-xs text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#DC2626] focus-visible:border-[#DC2626]"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs border-[#E5E7EB] text-[#374151] hover:bg-[#F5F7FA]"
+                disabled={deleteTenantMutation.isPending}
+                onClick={() => setTenantToDelete(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="text-xs bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-[4px]"
+                disabled={deleteTenantMutation.isPending}
+                onClick={() => {
+                  if (!deleteReason.trim()) {
+                    setDeleteError('A reason is required for audit compliance.');
+                    return;
+                  }
+                  deleteTenantMutation.mutate(
+                    { tenantId: tenantToDelete.id, reason: deleteReason.trim() },
+                    {
+                      onSuccess: () => {
+                        setTenantToDelete(null);
+                      },
+                      onError: (err: any) => {
+                        setDeleteError(err.message || 'Failed to delete tenant');
+                      },
+                    }
+                  );
+                }}
+              >
+                {deleteTenantMutation.isPending ? 'Deleting...' : 'Permanently Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
