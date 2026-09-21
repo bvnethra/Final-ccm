@@ -75,6 +75,42 @@ export const OnboardingWizard: React.FC = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Filter states based on selected country (Zero Hardcoding!)
+  const selectedCountryObj = React.useMemo(() => {
+    return countries.find((c) => c.label === formData.country || c.code === formData.country);
+  }, [countries, formData.country]);
+
+  const availableStates = React.useMemo(() => {
+    if (!formData.country) return [];
+    const code = selectedCountryObj?.code?.toLowerCase();
+    const label = (selectedCountryObj?.label || formData.country).toLowerCase();
+
+    return states.filter((st) => {
+      const metaCode = (st.metadata?.country_code || '').toLowerCase();
+      const metaCountry = (st.metadata?.country || '').toLowerCase();
+      if (metaCode && code && metaCode === code) return true;
+      if (metaCountry && metaCountry === label) return true;
+      return false;
+    });
+  }, [states, formData.country, selectedCountryObj]);
+
+  const handleCountryChange = (newCountry: string) => {
+    const matchedCountry = countries.find((c) => c.label === newCountry || c.code === newCountry);
+    const updates: Record<string, any> = {
+      country: newCountry,
+      state: '', // Reset state on country change so incompatible states are not preserved
+    };
+
+    if (matchedCountry?.metadata?.currency) {
+      updates.currency = matchedCountry.metadata.currency;
+    }
+    if (matchedCountry?.metadata?.timezone) {
+      updates.timezone = matchedCountry.metadata.timezone;
+    }
+
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
+
   const validateStep = (currentStep: number): boolean => {
     setErrorMessage('');
     if (currentStep === 1) {
@@ -327,48 +363,13 @@ export const OnboardingWizard: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Input
-                    label="City *"
-                    placeholder="e.g. Bangalore"
-                    value={formData.city}
-                    onChange={(e) => handleChange('city', e.target.value)}
-                    required
-                  />
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-700">
-                      State / Province
-                    </label>
-                    <select
-                      value={formData.state}
-                      onChange={(e) => handleChange('state', e.target.value)}
-                      className="bg-white border border-[#E5E7EB] rounded-[4px] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:border-[#0274BB] transition"
-                    >
-                      <option value="">Select State / Province</option>
-                      {states.map((st) => (
-                        <option key={st.code} value={st.label}>
-                          {st.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <Input
-                    label="Pincode / Postal Code"
-                    placeholder="e.g. 560001"
-                    value={formData.pincode}
-                    onChange={(e) => handleChange('pincode', e.target.value)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-slate-700">
                       Country (Dynamic from DB) *
                     </label>
                     <select
                       value={formData.country}
-                      onChange={(e) => handleChange('country', e.target.value)}
+                      onChange={(e) => handleCountryChange(e.target.value)}
                       className="bg-white border border-[#E5E7EB] rounded-[4px] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:border-[#0274BB] transition"
                     >
                       {countries.map((c) => (
@@ -378,6 +379,49 @@ export const OnboardingWizard: React.FC = () => {
                       ))}
                     </select>
                   </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-slate-700">
+                      State / Province
+                    </label>
+                    {availableStates.length > 0 ? (
+                      <select
+                        value={formData.state}
+                        onChange={(e) => handleChange('state', e.target.value)}
+                        className="bg-white border border-[#E5E7EB] rounded-[4px] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:border-[#0274BB] transition"
+                      >
+                        <option value="">Select State / Province</option>
+                        {availableStates.map((st) => (
+                          <option key={st.code} value={st.label}>
+                            {st.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Input
+                        placeholder="Enter state or province"
+                        value={formData.state}
+                        onChange={(e) => handleChange('state', e.target.value)}
+                      />
+                    )}
+                  </div>
+
+                  <Input
+                    label="City *"
+                    placeholder="e.g. Bangalore"
+                    value={formData.city}
+                    onChange={(e) => handleChange('city', e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input
+                    label="Pincode / Postal Code"
+                    placeholder="e.g. 560001"
+                    value={formData.pincode}
+                    onChange={(e) => handleChange('pincode', e.target.value)}
+                  />
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-[#4B5563]">

@@ -97,6 +97,33 @@ export default function TenantDetailPage() {
     currency: '',
   });
 
+  // Filter states based on locationForm.country (Zero Hardcoding!)
+  const selectedLocationCountryObj = countries.find(
+    (c) => c.label === locationForm.country || c.code === locationForm.country
+  );
+
+  const availableLocationStates = states.filter((st) => {
+    if (!locationForm.country) return false;
+    const code = selectedLocationCountryObj?.code?.toLowerCase();
+    const label = (selectedLocationCountryObj?.label || locationForm.country).toLowerCase();
+    const metaCode = (st.metadata?.country_code || '').toLowerCase();
+    const metaCountry = (st.metadata?.country || '').toLowerCase();
+    if (metaCode && code && metaCode === code) return true;
+    if (metaCountry && metaCountry === label) return true;
+    return false;
+  });
+
+  const handleLocationCountryChange = (newCountry: string) => {
+    const matched = countries.find(c => c.label === newCountry || c.code === newCountry);
+    setLocationForm(prev => ({
+      ...prev,
+      country: newCountry,
+      state: '', // reset state on country change
+      ...(matched?.metadata?.timezone ? { timezone: matched.metadata.timezone } : {}),
+      ...(matched?.metadata?.currency ? { currency: matched.metadata.currency } : {})
+    }));
+  };
+
   const handleSaveEnterprise = (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenant) return;
@@ -583,40 +610,13 @@ export default function TenantDetailPage() {
                       placeholder="Suite, Floor, Industrial Area"
                     />
                   </div>
-                  <Input
-                    label="City"
-                    value={locationForm.city}
-                    onChange={(e) => setLocationForm(prev => ({ ...prev, city: e.target.value }))}
-                    placeholder="e.g. Bangalore"
-                  />
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-[#4B5563] uppercase tracking-wider">
-                      State / Province
-                    </label>
-                    <select
-                      value={locationForm.state}
-                      onChange={(e) => setLocationForm(prev => ({ ...prev, state: e.target.value }))}
-                      className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
-                    >
-                      <option value="">Select State / Province</option>
-                      {states.map(s => (
-                        <option key={s.code} value={s.label}>{s.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <Input
-                    label="Pincode / Postal Code"
-                    value={locationForm.pincode}
-                    onChange={(e) => setLocationForm(prev => ({ ...prev, pincode: e.target.value }))}
-                    placeholder="e.g. 560001"
-                  />
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Country
                     </label>
                     <select
                       value={locationForm.country}
-                      onChange={(e) => setLocationForm(prev => ({ ...prev, country: e.target.value }))}
+                      onChange={(e) => handleLocationCountryChange(e.target.value)}
                       className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
                     >
                       {countries.length > 0 ? (
@@ -633,6 +633,41 @@ export default function TenantDetailPage() {
                       )}
                     </select>
                   </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[#4B5563] uppercase tracking-wider">
+                      State / Province
+                    </label>
+                    {availableLocationStates.length > 0 ? (
+                      <select
+                        value={locationForm.state}
+                        onChange={(e) => setLocationForm(prev => ({ ...prev, state: e.target.value }))}
+                        className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
+                      >
+                        <option value="">Select State / Province</option>
+                        {availableLocationStates.map(s => (
+                          <option key={s.code} value={s.label}>{s.label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Input
+                        value={locationForm.state}
+                        onChange={(e) => setLocationForm(prev => ({ ...prev, state: e.target.value }))}
+                        placeholder="e.g. Karnataka"
+                      />
+                    )}
+                  </div>
+                  <Input
+                    label="City"
+                    value={locationForm.city}
+                    onChange={(e) => setLocationForm(prev => ({ ...prev, city: e.target.value }))}
+                    placeholder="e.g. Bangalore"
+                  />
+                  <Input
+                    label="Pincode / Postal Code"
+                    value={locationForm.pincode}
+                    onChange={(e) => setLocationForm(prev => ({ ...prev, pincode: e.target.value }))}
+                    placeholder="e.g. 560001"
+                  />
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Timezone
