@@ -59,15 +59,27 @@ export const PlatformUserTable: React.FC = () => {
         </div>
 
         {isSuperAdmin && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => navigate('/users/new')}
-            className="gap-1.5 text-xs font-medium bg-[#0274BB] hover:bg-[#003B8C] text-white rounded-[4px] shadow-xs"
-          >
-            <Plus className="size-3.5" />
-            <span>Add Platform Operator</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/users/permissions')}
+              className="gap-1.5 text-xs font-medium border-[#E5E7EB] text-[#374151] hover:bg-[#F5F7FA] rounded-[4px] shadow-xs"
+              title="Configure Role & Permission Matrix (Section 11.1 & 11.2)"
+            >
+              <Shield className="size-3.5 text-[#0274BB]" />
+              <span>Permissions</span>
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => navigate('/users/new')}
+              className="gap-1.5 text-xs font-medium bg-[#0274BB] hover:bg-[#003B8C] text-white rounded-[4px] shadow-xs"
+            >
+              <Plus className="size-3.5" />
+              <span>Add Platform Operator</span>
+            </Button>
+          </div>
         )}
       </div>
 
@@ -144,6 +156,15 @@ export const PlatformUserTable: React.FC = () => {
                             title={u.status === 'ACTIVE' ? 'Deactivate Operator' : 'Activate Operator'}
                           >
                             {u.status === 'ACTIVE' ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs h-7 px-2 text-slate-400 hover:text-[#0274BB] hover:bg-blue-50"
+                            onClick={() => navigate('/users/permissions')}
+                            title="Role & Permissions Matrix (Section 11.1 & 11.2)"
+                          >
+                            <Shield className="size-3.5" />
                           </Button>
                           <Button
                             variant="ghost"

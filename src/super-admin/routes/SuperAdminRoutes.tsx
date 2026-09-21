@@ -12,6 +12,7 @@ const AddOrganizationPage = lazy(() => import('../pages/AddOrganizationPage'));
 const PlatformUsersPage = lazy(() => import('../pages/PlatformUsersPage'));
 const CreatePlatformUserPage = lazy(() => import('../pages/CreatePlatformUserPage'));
 const PlatformAuditPage = lazy(() => import('../pages/PlatformAuditPage'));
+const RolePermissionMatrixPage = lazy(() => import('../pages/RolePermissionMatrixPage'));
 
 export const SuperAdminRoutes: React.FC = () => {
   return (
@@ -40,6 +41,8 @@ export const SuperAdminRoutes: React.FC = () => {
           />
           <Route path="tenants/:id" element={<TenantDetailPage />} />
           <Route path="users" element={<PlatformUsersPage />} />
+          <Route path="users/permissions" element={<RolePermissionMatrixPage />} />
+          <Route path="permissions" element={<RolePermissionMatrixPage />} />
           <Route
             path="users/new"
             element={
@@ -71,6 +74,8 @@ export const SuperAdminRoutes: React.FC = () => {
           />
           <Route path="super-admin/tenants/:id" element={<TenantDetailPage />} />
           <Route path="super-admin/users" element={<PlatformUsersPage />} />
+          <Route path="super-admin/users/permissions" element={<RolePermissionMatrixPage />} />
+          <Route path="super-admin/permissions" element={<RolePermissionMatrixPage />} />
           <Route
             path="super-admin/users/new"
             element={
