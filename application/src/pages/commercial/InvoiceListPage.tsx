@@ -35,6 +35,8 @@ import {
   CheckSquare,
   Square,
   Check,
+  Plus,
+  AlertCircle,
 } from 'lucide-react';
 
 export const InvoiceListPage: React.FC = () => {
@@ -71,10 +73,10 @@ export const InvoiceListPage: React.FC = () => {
   const partialInvoicedValue = partialInvoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
   const actualInvoicedValue = actualInvoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
 
-  // Eligible work orders for invoice generation
+  // Eligible work orders for invoice generation (supports direct invoicing for all active requests)
   const eligibleRequests = requests.filter(
     (r) =>
-      ['CALIBRATED', 'QUOTATION', 'APPROVED', 'PARTIALLY_INVOICED', 'VERIFIED'].includes(r.status) ||
+      ['CREATED', 'VERIFIED', 'CALIBRATED', 'QUOTATION', 'APPROVED', 'PARTIALLY_INVOICED'].includes(r.status) ||
       (r.request_items && r.request_items.some((it: any) => !it.invoiced))
   );
 
@@ -600,32 +602,52 @@ export const InvoiceListPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Work Order Selection */}
-                <Field>
-                  <FieldLabel>Select Work Order / Calibration Request</FieldLabel>
-                  {eligibleRequests.length === 0 ? (
-                    <p className="text-xs text-[#9CA3AF] italic">
-                      No calibrated work orders currently available for invoicing.
-                    </p>
-                  ) : (
-                    <Select
-                      value={selectedRequestId}
-                      onChange={(e) => handleSelectRequest(e.target.value)}
-                    >
-                      {eligibleRequests.map((req) => {
-                        const hasQuote = quotations.some(
-                          (q) => q.request_id === req.id && q.status !== 'REJECTED'
-                        );
-                        return (
-                          <option key={req.id} value={req.id}>
-                            {req.request_number} — {req.clients?.client_name || 'Client'} ({req.status})
-                            {hasQuote ? ' [Quotation Available]' : ' [Direct Work Order]'}
-                          </option>
-                        );
-                      })}
-                    </Select>
-                  )}
-                </Field>
+                {eligibleRequests.length === 0 ? (
+                  <div className="p-8 text-center space-y-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[6px]">
+                    <div className="size-12 rounded-full bg-blue-50 text-[#0274BB] flex items-center justify-center mx-auto">
+                      <AlertCircle className="size-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#0F172A]">No Work Orders Ready for Invoicing</h4>
+                      <p className="text-xs text-[#64748B] mt-1.5 max-w-md mx-auto">
+                        In metrology billing, a tax invoice is issued against equipment registered under an Inward Request or an approved Quotation. No unbilled work orders were found in your current workspace.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 pt-2">
+                      <Link to="/requests/new" onClick={() => setShowGenerateModal(false)}>
+                        <Button variant="primary" size="sm">
+                          <Plus className="size-3.5" /> Register Inward Request
+                        </Button>
+                      </Link>
+                      <Link to="/commercial/quotations/new" onClick={() => setShowGenerateModal(false)}>
+                        <Button variant="secondary" size="sm">
+                          <FileText className="size-3.5" /> Create Quotation
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Work Order Selection */}
+                    <Field>
+                      <FieldLabel>Select Work Order / Calibration Request</FieldLabel>
+                      <Select
+                        value={selectedRequestId}
+                        onChange={(e) => handleSelectRequest(e.target.value)}
+                      >
+                        {eligibleRequests.map((req) => {
+                          const hasQuote = quotations.some(
+                            (q) => q.request_id === req.id && q.status !== 'REJECTED'
+                          );
+                          return (
+                            <option key={req.id} value={req.id}>
+                              {req.request_number} — {req.clients?.client_name || 'Client'} ({req.status})
+                              {hasQuote ? ' [Quotation Available]' : ' [Direct Work Order]'}
+                            </option>
+                          );
+                        })}
+                      </Select>
+                    </Field>
 
                 {/* Mode Indicator: Fetched from Quotation vs Direct Invoicing */}
                 {isFetchedFromQuotation ? (
@@ -885,7 +907,10 @@ export const InvoiceListPage: React.FC = () => {
                         max={discountType === 'PERCENT' ? 100 : subtotalCalc}
                         step={discountType === 'PERCENT' ? '1' : '10'}
                         value={discountValue}
-                        onChange={(e) => setDiscountValue(Math.max(0, parseFloat(e.target.value) || 0))}
+                        onChange={(e) => {
+                          const val = Math.max(0, parseFloat(e.target.value) || 0);
+                          setDiscountValue(discountType === 'PERCENT' ? Math.min(100, val) : val);
+                        }}
                         placeholder="0"
                         className="w-20 px-2 py-1 border border-slate-300 rounded text-right font-mono font-bold text-xs bg-white"
                       />
@@ -926,6 +951,8 @@ export const InvoiceListPage: React.FC = () => {
                     <span className="font-mono text-[#0274BB]">${grandTotalCalc.toFixed(2)}</span>
                   </div>
                 </div>
+                  </>
+                )}
               </div>
 
               {/* Modal Footer */}
@@ -933,19 +960,21 @@ export const InvoiceListPage: React.FC = () => {
                 <Button variant="secondary" size="sm" onClick={() => setShowGenerateModal(false)}>
                   Cancel
                 </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleConfirmIssueInvoice}
-                  disabled={selectedCount === 0 || createInvoiceMutation.isPending}
-                >
-                  <Receipt className="size-3.5" />
-                  {createInvoiceMutation.isPending
-                    ? 'Issuing Invoice...'
-                    : isActualInvoice
-                    ? `Generate Actual Invoice ($${grandTotalCalc.toFixed(2)})`
-                    : `Generate Partial Invoice ($${grandTotalCalc.toFixed(2)})`}
-                </Button>
+                {eligibleRequests.length > 0 && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleConfirmIssueInvoice}
+                    disabled={selectedCount === 0 || grandTotalCalc <= 0 || createInvoiceMutation.isPending}
+                  >
+                    <Receipt className="size-3.5" />
+                    {createInvoiceMutation.isPending
+                      ? 'Issuing Invoice...'
+                      : isActualInvoice
+                      ? `Generate Actual Invoice ($${grandTotalCalc.toFixed(2)})`
+                      : `Generate Partial Invoice ($${grandTotalCalc.toFixed(2)})`}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
