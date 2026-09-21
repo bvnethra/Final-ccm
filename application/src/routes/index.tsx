@@ -5,6 +5,7 @@ import {
   ProtectedRoute,
   DisallowCollectionAgentRoute,
   DisallowLabEntryRoute,
+  DisallowLabApproverRoute,
   RequireMasterEditRoute,
   DashboardRoute,
 } from './RouteGuards';
@@ -60,7 +61,7 @@ export const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         >
-          {/* Dashboard: Redirects Collection Agent to /requests, Lab Entry to /lab/queue */}
+          {/* Dashboard: Redirects Collection Agent to /requests, Lab Entry & Approver to /lab/queue */}
           <Route
             index
             element={
@@ -110,7 +111,7 @@ export const AppRoutes: React.FC = () => {
             }
           />
 
-          {/* Master Data: Item Master (Hidden/Blocked for Lab Entry Person) */}
+          {/* Master Data: Item Master (Hidden/Blocked for Lab Entry Person, View only for Lab Approver) */}
           <Route
             path="masters/items"
             element={
@@ -148,7 +149,7 @@ export const AppRoutes: React.FC = () => {
             }
           />
 
-          {/* Process 1: Equipment Inward (Blocked for Lab Entry Person) */}
+          {/* Process 1: Equipment Inward (Blocked for Lab Entry Person, Creation blocked for Lab Approver) */}
           <Route
             path="requests"
             element={
@@ -161,7 +162,9 @@ export const AppRoutes: React.FC = () => {
             path="requests/new"
             element={
               <DisallowLabEntryRoute>
-                <NewRequestPage />
+                <DisallowLabApproverRoute>
+                  <NewRequestPage />
+                </DisallowLabApproverRoute>
               </DisallowLabEntryRoute>
             }
           />
@@ -196,7 +199,9 @@ export const AppRoutes: React.FC = () => {
             path="lab/due-list"
             element={
               <DisallowCollectionAgentRoute>
-                <CalibrationDueListPage />
+                <DisallowLabApproverRoute>
+                  <CalibrationDueListPage />
+                </DisallowLabApproverRoute>
               </DisallowCollectionAgentRoute>
             }
           />
@@ -217,7 +222,9 @@ export const AppRoutes: React.FC = () => {
             element={
               <DisallowCollectionAgentRoute>
                 <DisallowLabEntryRoute>
-                  <QuotationBuilderPage />
+                  <DisallowLabApproverRoute>
+                    <QuotationBuilderPage />
+                  </DisallowLabApproverRoute>
                 </DisallowLabEntryRoute>
               </DisallowCollectionAgentRoute>
             }
@@ -237,7 +244,9 @@ export const AppRoutes: React.FC = () => {
             element={
               <DisallowCollectionAgentRoute>
                 <DisallowLabEntryRoute>
-                  <DispatchListPage />
+                  <DisallowLabApproverRoute>
+                    <DispatchListPage />
+                  </DisallowLabApproverRoute>
                 </DisallowLabEntryRoute>
               </DisallowCollectionAgentRoute>
             }
@@ -247,7 +256,9 @@ export const AppRoutes: React.FC = () => {
             element={
               <DisallowCollectionAgentRoute>
                 <DisallowLabEntryRoute>
-                  <DispatchListPage />
+                  <DisallowLabApproverRoute>
+                    <DispatchListPage />
+                  </DisallowLabApproverRoute>
                 </DisallowLabEntryRoute>
               </DisallowCollectionAgentRoute>
             }
@@ -257,7 +268,9 @@ export const AppRoutes: React.FC = () => {
             element={
               <DisallowCollectionAgentRoute>
                 <DisallowLabEntryRoute>
-                  <DispatchBuilderPage />
+                  <DisallowLabApproverRoute>
+                    <DispatchBuilderPage />
+                  </DisallowLabApproverRoute>
                 </DisallowLabEntryRoute>
               </DisallowCollectionAgentRoute>
             }

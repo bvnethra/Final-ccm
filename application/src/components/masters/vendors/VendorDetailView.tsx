@@ -31,8 +31,8 @@ interface VendorDetailViewProps {
 }
 
 export const VendorDetailView: React.FC<VendorDetailViewProps> = ({ vendor }) => {
-  const { isCollectionAgent, isLabEntryPerson } = useAuthContext();
-  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson;
+  const { isCollectionAgent, isLabEntryPerson, isLabApprover } = useAuthContext();
+  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson || isLabApprover;
   const phoneNumbers = vendor.phone_numbers || [vendor.phone];
   const emailAddresses = vendor.email_addresses || [vendor.email];
 

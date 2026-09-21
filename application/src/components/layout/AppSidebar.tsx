@@ -38,11 +38,12 @@ const masterDataItems: NavItem[] = [
 ];
 
 export const AppSidebar: React.FC = () => {
-  const { isCollectionAgent, isLabEntryPerson } = useAuthContext();
+  const { isCollectionAgent, isLabEntryPerson, isLabApprover } = useAuthContext();
 
   // Role-based operational items filtering:
   // - Collection Agent: Inward Requests only
   // - Lab Entry Person: Lab Verification & Queue, Calibration Due List, Tax Invoices
+  // - Lab Approver: Inward Requests, Lab & Calibration, Commercial Quotations, Tax Invoices
   let visibleOperationalItems = operationalItems;
   if (isCollectionAgent) {
     visibleOperationalItems = operationalItems.filter((item) => item.to === '/requests');
@@ -50,10 +51,15 @@ export const AppSidebar: React.FC = () => {
     visibleOperationalItems = operationalItems.filter((item) =>
       ['/lab/queue', '/lab/due-list', '/commercial/invoices'].includes(item.to)
     );
+  } else if (isLabApprover) {
+    visibleOperationalItems = operationalItems.filter((item) =>
+      ['/requests', '/lab/queue', '/commercial/quotations', '/commercial/invoices'].includes(item.to)
+    );
   }
 
   // Master Data filtering:
-  // - Lab Entry Person: View only Client and Vendor Master
+  // - Lab Entry Person: View only Client and Vendor Master (Item Master hidden)
+  // - Collection Agent & Lab Approver & Admin: View all 3 (Client, Vendor, Item)
   let visibleMasterDataItems = masterDataItems;
   if (isLabEntryPerson) {
     visibleMasterDataItems = masterDataItems.filter((item) =>

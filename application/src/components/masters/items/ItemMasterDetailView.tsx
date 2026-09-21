@@ -30,7 +30,8 @@ interface ItemMasterDetailViewProps {
 }
 
 export const ItemMasterDetailView: React.FC<ItemMasterDetailViewProps> = ({ item }) => {
-  const { isCollectionAgent } = useAuthContext();
+  const { isCollectionAgent, isLabApprover } = useAuthContext();
+  const isViewOnlyMaster = isCollectionAgent || isLabApprover;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
@@ -57,7 +58,7 @@ export const ItemMasterDetailView: React.FC<ItemMasterDetailViewProps> = ({ item
           </div>
         </div>
 
-        {!isCollectionAgent && (
+        {!isViewOnlyMaster && (
           <Link to={`/masters/items/${item.id}/edit`}>
             <Button variant="primary">
               <Edit2 className="size-4" /> Edit Instrument Master

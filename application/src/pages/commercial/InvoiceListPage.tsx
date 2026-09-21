@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 
 export const InvoiceListPage: React.FC = () => {
-  const { tenantId, organizationId } = useAuthContext();
+  const { tenantId, organizationId, isLabApprover } = useAuthContext();
   const { data: invoices = [], isLoading } = useInvoices();
   const { data: requests = [] } = useCalibrationRequests();
   const { data: quotations = [] } = useQuotations();
@@ -322,9 +322,11 @@ export const InvoiceListPage: React.FC = () => {
               View Quotations <ArrowRight className="size-3.5" />
             </Button>
           </Link>
-          <Button variant="primary" onClick={handleOpenGenerateModal}>
-            <Receipt className="size-4" /> Generate Tax Invoice
-          </Button>
+          {!isLabApprover && (
+            <Button variant="primary" onClick={handleOpenGenerateModal}>
+              <Receipt className="size-4" /> Generate Tax Invoice
+            </Button>
+          )}
         </div>
       </div>
 

@@ -33,7 +33,7 @@ import {
 
 export const QuotationListPage: React.FC = () => {
   const navigate = useNavigate();
-  const { tenantId, organizationId } = useAuthContext();
+  const { tenantId, organizationId, isLabApprover } = useAuthContext();
   const { data: quotations = [], isLoading, error } = useQuotations();
   const approveQuotationMutation = useApproveQuotation();
   const createInvoiceMutation = useCreateInvoice();
@@ -190,11 +190,13 @@ export const QuotationListPage: React.FC = () => {
               <Receipt className="size-4" /> View Invoices (Step 11)
             </Button>
           </Link>
-          <Link to="/commercial/quotations/new">
-            <Button variant="primary">
-              <Plus className="size-4" /> Create Quotation
-            </Button>
-          </Link>
+          {!isLabApprover && (
+            <Link to="/commercial/quotations/new">
+              <Button variant="primary">
+                <Plus className="size-4" /> Create Quotation
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -236,11 +238,13 @@ export const QuotationListPage: React.FC = () => {
               <p className="text-xs text-[#6B7280]">
                 Create a new quotation for calibrated equipment awaiting client billing.
               </p>
-              <Link to="/commercial/quotations/new">
-                <Button variant="secondary" size="sm" className="mt-2">
-                  <Plus className="size-4" /> Generate New Quotation
-                </Button>
-              </Link>
+              {!isLabApprover && (
+                <Link to="/commercial/quotations/new">
+                  <Button variant="secondary" size="sm" className="mt-2">
+                    <Plus className="size-4" /> Generate New Quotation
+                  </Button>
+                </Link>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">

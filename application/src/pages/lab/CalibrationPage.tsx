@@ -59,7 +59,7 @@ interface MeasurementFormState {
 
 export const CalibrationPage: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
-  const { tenantId, organizationId } = useAuthContext();
+  const { tenantId, organizationId, isLabApprover } = useAuthContext();
   const { data: request, isLoading } = useCalibrationRequest(requestId);
   const { data: vendors = [] } = useVendors();
   const { data: requestRepairs = [] } = useRepairs(requestId);
@@ -800,16 +800,22 @@ export const CalibrationPage: React.FC = () => {
                       Cancel
                     </Button>
                   </Link>
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    disabled={recordCalibrationMutation.isPending}
-                  >
-                    <CheckCircle2 className="size-4" />
-                    {recordCalibrationMutation.isPending
-                      ? 'Processing...'
-                      : 'Submit & Generate Certificate'}
-                  </Button>
+                  {!isLabApprover ? (
+                    <Button
+                      variant="primary"
+                      type="submit"
+                      disabled={recordCalibrationMutation.isPending}
+                    >
+                      <CheckCircle2 className="size-4" />
+                      {recordCalibrationMutation.isPending
+                        ? 'Processing...'
+                        : 'Submit & Generate Certificate'}
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-[#6B7280] self-center">
+                      Lab Approver Review Mode (Calibration Records Read-Only)
+                    </span>
+                  )}
                 </div>
               </CardFooter>
             </Card>
@@ -1019,14 +1025,16 @@ export const CalibrationPage: React.FC = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-3 p-4 bg-[#F9FAFB] border-t border-[#E5E7EB]">
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    disabled={recordRepairMutation.isPending}
-                  >
-                    <Wrench className="size-4" />
-                    {recordRepairMutation.isPending ? 'Logging Repair...' : 'Log Repair Order'}
-                  </Button>
+                  {!isLabApprover && (
+                    <Button
+                      variant="primary"
+                      type="submit"
+                      disabled={recordRepairMutation.isPending}
+                    >
+                      <Wrench className="size-4" />
+                      {recordRepairMutation.isPending ? 'Logging Repair...' : 'Log Repair Order'}
+                    </Button>
+                  )}
                 </CardFooter>
               </form>
             </Card>
@@ -1211,14 +1219,16 @@ export const CalibrationPage: React.FC = () => {
                   </Field>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-3 p-4 bg-[#F9FAFB] border-t border-[#E5E7EB]">
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    disabled={createOutsourceMutation.isPending}
-                  >
-                    <Truck className="size-4" />
-                    {createOutsourceMutation.isPending ? 'Issuing PO...' : 'Issue Outsource Vendor PO'}
-                  </Button>
+                  {!isLabApprover && (
+                    <Button
+                      variant="primary"
+                      type="submit"
+                      disabled={createOutsourceMutation.isPending}
+                    >
+                      <Truck className="size-4" />
+                      {createOutsourceMutation.isPending ? 'Issuing PO...' : 'Issue Outsource Vendor PO'}
+                    </Button>
+                  )}
                 </CardFooter>
               </form>
             </Card>

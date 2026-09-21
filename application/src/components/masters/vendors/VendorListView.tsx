@@ -51,8 +51,8 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
   onToggleStatus,
   isTogglingId,
 }) => {
-  const { isCollectionAgent, isLabEntryPerson } = useAuthContext();
-  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson;
+  const { isCollectionAgent, isLabEntryPerson, isLabApprover } = useAuthContext();
+  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson || isLabApprover;
 
   return (
     <div className="space-y-6">

@@ -51,7 +51,8 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
   onToggleStatus,
   isTogglingId,
 }) => {
-  const { isCollectionAgent } = useAuthContext();
+  const { isCollectionAgent, isLabApprover } = useAuthContext();
+  const isViewOnlyMaster = isCollectionAgent || isLabApprover;
 
   return (
     <div className="space-y-6">
@@ -67,11 +68,11 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
             </h1>
           </div>
           <p className="text-sm text-[#6B7280] mt-1">
-            Metrology Instruments & Measurement Equipment Catalog for Inward, Testing & Commercial Billing {isCollectionAgent && '(View Only)'}
+            Metrology Instruments & Measurement Equipment Catalog for Inward, Testing & Commercial Billing {isViewOnlyMaster && '(View Only)'}
           </p>
         </div>
 
-        {!isCollectionAgent && (
+        {!isViewOnlyMaster && (
           <Link to="/masters/items/new">
             <Button variant="primary">
               <Plus className="size-4" /> Add New Item
@@ -235,7 +236,7 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
                       </td>
 
                       <td className="px-5 py-4">
-                        {isCollectionAgent ? (
+                        {isViewOnlyMaster ? (
                           <Badge variant={item.status === 'ACTIVE' ? 'success' : 'outline'}>
                             {item.status}
                           </Badge>
@@ -289,7 +290,7 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
                               <Eye className="size-4" />
                             </button>
                           </Link>
-                          {!isCollectionAgent && (
+                          {!isViewOnlyMaster && (
                             <Link to={`/masters/items/${item.id}/edit`}>
                               <button
                                 className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"

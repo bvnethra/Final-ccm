@@ -83,18 +83,36 @@ export const DisallowLabEntryRoute: React.FC<{ children: React.ReactNode }> = ({
 };
 
 /**
- * Route guard preventing view-only roles (Collection Agent, Lab Entry Person)
+ * Route guard that prevents Lab Approver from accessing screens outside
+ * their designated role scope (only Client, Vendor, Item Master view, Request view,
+ * Lab Verification/Proof view, Calibration frequency view, Invoice view, Outsource PO view,
+ * and Repair/Quotation approval).
+ */
+export const DisallowLabApproverRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isLabApprover, isLoading } = useAuthContext();
+
+  if (isLoading) return null;
+
+  if (isLabApprover) {
+    return <Navigate to="/lab/queue" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+/**
+ * Route guard preventing view-only roles (Collection Agent, Lab Entry Person, Lab Approver)
  * from accessing Master creation or editing screens.
  */
 export const RequireMasterEditRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isCollectionAgent, isLabEntryPerson, isLoading } = useAuthContext();
+  const { isCollectionAgent, isLabEntryPerson, isLabApprover, isLoading } = useAuthContext();
 
   if (isLoading) return null;
 
   if (isCollectionAgent) {
     return <Navigate to="/requests" replace />;
   }
-  if (isLabEntryPerson) {
+  if (isLabEntryPerson || isLabApprover) {
     return <Navigate to="/lab/queue" replace />;
   }
 
@@ -105,17 +123,18 @@ export const RequireMasterEditRoute: React.FC<{ children: React.ReactNode }> = (
  * Root dashboard redirect:
  * - Collection Agent -> /requests
  * - Lab Entry Person -> /lab/queue
+ * - Lab Approver -> /lab/queue
  * - Others -> DashboardPage
  */
 export const DashboardRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isCollectionAgent, isLabEntryPerson, isLoading } = useAuthContext();
+  const { isCollectionAgent, isLabEntryPerson, isLabApprover, isLoading } = useAuthContext();
 
   if (isLoading) return null;
 
   if (isCollectionAgent) {
     return <Navigate to="/requests" replace />;
   }
-  if (isLabEntryPerson) {
+  if (isLabEntryPerson || isLabApprover) {
     return <Navigate to="/lab/queue" replace />;
   }
 

@@ -45,7 +45,7 @@ import { useAuthContext } from '../../contexts/AuthContext';
 export const RequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isLabEntryPerson } = useAuthContext();
+  const { isLabEntryPerson, isLabApprover } = useAuthContext();
   const { data: request, isLoading, error } = useCalibrationRequest(id);
   const { data: certificates = [] } = useCertificates(id);
   const { data: repairs = [] } = useRepairs(id);
@@ -316,25 +316,36 @@ export const RequestDetailPage: React.FC = () => {
                 <Truck className="size-4" /> Manage Vendor Outsource PO
               </Button>
             </Link>
-          )}
-          {(request.status === 'CALIBRATED' || request.status === 'PARTIALLY_INVOICED') && (
+          )}          {(request.status === 'CALIBRATED' || request.status === 'PARTIALLY_INVOICED') && (
             <div className="flex items-center gap-2">
-              <Button variant="primary" onClick={handleOpenDirectInvoice}>
-                <Receipt className="size-4" />
-                {request.status === 'PARTIALLY_INVOICED' ? 'Invoice Remaining Items' : 'Generate Tax Invoice Directly'}
-              </Button>
-              <Link to="/commercial/quotations/new">
-                <Button variant="outlineInk">
-                  <FileText className="size-4" /> Create Quotation (Optional)
+              {!isLabApprover && (
+                <Button variant="primary" onClick={handleOpenDirectInvoice}>
+                  <Receipt className="size-4" />
+                  {request.status === 'PARTIALLY_INVOICED' ? 'Invoice Remaining Items' : 'Generate Tax Invoice Directly'}
                 </Button>
-              </Link>
+              )}
+              {!isLabApprover ? (
+                <Link to="/commercial/quotations/new">
+                  <Button variant="outlineInk">
+                    <FileText className="size-4" /> Create Quotation (Optional)
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/commercial/quotations">
+                  <Button variant="outlineInk">
+                    <FileText className="size-4" /> View Quotations
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
           {request.status === 'QUOTATION' && (
             <div className="flex items-center gap-2">
-              <Button variant="primary" onClick={handleOpenDirectInvoice}>
-                <Receipt className="size-4" /> Generate Tax Invoice Directly
-              </Button>
+              {!isLabApprover && (
+                <Button variant="primary" onClick={handleOpenDirectInvoice}>
+                  <Receipt className="size-4" /> Generate Tax Invoice Directly
+                </Button>
+              )}
               <Link to="/commercial/quotations">
                 <Button variant="outlineInk">
                   <FileText className="size-4" /> View Quotations
@@ -344,12 +355,14 @@ export const RequestDetailPage: React.FC = () => {
           )}
           {request.status === 'APPROVED' && (
             <div className="flex items-center gap-2">
-              <Button variant="primary" onClick={handleOpenDirectInvoice}>
-                <Receipt className="size-4" /> Generate Tax Invoice
-              </Button>
+              {!isLabApprover && (
+                <Button variant="primary" onClick={handleOpenDirectInvoice}>
+                  <Receipt className="size-4" /> Generate Tax Invoice
+                </Button>
+              )}
               <Link to="/commercial/quotations">
                 <Button variant="outlineInk">
-                  <FileText className="size-4" /> View Quotation
+                  <FileText className="size-4" /> View Quotations
                 </Button>
               </Link>
             </div>

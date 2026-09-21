@@ -13,8 +13,10 @@ import {
   CategoryTabs,
 } from '../../components/ui/UIPrimitives';
 import { Plus, ArrowRight, Clock, AlertCircle } from 'lucide-react';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 export const RequestListPage: React.FC = () => {
+  const { isLabApprover } = useAuthContext();
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const { data: requests = [], isLoading, error } = useCalibrationRequests(activeTab);
 
@@ -60,11 +62,13 @@ export const RequestListPage: React.FC = () => {
           </p>
         </div>
 
-        <Link to="/requests/new">
-          <Button variant="primary">
-            <Plus className="size-4" /> New Inward Request
-          </Button>
-        </Link>
+        {!isLabApprover && (
+          <Link to="/requests/new">
+            <Button variant="primary">
+              <Plus className="size-4" /> New Inward Request
+            </Button>
+          </Link>
+        )}
       </div>
 
       <CategoryTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
