@@ -142,3 +142,23 @@ export interface OnboardTenantPayload {
   currency?: string;
   branchesCount?: number;
 }
+
+export interface UpdateTenantPayload {
+  tenantId: string;
+  name?: string;
+  tenantType?: string;
+  registrationNumber?: string;
+  gstNumber?: string;
+  phone?: string;
+  adminName?: string;
+  adminEmail?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pincode?: string;
+  timezone?: string;
+  currency?: string;
+  branchesCount?: number;
+}

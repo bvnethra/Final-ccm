@@ -7,7 +7,8 @@ import type {
   OnboardTenantPayload, 
   TenantStatus,
   TenantOrganization,
-  CreateOrganizationPayload
+  CreateOrganizationPayload,
+  UpdateTenantPayload
 } from '../types/superAdmin';
 import { logPlatformEvent } from './platformAuditService';
 
@@ -232,6 +233,57 @@ export async function updateTenantStatus(params: {
     reason: reason.trim(),
     metadata: { tenantName: previous.name, tenantCode: previous.code },
   });
+}
+
+export async function updateTenantDetails(payload: UpdateTenantPayload): Promise<PlatformTenant> {
+  const { tenantId, ...fields } = payload;
+  const previous = await fetchTenantById(tenantId);
+
+  const updates: Record<string, any> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (fields.name !== undefined) updates.name = fields.name.trim();
+  if (fields.tenantType !== undefined) updates.tenant_type = fields.tenantType;
+  if (fields.registrationNumber !== undefined) updates.registration_number = fields.registrationNumber.trim() || null;
+  if (fields.gstNumber !== undefined) updates.gst_number = fields.gstNumber.trim().toUpperCase() || null;
+  if (fields.phone !== undefined) updates.phone = fields.phone.trim() || null;
+  if (fields.adminName !== undefined) updates.admin_name = fields.adminName.trim() || null;
+  if (fields.adminEmail !== undefined) updates.admin_email = fields.adminEmail.trim().toLowerCase() || null;
+  if (fields.addressLine1 !== undefined) updates.address_line1 = fields.addressLine1.trim() || null;
+  if (fields.addressLine2 !== undefined) updates.address_line2 = fields.addressLine2.trim() || null;
+  if (fields.city !== undefined) updates.city = fields.city.trim() || null;
+  if (fields.state !== undefined) updates.state = fields.state.trim() || null;
+  if (fields.country !== undefined) updates.country = fields.country.trim() || null;
+  if (fields.pincode !== undefined) updates.pincode = fields.pincode.trim() || null;
+  if (fields.timezone !== undefined) updates.timezone = fields.timezone.trim() || null;
+  if (fields.currency !== undefined) updates.currency = fields.currency.trim() || null;
+  if (fields.branchesCount !== undefined) updates.branches_count = fields.branchesCount;
+
+  const { data, error } = await supabase
+    .from('tenants')
+    .update(updates)
+    .eq('id', tenantId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update tenant details: ${error.message}`);
+  }
+
+  // Log Immutable Platform Audit Event
+  await logPlatformEvent({
+    action: 'TENANT_UPDATED',
+    referenceId: tenantId,
+    previousState: previous,
+    newState: data,
+    reason: `Updated enterprise configuration for '${previous.name}' (${previous.code})`,
+    metadata: {
+      modifiedFields: Object.keys(updates).filter(k => k !== 'updated_at'),
+    },
+  });
+
+  return fetchTenantById(tenantId);
 }
 
 export async function triggerAdminInvite(tenantId: string): Promise<void> {

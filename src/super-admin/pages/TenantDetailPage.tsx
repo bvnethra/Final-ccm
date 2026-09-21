@@ -5,11 +5,13 @@ import {
   useTenantDetail, 
   useTriggerAdminInvite, 
   useTenantOrganizations, 
-  useUpdateTenantStatus 
+  useUpdateTenantStatus,
+  useUpdateTenantDetails,
 } from '../hooks/useTenants';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { usePlatformAuth } from '../hooks/usePlatformAuth';
 import { usePlatformAudit } from '../hooks/usePlatformAudit';
-import { Card, Button, Badge } from '../../components/ui/UIPrimitives';
+import { Card, Button, Badge, Input } from '../../components/ui/UIPrimitives';
 import type { TenantStatus } from '../types/superAdmin';
 import { 
   Building2, 
@@ -25,7 +27,8 @@ import {
   Network,
   AlertTriangle,
   X,
-  ChevronDown
+  ChevronDown,
+  Pencil
 } from 'lucide-react';
 
 export default function TenantDetailPage() {
@@ -39,6 +42,13 @@ export default function TenantDetailPage() {
 
   const triggerInviteMutation = useTriggerAdminInvite();
   const updateStatusMutation = useUpdateTenantStatus();
+  const updateTenantMutation = useUpdateTenantDetails();
+
+  // Dynamic configuration lists for editing selects
+  const { data: tenantTypes = [] } = usePlatformConfig('tenant_types');
+  const { data: countries = [] } = usePlatformConfig('countries');
+  const { data: currencies = [] } = usePlatformConfig('currencies');
+  const { data: timezones = [] } = usePlatformConfig('timezones');
 
   // In-Page Status Governance Panel State (Zero Modal Architecture)
   const [isStatusPanelOpen, setIsStatusPanelOpen] = useState(false);
@@ -46,6 +56,104 @@ export default function TenantDetailPage() {
   const [statusReason, setStatusReason] = useState('');
   const [statusError, setStatusError] = useState('');
   const [feedbackMsg, setFeedbackMsg] = useState('');
+
+  // Enterprise Details Edit State
+  const [isEditingEnterprise, setIsEditingEnterprise] = useState(false);
+  const [enterpriseForm, setEnterpriseForm] = useState({
+    name: '',
+    tenantType: '',
+    gstNumber: '',
+    registrationNumber: '',
+    phone: '',
+    branchesCount: 1,
+  });
+
+  // Designated Admin Edit State
+  const [isEditingAdmin, setIsEditingAdmin] = useState(false);
+  const [adminForm, setAdminForm] = useState({
+    adminName: '',
+    adminEmail: '',
+  });
+
+  // Location & Regional Edit State
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [locationForm, setLocationForm] = useState({
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    pincode: '',
+    country: '',
+    timezone: '',
+    currency: '',
+  });
+
+  const handleSaveEnterprise = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenant) return;
+    updateTenantMutation.mutate(
+      {
+        tenantId: tenant.id,
+        name: enterpriseForm.name.trim(),
+        tenantType: enterpriseForm.tenantType,
+        gstNumber: enterpriseForm.gstNumber.trim().toUpperCase(),
+        registrationNumber: enterpriseForm.registrationNumber.trim(),
+        phone: enterpriseForm.phone.trim(),
+        branchesCount: enterpriseForm.branchesCount,
+      },
+      {
+        onSuccess: () => {
+          setFeedbackMsg('Enterprise details successfully updated.');
+          setIsEditingEnterprise(false);
+          setTimeout(() => setFeedbackMsg(''), 4000);
+        },
+      }
+    );
+  };
+
+  const handleSaveAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenant) return;
+    updateTenantMutation.mutate(
+      {
+        tenantId: tenant.id,
+        adminName: adminForm.adminName.trim(),
+        adminEmail: adminForm.adminEmail.trim().toLowerCase(),
+      },
+      {
+        onSuccess: () => {
+          setFeedbackMsg('Designated tenant admin successfully updated.');
+          setIsEditingAdmin(false);
+          setTimeout(() => setFeedbackMsg(''), 4000);
+        },
+      }
+    );
+  };
+
+  const handleSaveLocation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenant) return;
+    updateTenantMutation.mutate(
+      {
+        tenantId: tenant.id,
+        addressLine1: locationForm.addressLine1.trim(),
+        addressLine2: locationForm.addressLine2.trim(),
+        city: locationForm.city.trim(),
+        state: locationForm.state.trim(),
+        pincode: locationForm.pincode.trim(),
+        country: locationForm.country.trim(),
+        timezone: locationForm.timezone.trim(),
+        currency: locationForm.currency.trim(),
+      },
+      {
+        onSuccess: () => {
+          setFeedbackMsg('Location & regional configuration successfully updated.');
+          setIsEditingLocation(false);
+          setTimeout(() => setFeedbackMsg(''), 4000);
+        },
+      }
+    );
+  };
 
   const addOrgPath = window.location.pathname.startsWith('/super-admin')
     ? `/super-admin/tenants/${id}/organizations/new`
@@ -280,95 +388,410 @@ export default function TenantDetailPage() {
         {/* Left Column: Organization & Regional */}
         <div className="md:col-span-2 space-y-6">
           <Card className="p-5 space-y-4 bg-white border-slate-200 shadow-xs">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-3 flex items-center gap-2">
-              <Building2 className="size-3.5 text-slate-400" />
-              <span>Enterprise Details</span>
-            </h3>
-
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-slate-500 block mb-0.5">Tenant Classification</span>
-                <strong className="text-slate-800">{tenant.tenantType || 'COMMERCIAL_LAB'}</strong>
-              </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">GST Identification Number</span>
-                <code className="text-slate-700 font-mono">{tenant.gstNumber || 'Not provided'}</code>
-              </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">Registration Number</span>
-                <span className="text-slate-700 font-mono">{tenant.registrationNumber || 'Not provided'}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">Contact Phone</span>
-                <span className="text-slate-700 flex items-center gap-1.5">
-                  <Phone className="size-3 text-slate-400" />
-                  {tenant.phone || 'Not provided'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">Branch Capacity</span>
-                <span className="text-slate-700 flex items-center gap-1.5">
-                  <Layers className="size-3 text-slate-400" />
-                  {tenant.branchesCount} Branch Facilities
-                </span>
-              </div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                <Building2 className="size-3.5 text-slate-400" />
+                <span>Enterprise Details</span>
+              </h3>
+              {!isSupport && !isEditingEnterprise && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2.5 text-xs text-slate-600 gap-1 hover:text-indigo-600 hover:border-indigo-200 shadow-none"
+                  onClick={() => {
+                    setEnterpriseForm({
+                      name: tenant.name,
+                      tenantType: tenant.tenantType || 'COMMERCIAL_LAB',
+                      gstNumber: tenant.gstNumber || '',
+                      registrationNumber: tenant.registrationNumber || '',
+                      phone: tenant.phone || '',
+                      branchesCount: tenant.branchesCount || 1,
+                    });
+                    setIsEditingEnterprise(true);
+                  }}
+                >
+                  <Pencil className="size-3 text-slate-400" />
+                  <span>Edit</span>
+                </Button>
+              )}
             </div>
+
+            {isEditingEnterprise ? (
+              <form onSubmit={handleSaveEnterprise} className="space-y-4 animate-fadeIn">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
+                    <Input
+                      label="Tenant Legal Name *"
+                      value={enterpriseForm.name}
+                      onChange={(e) => setEnterpriseForm(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                      Tenant Classification
+                    </label>
+                    <select
+                      value={enterpriseForm.tenantType}
+                      onChange={(e) => setEnterpriseForm(prev => ({ ...prev, tenantType: e.target.value }))}
+                      className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-900 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                    >
+                      {tenantTypes.length > 0 ? (
+                        tenantTypes.map(t => (
+                          <option key={t.code} value={t.code}>{t.label}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="COMMERCIAL_LAB">Commercial Testing & Calibration Lab</option>
+                          <option value="MANUFACTURING_INHOUSE">Manufacturing In-house Calibration</option>
+                          <option value="GOVERNMENT_DEFENSE">Government / Defense Metrology</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                  <Input
+                    label="GST Identification Number"
+                    value={enterpriseForm.gstNumber}
+                    onChange={(e) => setEnterpriseForm(prev => ({ ...prev, gstNumber: e.target.value.toUpperCase() }))}
+                    placeholder="e.g. 29AAAAA0000A1Z5"
+                  />
+                  <Input
+                    label="Registration Number"
+                    value={enterpriseForm.registrationNumber}
+                    onChange={(e) => setEnterpriseForm(prev => ({ ...prev, registrationNumber: e.target.value }))}
+                    placeholder="e.g. U72200TN2020PTC123456"
+                  />
+                  <Input
+                    label="Contact Phone"
+                    value={enterpriseForm.phone}
+                    onChange={(e) => setEnterpriseForm(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+91 98765 43210"
+                  />
+                  <Input
+                    label="Branch Capacity"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={enterpriseForm.branchesCount}
+                    onChange={(e) => setEnterpriseForm(prev => ({ ...prev, branchesCount: parseInt(e.target.value, 10) || 1 }))}
+                  />
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => setIsEditingEnterprise(false)}
+                    disabled={updateTenantMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    type="submit"
+                    disabled={updateTenantMutation.isPending}
+                  >
+                    {updateTenantMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <span className="text-slate-500 block mb-0.5">Tenant Classification</span>
+                  <strong className="text-slate-800">{tenant.tenantType || 'COMMERCIAL_LAB'}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-0.5">GST Identification Number</span>
+                  <code className="text-slate-700 font-mono">{tenant.gstNumber || 'Not provided'}</code>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-0.5">Registration Number</span>
+                  <span className="text-slate-700 font-mono">{tenant.registrationNumber || 'Not provided'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-0.5">Contact Phone</span>
+                  <span className="text-slate-700 flex items-center gap-1.5">
+                    <Phone className="size-3 text-slate-400" />
+                    {tenant.phone || 'Not provided'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-0.5">Branch Capacity</span>
+                  <span className="text-slate-700 flex items-center gap-1.5">
+                    <Layers className="size-3 text-slate-400" />
+                    {tenant.branchesCount} Branch Facilities
+                  </span>
+                </div>
+              </div>
+            )}
           </Card>
 
           <Card className="p-5 space-y-4 bg-white border-slate-200 shadow-xs">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-3 flex items-center gap-2">
-              <MapPin className="size-3.5 text-slate-400" />
-              <span>Location & Regional Configuration</span>
-            </h3>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                <MapPin className="size-3.5 text-slate-400" />
+                <span>Location & Regional Configuration</span>
+              </h3>
+              {!isSupport && !isEditingLocation && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2.5 text-xs text-slate-600 gap-1 hover:text-indigo-600 hover:border-indigo-200 shadow-none"
+                  onClick={() => {
+                    setLocationForm({
+                      addressLine1: tenant.addressLine1 || '',
+                      addressLine2: tenant.addressLine2 || '',
+                      city: tenant.city || '',
+                      state: tenant.state || '',
+                      pincode: tenant.pincode || '',
+                      country: tenant.country || 'India',
+                      timezone: tenant.timezone || 'Asia/Kolkata',
+                      currency: tenant.currency || 'INR',
+                    });
+                    setIsEditingLocation(true);
+                  }}
+                >
+                  <Pencil className="size-3 text-slate-400" />
+                  <span>Edit</span>
+                </Button>
+              )}
+            </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="col-span-2">
-                <span className="text-slate-500 block mb-0.5">Physical Address</span>
-                <div className="text-slate-800">
-                  {tenant.addressLine1 || 'No street address recorded'}
-                  {tenant.addressLine2 && <div>{tenant.addressLine2}</div>}
+            {isEditingLocation ? (
+              <form onSubmit={handleSaveLocation} className="space-y-4 animate-fadeIn">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
+                    <Input
+                      label="Physical Address Line 1"
+                      value={locationForm.addressLine1}
+                      onChange={(e) => setLocationForm(prev => ({ ...prev, addressLine1: e.target.value }))}
+                      placeholder="Plot / Street, Innovation Zone"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Input
+                      label="Physical Address Line 2"
+                      value={locationForm.addressLine2}
+                      onChange={(e) => setLocationForm(prev => ({ ...prev, addressLine2: e.target.value }))}
+                      placeholder="Suite, Floor, Industrial Area"
+                    />
+                  </div>
+                  <Input
+                    label="City"
+                    value={locationForm.city}
+                    onChange={(e) => setLocationForm(prev => ({ ...prev, city: e.target.value }))}
+                    placeholder="e.g. Bangalore"
+                  />
+                  <Input
+                    label="State / Province"
+                    value={locationForm.state}
+                    onChange={(e) => setLocationForm(prev => ({ ...prev, state: e.target.value }))}
+                    placeholder="e.g. Karnataka"
+                  />
+                  <Input
+                    label="Pincode / Postal Code"
+                    value={locationForm.pincode}
+                    onChange={(e) => setLocationForm(prev => ({ ...prev, pincode: e.target.value }))}
+                    placeholder="e.g. 560001"
+                  />
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                      Country
+                    </label>
+                    <select
+                      value={locationForm.country}
+                      onChange={(e) => setLocationForm(prev => ({ ...prev, country: e.target.value }))}
+                      className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-900 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                    >
+                      {countries.length > 0 ? (
+                        countries.map(c => (
+                          <option key={c.code} value={c.label}>{c.label}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="India">India</option>
+                          <option value="United States">United States</option>
+                          <option value="Germany">Germany</option>
+                          <option value="United Kingdom">United Kingdom</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                      Timezone
+                    </label>
+                    <select
+                      value={locationForm.timezone}
+                      onChange={(e) => setLocationForm(prev => ({ ...prev, timezone: e.target.value }))}
+                      className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-900 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                    >
+                      {timezones.length > 0 ? (
+                        timezones.map(tz => (
+                          <option key={tz.code} value={tz.code}>{tz.label}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="Asia/Kolkata">Asia/Kolkata (IST +5:30)</option>
+                          <option value="UTC">UTC (+0:00)</option>
+                          <option value="America/New_York">America/New_York (EST -5:00)</option>
+                          <option value="Europe/London">Europe/London (GMT +0:00)</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                      Operational Currency
+                    </label>
+                    <select
+                      value={locationForm.currency}
+                      onChange={(e) => setLocationForm(prev => ({ ...prev, currency: e.target.value }))}
+                      className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-900 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                    >
+                      {currencies.length > 0 ? (
+                        currencies.map(curr => (
+                          <option key={curr.code} value={curr.code}>{curr.label}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="INR">INR — Indian Rupee (₹)</option>
+                          <option value="USD">USD — US Dollar ($)</option>
+                          <option value="EUR">EUR — Euro (€)</option>
+                          <option value="GBP">GBP — British Pound (£)</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => setIsEditingLocation(false)}
+                    disabled={updateTenantMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    type="submit"
+                    disabled={updateTenantMutation.isPending}
+                  >
+                    {updateTenantMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="col-span-2">
+                  <span className="text-slate-500 block mb-0.5">Physical Address</span>
+                  <div className="text-slate-800">
+                    {tenant.addressLine1 || 'No street address recorded'}
+                    {tenant.addressLine2 && <div>{tenant.addressLine2}</div>}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-0.5">City & State</span>
+                  <span className="text-slate-800">
+                    {tenant.city || 'N/A'}, {tenant.state || 'N/A'} {tenant.pincode ? `(${tenant.pincode})` : ''}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-0.5">Country</span>
+                  <span className="text-slate-800">{tenant.country || 'India'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-0.5">Timezone</span>
+                  <code className="text-slate-700 font-mono">{tenant.timezone || 'Asia/Kolkata'}</code>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-0.5">Operational Currency</span>
+                  <code className="text-slate-700 font-mono">{tenant.currency || 'INR'}</code>
                 </div>
               </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">City & State</span>
-                <span className="text-slate-800">
-                  {tenant.city || 'N/A'}, {tenant.state || 'N/A'} {tenant.pincode ? `(${tenant.pincode})` : ''}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">Country</span>
-                <span className="text-slate-800">{tenant.country || 'India'}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">Timezone</span>
-                <code className="text-slate-700 font-mono">{tenant.timezone || 'Asia/Kolkata'}</code>
-              </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">Operational Currency</span>
-                <code className="text-slate-700 font-mono">{tenant.currency || 'INR'}</code>
-              </div>
-            </div>
+            )}
           </Card>
         </div>
 
         {/* Right Column: Admin & Status Metadata */}
         <div className="space-y-6">
           <Card className="p-5 space-y-4 bg-white border-slate-200 shadow-xs">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-3 flex items-center gap-2">
-              <Shield className="size-3.5 text-slate-400" />
-              <span>Designated Tenant Admin</span>
-            </h3>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <span className="text-slate-500 block mb-0.5">Full Name</span>
-                <strong className="text-slate-800">{tenant.adminName || 'Not provisioned'}</strong>
-              </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">Email Address</span>
-                <div className="text-slate-700 font-mono">{tenant.adminEmail || 'Not provisioned'}</div>
-              </div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                <Shield className="size-3.5 text-slate-400" />
+                <span>Designated Tenant Admin</span>
+              </h3>
+              {!isSupport && !isEditingAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2.5 text-xs text-slate-600 gap-1 hover:text-indigo-600 hover:border-indigo-200 shadow-none"
+                  onClick={() => {
+                    setAdminForm({
+                      adminName: tenant.adminName || '',
+                      adminEmail: tenant.adminEmail || '',
+                    });
+                    setIsEditingAdmin(true);
+                  }}
+                >
+                  <Pencil className="size-3 text-slate-400" />
+                  <span>Edit</span>
+                </Button>
+              )}
             </div>
+
+            {isEditingAdmin ? (
+              <form onSubmit={handleSaveAdmin} className="space-y-3 animate-fadeIn">
+                <Input
+                  label="Administrator Full Name"
+                  value={adminForm.adminName}
+                  onChange={(e) => setAdminForm(prev => ({ ...prev, adminName: e.target.value }))}
+                  placeholder="e.g. Dr. Sarah Connor"
+                />
+                <Input
+                  label="Administrator Email Address"
+                  type="email"
+                  value={adminForm.adminEmail}
+                  onChange={(e) => setAdminForm(prev => ({ ...prev, adminEmail: e.target.value }))}
+                  placeholder="admin@enterprise.com"
+                />
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => setIsEditingAdmin(false)}
+                    disabled={updateTenantMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    type="submit"
+                    disabled={updateTenantMutation.isPending}
+                  >
+                    {updateTenantMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <span className="text-slate-500 block mb-0.5">Full Name</span>
+                  <strong className="text-slate-800">{tenant.adminName || 'Not provisioned'}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-0.5">Email Address</span>
+                  <div className="text-slate-700 font-mono">{tenant.adminEmail || 'Not provisioned'}</div>
+                </div>
+              </div>
+            )}
           </Card>
 
           {tenant.statusReason && (

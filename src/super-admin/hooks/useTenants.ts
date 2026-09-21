@@ -5,6 +5,7 @@ import {
   fetchTenantById,
   onboardTenant,
   updateTenantStatus,
+  updateTenantDetails,
   triggerAdminInvite,
   fetchTenantOrganizations,
   createTenantOrganization,
@@ -13,7 +14,8 @@ import type {
   TenantFilters, 
   OnboardTenantPayload, 
   TenantStatus, 
-  CreateOrganizationPayload 
+  CreateOrganizationPayload,
+  UpdateTenantPayload
 } from '../types/superAdmin';
 
 export function useTenants(filters: TenantFilters = {}) {
@@ -72,6 +74,19 @@ export function useUpdateTenantStatus() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['platformTenants'] });
       queryClient.invalidateQueries({ queryKey: ['platformTenant', variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['superAdminDashboardMetrics'] });
+      queryClient.invalidateQueries({ queryKey: ['platformAuditLogs'] });
+    },
+  });
+}
+
+export function useUpdateTenantDetails() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateTenantPayload) => updateTenantDetails(payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['platformTenant', variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['platformTenants'] });
       queryClient.invalidateQueries({ queryKey: ['superAdminDashboardMetrics'] });
       queryClient.invalidateQueries({ queryKey: ['platformAuditLogs'] });
     },
