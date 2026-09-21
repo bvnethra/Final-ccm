@@ -99,6 +99,40 @@ export const LoginPage: React.FC = () => {
                 <LogIn className="size-4" />
                 {isSubmitting ? 'Authenticating...' : 'Sign In to Operations'}
               </Button>
+
+              <div className="w-full text-xs text-[#6B7280] bg-[#F9FAFB] p-3 rounded-[4px] border border-[#E5E7EB] space-y-1 mt-2">
+                <div className="font-semibold text-[#374151] flex items-center justify-between">
+                  <span>Configured Credentials:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail(import.meta.env.VITE_TEST_ADMIN_EMAIL || 'admin@nethra.com');
+                      setPassword(import.meta.env.VITE_TEST_USER_PASSWORD || 'Password@123');
+                    }}
+                    className="text-[#0274BB] hover:underline font-medium cursor-pointer"
+                  >
+                    Click to Auto-fill
+                  </button>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span>Admin:</span>
+                  <code className="bg-white px-1.5 py-0.5 rounded border border-[#E5E7EB] text-[#111827]">
+                    {import.meta.env.VITE_TEST_ADMIN_EMAIL || 'admin@nethra.com'}
+                  </code>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Operator:</span>
+                  <code className="bg-white px-1.5 py-0.5 rounded border border-[#E5E7EB] text-[#111827]">
+                    {import.meta.env.VITE_TEST_USER_EMAIL || 'user@nethra.com'}
+                  </code>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Password:</span>
+                  <code className="bg-white px-1.5 py-0.5 rounded border border-[#E5E7EB] text-[#111827]">
+                    {import.meta.env.VITE_TEST_USER_PASSWORD || 'Password@123'}
+                  </code>
+                </div>
+              </div>
             </CardFooter>
           </Card>
         </form>
