@@ -38,23 +38,24 @@ export default function SuperAdminDashboardPage() {
       {/* Top Banner & Quick Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-zinc-100 flex items-center gap-2.5 tracking-tight">
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2.5 tracking-tight">
             <span>Platform Governance Dashboard</span>
-            <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-emerald-950/50 border border-emerald-800/40 text-emerald-300">
-              Live DB
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 inline-flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-emerald-500" />
+              Live
             </span>
           </h1>
-          <p className="text-zinc-400 text-xs mt-0.5">
+          <p className="text-slate-500 text-xs mt-1">
             Centralized platform oversight, enterprise tenant metrics, and immutable audit telemetry.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
             onClick={() => refetch()}
-            className="text-xs gap-1.5 h-8"
+            className="text-xs gap-1.5 h-9 px-3.5 rounded-lg border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-medium shadow-xs"
             title="Refresh database metrics"
           >
             <RefreshCw className="size-3.5" />
@@ -66,9 +67,9 @@ export default function SuperAdminDashboardPage() {
               variant="default"
               size="sm"
               onClick={() => navigate('/tenants/new')}
-              className="text-xs gap-1.5 h-8 font-medium"
+              className="text-xs gap-1.5 h-9 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xs"
             >
-              <Plus className="size-3.5" />
+              <Plus className="size-4" />
               <span>Onboard New Tenant</span>
             </Button>
           )}
@@ -86,51 +87,51 @@ export default function SuperAdminDashboardPage() {
         />
 
         {/* Recently Onboarded Tenants Card */}
-        <Card className="p-5 bg-zinc-900/40 border-zinc-800">
+        <Card className="p-5 bg-white border-slate-200 shadow-xs">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="size-7 rounded-md bg-zinc-800/80 border border-zinc-700/60 flex items-center justify-center text-zinc-300">
-                <Building2 className="size-3.5" />
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                <Building2 className="size-4" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-zinc-100">Recently Onboarded</h3>
-                <p className="text-[11px] text-zinc-500">Latest enterprise registrations in PostgreSQL</p>
+                <h3 className="text-sm font-bold text-slate-900">Recently Onboarded</h3>
+                <p className="text-xs text-slate-500">Latest enterprise registrations in PostgreSQL</p>
               </div>
             </div>
             <Link
               to="/tenants"
-              className="text-xs text-zinc-400 hover:text-zinc-200 font-medium transition-colors"
+              className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold transition-colors flex items-center gap-1"
             >
               View All &rarr;
             </Link>
           </div>
 
           {data.recentTenants.length === 0 ? (
-            <div className="py-8 text-center text-xs text-zinc-500">
+            <div className="py-8 text-center text-xs text-slate-400">
               No recent tenants registered.
             </div>
           ) : (
-            <div className="divide-y divide-zinc-800/60">
+            <div className="divide-y divide-slate-100">
               {data.recentTenants.map((t) => (
-                <div key={t.id} className="py-3 flex items-center justify-between gap-4 first:pt-0 last:pb-0 text-xs">
+                <div key={t.id} className="py-3.5 flex items-center justify-between gap-4 first:pt-0 last:pb-0 text-xs">
                   <div>
-                    <div className="font-medium text-zinc-200 hover:text-zinc-100 transition-colors">
+                    <div className="font-semibold text-slate-900 hover:text-indigo-600 transition-colors">
                       <Link to={`/tenants/${t.id}`}>{t.name}</Link>
                     </div>
-                    <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
-                      {t.code} &bull; <span className="text-zinc-400">{t.adminEmail}</span>
+                    <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                      {t.code} &bull; <span className="text-slate-400">{t.adminEmail}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Badge variant={t.status === 'ACTIVE' ? 'success' : 'destructive'}>
+                  <div className="flex items-center gap-2.5">
+                    <Badge variant={t.status === 'ACTIVE' ? 'success' : 'destructive'} className="rounded-full px-2.5">
                       {t.status}
                     </Badge>
                     <Link
                       to={`/tenants/${t.id}`}
-                      className="p-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-100 transition-colors"
+                      className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                     >
-                      <ArrowUpRight className="size-3.5" />
+                      <ArrowUpRight className="size-4" />
                     </Link>
                   </div>
                 </div>

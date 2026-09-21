@@ -85,25 +85,25 @@ export const AddOrganizationDialog: React.FC<AddOrganizationDialogProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-xs transition-opacity animate-fadeIn"
+        className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-fadeIn"
         onClick={handleClose}
       />
 
       {/* Dialog Modal Content */}
-      <div className="relative z-50 w-full max-w-lg rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-5 animate-scaleUp">
+      <div className="relative z-50 w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5 animate-scaleUp">
         {/* Header */}
-        <div className="flex items-start justify-between pb-3 border-b border-zinc-800">
+        <div className="flex items-start justify-between pb-3 border-b border-slate-200">
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300">
+            <div className="size-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700">
               <Building2 className="size-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-zinc-100">
+              <h2 className="text-base font-semibold text-slate-900">
                 Provision Organization / Branch
               </h2>
-              <p className="text-xs text-zinc-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Add a laboratory branch or division under{' '}
-                <strong className="text-zinc-200">{tenantName || 'this tenant'}</strong>
+                <strong className="text-slate-800">{tenantName || 'this tenant'}</strong>
                 {tenantCode ? ` (${tenantCode})` : ''}.
               </p>
             </div>
@@ -111,14 +111,14 @@ export const AddOrganizationDialog: React.FC<AddOrganizationDialogProps> = ({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100 transition-colors"
+            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
           >
             <X className="size-4" />
           </button>
         </div>
 
         {errorMsg && (
-          <div className="p-3 rounded-lg bg-red-950/40 border border-red-800/50 text-red-300 text-xs flex items-center gap-2">
+          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
             <span>{errorMsg}</span>
           </div>
         )}
@@ -155,7 +155,7 @@ export const AddOrganizationDialog: React.FC<AddOrganizationDialogProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <Field>
                 <FieldLabel htmlFor="dialog-org-email" className="flex items-center gap-1.5">
-                  <Mail className="size-3 text-zinc-500" />
+                  <Mail className="size-3 text-slate-400" />
                   <span>Contact Email</span>
                 </FieldLabel>
                 <Input
@@ -169,7 +169,7 @@ export const AddOrganizationDialog: React.FC<AddOrganizationDialogProps> = ({
 
               <Field>
                 <FieldLabel htmlFor="dialog-org-phone" className="flex items-center gap-1.5">
-                  <Phone className="size-3 text-zinc-500" />
+                  <Phone className="size-3 text-slate-400" />
                   <span>Contact Phone</span>
                 </FieldLabel>
                 <Input
@@ -184,7 +184,7 @@ export const AddOrganizationDialog: React.FC<AddOrganizationDialogProps> = ({
 
             <Field>
               <FieldLabel htmlFor="dialog-org-address" className="flex items-center gap-1.5">
-                <MapPin className="size-3 text-zinc-500" />
+                <MapPin className="size-3 text-slate-400" />
                 <span>Physical Facility Address</span>
               </FieldLabel>
               <textarea
@@ -193,19 +193,19 @@ export const AddOrganizationDialog: React.FC<AddOrganizationDialogProps> = ({
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Plot / Street, Industrial Corridor, City, Pincode"
-                className="flex w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400"
+                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
               />
             </Field>
           </FieldGroup>
 
-          <div className="p-2.5 rounded-md bg-zinc-900/60 border border-zinc-800 text-[11px] text-zinc-400 flex items-center gap-2">
-            <Shield className="size-3.5 text-zinc-400 shrink-0" />
+          <div className="p-2.5 rounded-md bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center gap-2">
+            <Shield className="size-3.5 text-slate-400 shrink-0" />
             <span>
-              This organization is automatically registered in <code className="font-mono text-zinc-300">platform_audit_logs</code>.
+              This organization is automatically registered in <code className="font-mono text-slate-800">platform_audit_logs</code>.
             </span>
           </div>
 
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200">
             <Button
               variant="outline"
               type="button"

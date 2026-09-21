@@ -58,7 +58,7 @@ export default function AddOrganizationPage() {
 
   if (isTenantLoading) {
     return (
-      <div className="py-24 text-center text-zinc-500 font-mono text-xs animate-pulse">
+      <div className="py-24 text-center text-slate-400 font-mono text-xs animate-pulse">
         Loading parent tenant reference...
       </div>
     );
@@ -72,7 +72,7 @@ export default function AddOrganizationPage() {
           variant="outline"
           size="sm"
           onClick={() => navigate(tenantDetailPath)}
-          className="gap-1 text-xs"
+          className="gap-1.5 text-xs border-slate-200 text-slate-700 hover:bg-slate-50"
         >
           <ArrowLeft className="size-3.5" />
           <span>Back to Tenant</span>
@@ -80,36 +80,36 @@ export default function AddOrganizationPage() {
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold text-zinc-100 tracking-tight">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
           Provision Organization / Branch
         </h1>
-        <p className="text-sm text-zinc-400 mt-1">
+        <p className="text-sm text-slate-500 mt-1">
           Add an operational laboratory branch, calibration facility, or division under{' '}
-          <strong className="text-zinc-200">{tenant?.name || 'this enterprise'}</strong>.
+          <strong className="text-slate-800">{tenant?.name || 'this enterprise'}</strong>.
         </p>
       </div>
 
       {/* Parent Tenant Reference Banner */}
-      <Card className="p-4 bg-zinc-900/30 border-zinc-800 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="size-8 rounded-md bg-zinc-800/80 border border-zinc-700/60 flex items-center justify-center">
-            <Building className="size-4 text-zinc-300" />
+      <Card className="p-4 bg-slate-50 border-slate-200 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-3">
+          <div className="size-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+            <Building className="size-4" />
           </div>
           <div>
-            <span className="text-zinc-400">Parent Enterprise:</span>{' '}
-            <strong className="text-zinc-100 font-medium">{tenant?.name}</strong>
+            <span className="text-slate-500">Parent Enterprise:</span>{' '}
+            <strong className="text-slate-800 font-medium">{tenant?.name}</strong>
           </div>
         </div>
         <div>
-          <span className="text-zinc-500 font-mono">Code: {tenant?.code}</span>
+          <span className="text-slate-500 font-mono">Code: {tenant?.code}</span>
         </div>
       </Card>
 
       {/* Full-Page Form Card */}
-      <Card className="p-6">
+      <Card className="p-6 bg-white border-slate-200 shadow-xs">
         <form onSubmit={handleSubmit} className="space-y-6">
           {errorMsg && (
-            <div className="p-3.5 rounded-md bg-red-950/40 border border-red-800/50 text-red-300 text-xs">
+            <div className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
               {errorMsg}
             </div>
           )}
@@ -145,7 +145,7 @@ export default function AddOrganizationPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field>
                 <FieldLabel htmlFor="org-email" className="flex items-center gap-1.5">
-                  <Mail className="size-3 text-zinc-500" />
+                  <Mail className="size-3 text-slate-400" />
                   <span>Contact Email</span>
                 </FieldLabel>
                 <Input
@@ -159,7 +159,7 @@ export default function AddOrganizationPage() {
 
               <Field>
                 <FieldLabel htmlFor="org-phone" className="flex items-center gap-1.5">
-                  <Phone className="size-3 text-zinc-500" />
+                  <Phone className="size-3 text-slate-400" />
                   <span>Contact Phone</span>
                 </FieldLabel>
                 <Input
@@ -174,7 +174,7 @@ export default function AddOrganizationPage() {
 
             <Field>
               <FieldLabel htmlFor="org-address" className="flex items-center gap-1.5">
-                <MapPin className="size-3 text-zinc-500" />
+                <MapPin className="size-3 text-slate-400" />
                 <span>Physical Facility Address</span>
               </FieldLabel>
               <textarea
@@ -183,23 +183,24 @@ export default function AddOrganizationPage() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Plot / Street, Industrial Estate, City, State, Pincode"
-                className="flex w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400"
+                className="flex w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
               />
             </Field>
           </FieldGroup>
 
-          <div className="p-3 rounded-md bg-zinc-900/60 border border-zinc-800 text-xs text-zinc-400 flex items-center gap-2">
-            <Shield className="size-4 text-zinc-400 shrink-0" />
+          <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-2.5">
+            <Shield className="size-4 text-indigo-600 shrink-0" />
             <span>
-              This organization will be directly governed under tenant <strong className="text-zinc-200">{tenant?.code}</strong> and recorded in immutable platform audit logs.
+              This organization will be directly governed under tenant <strong className="text-slate-800">{tenant?.code}</strong> and recorded in immutable platform audit logs.
             </span>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <Button
               variant="outline"
               type="button"
               onClick={() => navigate(tenantDetailPath)}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50"
             >
               Cancel
             </Button>
@@ -207,6 +208,7 @@ export default function AddOrganizationPage() {
               variant="default"
               type="submit"
               disabled={createOrgMutation.isPending}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xs"
             >
               {createOrgMutation.isPending ? 'Provisioning...' : 'Provision Organization'}
             </Button>
