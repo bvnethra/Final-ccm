@@ -50,6 +50,7 @@ export default function TenantDetailPage() {
   // Dynamic configuration lists for editing selects
   const { data: tenantTypes = [] } = usePlatformConfig('tenant_types');
   const { data: countries = [] } = usePlatformConfig('countries');
+  const { data: states = [] } = usePlatformConfig('states');
   const { data: currencies = [] } = usePlatformConfig('currencies');
   const { data: timezones = [] } = usePlatformConfig('timezones');
 
@@ -588,12 +589,21 @@ export default function TenantDetailPage() {
                     onChange={(e) => setLocationForm(prev => ({ ...prev, city: e.target.value }))}
                     placeholder="e.g. Bangalore"
                   />
-                  <Input
-                    label="State / Province"
-                    value={locationForm.state}
-                    onChange={(e) => setLocationForm(prev => ({ ...prev, state: e.target.value }))}
-                    placeholder="e.g. Karnataka"
-                  />
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[#4B5563] uppercase tracking-wider">
+                      State / Province
+                    </label>
+                    <select
+                      value={locationForm.state}
+                      onChange={(e) => setLocationForm(prev => ({ ...prev, state: e.target.value }))}
+                      className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
+                    >
+                      <option value="">Select State / Province</option>
+                      {states.map(s => (
+                        <option key={s.code} value={s.label}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
                   <Input
                     label="Pincode / Postal Code"
                     value={locationForm.pincode}

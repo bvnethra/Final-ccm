@@ -22,6 +22,7 @@ export const OnboardingWizard: React.FC = () => {
   // Dynamic configuration lists from PostgreSQL (Zero Hardcoding!)
   const { data: tenantTypes = [] } = usePlatformConfig('tenant_types');
   const { data: countries = [] } = usePlatformConfig('countries');
+  const { data: states = [] } = usePlatformConfig('states');
   const { data: currencies = [] } = usePlatformConfig('currencies');
   const { data: timezones = [] } = usePlatformConfig('timezones');
 
@@ -334,12 +335,23 @@ export const OnboardingWizard: React.FC = () => {
                     required
                   />
 
-                  <Input
-                    label="State / Province"
-                    placeholder="e.g. Karnataka"
-                    value={formData.state}
-                    onChange={(e) => handleChange('state', e.target.value)}
-                  />
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-slate-700">
+                      State / Province
+                    </label>
+                    <select
+                      value={formData.state}
+                      onChange={(e) => handleChange('state', e.target.value)}
+                      className="bg-white border border-[#E5E7EB] rounded-[4px] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:border-[#0274BB] transition"
+                    >
+                      <option value="">Select State / Province</option>
+                      {states.map((st) => (
+                        <option key={st.code} value={st.label}>
+                          {st.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                   <Input
                     label="Pincode / Postal Code"
