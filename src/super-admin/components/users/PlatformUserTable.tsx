@@ -27,28 +27,26 @@ export const PlatformUserTable: React.FC = () => {
   const [deleteReason, setDeleteReason] = React.useState('');
   const [deleteError, setDeleteError] = React.useState('');
 
-  const handleToggleStatus = (u: PlatformUser) => {
-    const targetStatus: PlatformUserStatus = u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    const reason = window.prompt(`Enter reason for marking ${u.fullName} as ${targetStatus}:`);
-    if (reason) {
-      updateStatusMutation.mutate({
-        userId: u.id,
-        status: targetStatus,
-        reason,
-      });
-    }
+  const [roleChangeTarget, setRoleChangeTarget] = React.useState<{ user: PlatformUser; targetRole: PlatformRole } | null>(null);
+  const [roleChangeReason, setRoleChangeReason] = React.useState('');
+  const [roleChangeError, setRoleChangeError] = React.useState('');
+
+  const [statusChangeTarget, setStatusChangeTarget] = React.useState<{ user: PlatformUser; targetStatus: PlatformUserStatus } | null>(null);
+  const [statusChangeReason, setStatusChangeReason] = React.useState('');
+  const [statusChangeError, setStatusChangeError] = React.useState('');
+
+  const handleOpenRoleModal = (u: PlatformUser) => {
+    const targetRole: PlatformRole = u.role === 'SUPER_ADMIN' ? 'PLATFORM_SUPPORT' : 'SUPER_ADMIN';
+    setRoleChangeTarget({ user: u, targetRole });
+    setRoleChangeReason(`Role changed to ${targetRole} for access governance`);
+    setRoleChangeError('');
   };
 
-  const handleToggleRole = (u: PlatformUser) => {
-    const targetRole: PlatformRole = u.role === 'SUPER_ADMIN' ? 'PLATFORM_SUPPORT' : 'SUPER_ADMIN';
-    const reason = window.prompt(`Enter reason for changing role of ${u.fullName} to ${targetRole}:`);
-    if (reason) {
-      updateRoleMutation.mutate({
-        userId: u.id,
-        role: targetRole,
-        reason,
-      });
-    }
+  const handleOpenStatusModal = (u: PlatformUser) => {
+    const targetStatus: PlatformUserStatus = u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    setStatusChangeTarget({ user: u, targetStatus });
+    setStatusChangeReason(`Operator marked as ${targetStatus} by Super Admin`);
+    setStatusChangeError('');
   };
 
   return (
@@ -137,7 +135,7 @@ export const PlatformUserTable: React.FC = () => {
                             variant="outline"
                             size="sm"
                             className="text-xs h-7 px-2.5"
-                            onClick={() => handleToggleRole(u)}
+                            onClick={() => handleOpenRoleModal(u)}
                             title="Switch Role"
                           >
                             Switch Role
@@ -146,7 +144,7 @@ export const PlatformUserTable: React.FC = () => {
                             variant="ghost"
                             size="sm"
                             className="text-xs h-7 px-2 text-slate-400 hover:text-red-600"
-                            onClick={() => handleToggleStatus(u)}
+                            onClick={() => handleOpenStatusModal(u)}
                             title={u.status === 'ACTIVE' ? 'Deactivate Operator' : 'Activate Operator'}
                           >
                             {u.status === 'ACTIVE' ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
@@ -261,6 +259,197 @@ export const PlatformUserTable: React.FC = () => {
                 }}
               >
                 {deleteUserMutation.isPending ? 'Deleting...' : 'Permanently Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Change Modal */}
+      {roleChangeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#E6F2FF] rounded-[6px] text-[#0274BB]">
+                  <Shield className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#111827]">Change Platform Role</h3>
+                  <p className="text-xs text-[#6B7280]">Modify system governance privileges</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setRoleChangeTarget(null)}
+                className="text-[#9CA3AF] hover:text-[#374151] p-1 rounded transition"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#4B5563] leading-relaxed">
+              Are you sure you want to change the platform role of <strong className="text-[#111827]">{roleChangeTarget.user.fullName}</strong> (<span className="font-mono">{roleChangeTarget.user.email}</span>) from <span className="font-mono font-medium text-[#6B7280]">{roleChangeTarget.user.role}</span> to <strong className="font-mono text-[#0274BB]">{roleChangeTarget.targetRole}</strong>?
+            </p>
+
+            {roleChangeError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-[4px] text-xs text-rose-700">
+                {roleChangeError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[11px] font-semibold text-[#374151] uppercase tracking-wider mb-1">
+                Audit Compliance Reason
+              </label>
+              <input
+                type="text"
+                value={roleChangeReason}
+                onChange={(e) => setRoleChangeReason(e.target.value)}
+                placeholder="Reason for role change..."
+                className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-1.5 text-xs text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs border-[#E5E7EB] text-[#374151] hover:bg-[#F5F7FA]"
+                disabled={updateRoleMutation.isPending}
+                onClick={() => setRoleChangeTarget(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="text-xs bg-[#0274BB] hover:bg-[#003B8C] text-white rounded-[4px]"
+                disabled={updateRoleMutation.isPending}
+                onClick={() => {
+                  if (!roleChangeReason.trim()) {
+                    setRoleChangeError('An audit reason is required.');
+                    return;
+                  }
+                  updateRoleMutation.mutate(
+                    {
+                      userId: roleChangeTarget.user.id,
+                      role: roleChangeTarget.targetRole,
+                      reason: roleChangeReason.trim(),
+                    },
+                    {
+                      onSuccess: () => {
+                        setRoleChangeTarget(null);
+                      },
+                      onError: (err: any) => {
+                        setRoleChangeError(err.message || 'Failed to update role');
+                      },
+                    }
+                  );
+                }}
+              >
+                {updateRoleMutation.isPending ? 'Updating...' : 'Confirm Role Change'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Change Modal */}
+      {statusChangeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-[6px] ${statusChangeTarget.targetStatus === 'INACTIVE' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                  {statusChangeTarget.targetStatus === 'INACTIVE' ? <UserX className="size-5" /> : <UserCheck className="size-5" />}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#111827]">
+                    {statusChangeTarget.targetStatus === 'INACTIVE' ? 'Deactivate Operator' : 'Activate Operator'}
+                  </h3>
+                  <p className="text-xs text-[#6B7280]">Account access control</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setStatusChangeTarget(null)}
+                className="text-[#9CA3AF] hover:text-[#374151] p-1 rounded transition"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#4B5563] leading-relaxed">
+              Are you sure you want to mark <strong className="text-[#111827]">{statusChangeTarget.user.fullName}</strong> as <strong className={statusChangeTarget.targetStatus === 'INACTIVE' ? 'text-amber-600' : 'text-emerald-600'}>{statusChangeTarget.targetStatus}</strong>?
+              {statusChangeTarget.targetStatus === 'INACTIVE'
+                ? ' This will prevent them from signing in until reactivated.'
+                : ' This will restore platform access for this operator.'}
+            </p>
+
+            {statusChangeError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-[4px] text-xs text-rose-700">
+                {statusChangeError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[11px] font-semibold text-[#374151] uppercase tracking-wider mb-1">
+                Audit Compliance Reason
+              </label>
+              <input
+                type="text"
+                value={statusChangeReason}
+                onChange={(e) => setStatusChangeReason(e.target.value)}
+                placeholder="Reason for status change..."
+                className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-1.5 text-xs text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs border-[#E5E7EB] text-[#374151] hover:bg-[#F5F7FA]"
+                disabled={updateStatusMutation.isPending}
+                onClick={() => setStatusChangeTarget(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className={`text-xs text-white rounded-[4px] ${
+                  statusChangeTarget.targetStatus === 'INACTIVE'
+                    ? 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+                disabled={updateStatusMutation.isPending}
+                onClick={() => {
+                  if (!statusChangeReason.trim()) {
+                    setStatusChangeError('An audit reason is required.');
+                    return;
+                  }
+                  updateStatusMutation.mutate(
+                    {
+                      userId: statusChangeTarget.user.id,
+                      status: statusChangeTarget.targetStatus,
+                      reason: statusChangeReason.trim(),
+                    },
+                    {
+                      onSuccess: () => {
+                        setStatusChangeTarget(null);
+                      },
+                      onError: (err: any) => {
+                        setStatusChangeError(err.message || 'Failed to update status');
+                      },
+                    }
+                  );
+                }}
+              >
+                {updateStatusMutation.isPending
+                  ? 'Saving...'
+                  : statusChangeTarget.targetStatus === 'INACTIVE'
+                  ? 'Deactivate'
+                  : 'Activate'}
               </Button>
             </div>
           </div>
