@@ -17,7 +17,8 @@
     "test:admin": "npm --prefix super-admin test",
     "test:app": "npm --prefix application test",
     "test": "npm run test:admin && npm run test:app",
-    "test:db": "node scripts/test-db-connection.js"
+    "test:db": "node scripts/test-db-connection.js",
+    "test:verify": "node scripts/verify-all-connections.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
