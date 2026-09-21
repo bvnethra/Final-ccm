@@ -193,7 +193,7 @@ export const AddOrganizationDialog: React.FC<AddOrganizationDialogProps> = ({
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Plot / Street, Industrial Corridor, City, Pincode"
-                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                className="flex w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-2 text-xs text-[#111827] placeholder:text-[#9CA3AF] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
               />
             </Field>
           </FieldGroup>

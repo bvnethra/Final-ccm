@@ -47,21 +47,21 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center relative overflow-hidden">
       {/* Ambient glow effects */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-700/20 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-cyan-700/15 blur-[120px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#0274BB]/20 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#EF7626]/15 blur-[120px]" />
       </div>
 
       {/* Login Card */}
       <div className="relative z-10 w-full max-w-md px-6">
         {/* Logo & Branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-600 shadow-xl shadow-indigo-600/30 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-[16px] bg-gradient-to-br from-[#0274BB] to-[#003B8C] shadow-xl shadow-[#0274BB]/20 mb-4">
             <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.698-1.382 2.698H4.18c-1.412 0-2.382-1.698-1.382-2.698L4.2 15.3" />
             </svg>
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight">
-            <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#0274BB] via-[#003B8C] to-[#EF7626] bg-clip-text text-transparent">
               {platformName}
             </span>
           </h1>
@@ -70,7 +70,7 @@ export default function LoginPage() {
         </div>
 
         {/* Glass Card */}
-        <div className="bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-8 shadow-2xl shadow-slate-900/80">
+        <div className="bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 rounded-[16px] p-8 shadow-2xl shadow-slate-900/80">
           <h2 className="text-lg font-semibold text-slate-100 mb-1">Sign in to your workspace</h2>
           <p className="text-xs text-slate-400 mb-6">Enter your credentials to access the platform</p>
 
@@ -87,7 +87,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@organization.com"
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all outline-none"
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-[4px] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-[#0274BB] focus:ring-1 focus:ring-[#0274BB] transition-all outline-none"
               />
             </div>
 
@@ -103,12 +103,12 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all outline-none"
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-[4px] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-[#0274BB] focus:ring-1 focus:ring-[#0274BB] transition-all outline-none"
               />
             </div>
 
             {error && (
-              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+              <div className="flex items-start gap-2.5 p-3 rounded-[4px] bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
                 <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -120,7 +120,7 @@ export default function LoginPage() {
               id="login-submit"
               type="submit"
               disabled={isLoading}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2"
+              className="w-full bg-[#0274BB] hover:bg-[#003B8C] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-[4px] px-4 py-2.5 text-sm transition-all shadow-lg shadow-[#0274BB]/20 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isLoading ? (
                 <>

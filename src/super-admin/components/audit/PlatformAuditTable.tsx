@@ -25,11 +25,11 @@ export const PlatformAuditTable: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-indigo-600" />
+          <h2 className="text-base font-bold text-[#111827] flex items-center gap-2">
+            <FileText className="w-4 h-4 text-[#0274BB]" />
             <span>Platform Immutable Audit Trail</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-[#6B7280] mt-0.5">
             Append-only security log of all tenant onboardings, status transitions, and config updates.
           </p>
         </div>
@@ -38,7 +38,7 @@ export const PlatformAuditTable: React.FC = () => {
           <select
             value={selectedAction}
             onChange={(e) => setSelectedAction(e.target.value)}
-            className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs"
+            className="bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-1.5 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:border-[#0274BB] transition shadow-2xs"
           >
             <option value="ALL">All Event Actions</option>
             <option value="TENANT_ONBOARDED">TENANT_ONBOARDED</option>

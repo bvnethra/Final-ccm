@@ -32,18 +32,18 @@ export const SuperAdminLayout: React.FC = () => {
 
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
     cn(
-      'flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors',
+      'flex items-center gap-2 px-3.5 py-1.5 rounded-[4px] text-xs font-medium transition-colors',
       isActive
-        ? 'bg-indigo-50 text-indigo-600 border border-indigo-100 font-semibold shadow-2xs'
-        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+        ? 'bg-[#E6F2FF] text-[#0274BB] border border-[#b8dcff] font-semibold'
+        : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F5F7FA]'
     );
 
   const sidebarIconClasses = ({ isActive }: { isActive: boolean }) =>
     cn(
-      'p-2 rounded-lg transition-colors flex items-center justify-center',
+      'p-2 rounded-[4px] transition-colors flex items-center justify-center',
       isActive
-        ? 'bg-indigo-50 text-indigo-600'
-        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+        ? 'bg-[#E6F2FF] text-[#0274BB]'
+        : 'text-[#6B7280] hover:text-[#111827] hover:bg-[#F5F7FA]'
     );
 
   const getInitials = (name?: string) => {
@@ -57,21 +57,21 @@ export const SuperAdminLayout: React.FC = () => {
   const displayRole = platformSession?.user?.role || 'SUPER_ADMIN';
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-[#FAFAFA] text-[#111827] flex flex-col font-sans">
       {/* Platform Top Header */}
-      <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between sticky top-0 z-40">
+      <header className="h-16 border-b border-[#E5E7EB] bg-white px-6 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-xs">
+            <div className="size-9 rounded-[4px] bg-[#0274BB] flex items-center justify-center text-white shadow-xs">
               <ShieldCheck className="size-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sm tracking-tight text-slate-900">
+                <span className="font-bold text-sm tracking-tight text-[#111827]">
                   {platformName}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-normal">{platformTagline}</p>
+              <p className="text-[11px] text-[#6B7280] font-normal">{platformTagline}</p>
             </div>
           </div>
 
@@ -103,16 +103,16 @@ export const SuperAdminLayout: React.FC = () => {
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="size-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-xs shadow-xs">
+            <div className="size-8 rounded-full bg-[#003B8C] text-white flex items-center justify-center font-semibold text-xs shadow-xs">
               {getInitials(displayName)}
             </div>
             <div className="text-left hidden sm:block">
-              <div className="text-xs font-semibold text-slate-900 leading-tight">
+              <div className="text-xs font-semibold text-[#111827] leading-tight">
                 {displayName}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="size-1.5 rounded-full bg-emerald-500" />
-                <span className="text-[10px] font-mono text-slate-500 uppercase">
+                <span className="size-1.5 rounded-full bg-[#16A34A]" />
+                <span className="text-[10px] font-mono text-[#6B7280] uppercase">
                   {displayRole}
                 </span>
               </div>
@@ -120,7 +120,7 @@ export const SuperAdminLayout: React.FC = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="text-slate-500 hover:text-slate-900 gap-1.5 px-2.5 h-8 text-xs font-medium ml-2"
+              className="text-[#6B7280] hover:text-[#111827] gap-1.5 px-2.5 h-8 text-xs font-medium ml-2"
               onClick={() => logout().then(() => navigate('/login'))}
               title="Sign out of platform"
             >
@@ -134,7 +134,7 @@ export const SuperAdminLayout: React.FC = () => {
       {/* Body with Left Icon Sidebar & Main Workspace */}
       <div className="flex-1 flex">
         {/* Left Vertical Icon Bar */}
-        <aside className="w-14 bg-white border-r border-slate-200 hidden md:flex flex-col items-center py-4 gap-3 shrink-0">
+        <aside className="w-14 bg-white border-r border-[#E5E7EB] hidden md:flex flex-col items-center py-4 gap-3 shrink-0">
           <NavLink to="/" end className={sidebarIconClasses} title="Dashboard">
             <LayoutDashboard className="size-4" />
           </NavLink>
@@ -152,7 +152,7 @@ export const SuperAdminLayout: React.FC = () => {
         {/* Main Workspace */}
         <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 space-y-6">
           <Suspense fallback={
-            <div className="min-h-[400px] flex items-center justify-center text-slate-400 font-mono text-xs">
+            <div className="min-h-[400px] flex items-center justify-center text-[#6B7280] font-mono text-xs">
               Loading platform module...
             </div>
           }>

@@ -12,10 +12,10 @@ export default function TenantListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E7EB] pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Enterprise Tenants</h1>
-          <p className="text-slate-500 text-xs mt-1">
+          <h1 className="text-2xl font-bold text-[#111827] tracking-tight">Enterprise Tenants</h1>
+          <p className="text-[#6B7280] text-xs mt-1">
             Search, inspect, filter, and govern all registered enterprise tenant accounts across the platform.
           </p>
         </div>
@@ -25,7 +25,7 @@ export default function TenantListPage() {
             variant="default"
             size="sm"
             onClick={() => navigate('/tenants/new')}
-            className="text-xs gap-1.5 h-9 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xs"
+            className="text-xs gap-1.5 h-9 px-4 rounded-[4px] bg-[#0274BB] hover:bg-[#003B8C] text-white font-semibold shadow-xs"
           >
             <Plus className="size-4" />
             <span>Onboard Tenant</span>

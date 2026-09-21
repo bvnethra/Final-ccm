@@ -62,7 +62,7 @@ export const PlatformUserTable: React.FC = () => {
             variant="default"
             size="sm"
             onClick={() => navigate('/users/new')}
-            className="gap-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+            className="gap-1.5 text-xs font-medium bg-[#0274BB] hover:bg-[#003B8C] text-white rounded-[4px] shadow-xs"
           >
             <Plus className="size-3.5" />
             <span>Add Platform Operator</span>
@@ -70,24 +70,24 @@ export const PlatformUserTable: React.FC = () => {
         )}
       </div>
 
-      <Card className="p-0 overflow-hidden bg-white border border-slate-200 shadow-xs">
+      <Card className="p-0 overflow-hidden bg-white border border-[#E5E7EB] rounded-[8px] shadow-xs">
         {isLoading ? (
-          <div className="py-16 text-center text-slate-400 font-mono text-xs animate-pulse">
+          <div className="py-16 text-center text-[#9CA3AF] font-mono text-xs animate-pulse">
             Querying platform_users from PostgreSQL...
           </div>
         ) : error ? (
-          <div className="py-12 text-center text-red-500 text-sm">
+          <div className="py-12 text-center text-[#DC2626] text-sm">
             Error: {(error as Error).message}
           </div>
         ) : users.length === 0 ? (
-          <div className="py-12 text-center text-slate-400 text-xs">
+          <div className="py-12 text-center text-[#9CA3AF] text-xs">
             No platform operators registered.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-medium text-slate-500 uppercase tracking-wider">
+                <tr className="border-b border-[#E5E7EB] bg-[#F5F7FA] text-[11px] font-semibold text-[#4B5563] uppercase tracking-wider">
                   <th className="py-3 px-4">Operator Name & Email</th>
                   <th className="py-3 px-4">Platform Role</th>
                   <th className="py-3 px-4">Account Status</th>
@@ -95,21 +95,21 @@ export const PlatformUserTable: React.FC = () => {
                   {isSuperAdmin && <th className="py-3 px-4 text-right">Actions</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
+              <tbody className="divide-y divide-[#E5E7EB] text-sm">
                 {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={u.id} className="hover:bg-[#F5F7FA] transition-colors">
                     <td className="py-3.5 px-4">
-                      <div className="font-medium text-slate-900">{u.fullName}</div>
-                      <div className="text-xs text-slate-500 font-mono">{u.email}</div>
+                      <div className="font-medium text-[#111827]">{u.fullName}</div>
+                      <div className="text-xs text-[#6B7280] font-mono">{u.email}</div>
                     </td>
                     <td className="py-3.5 px-4">
                       {u.role === 'SUPER_ADMIN' ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                          <Shield className="size-3 text-indigo-600" /> SUPER_ADMIN
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-[#0274BB] bg-[#E6F2FF] px-2 py-0.5 rounded-[4px] border border-[#b8dcff]">
+                          <Shield className="size-3 text-[#0274BB]" /> SUPER_ADMIN
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                          <UserCheck className="size-3 text-slate-500" /> PLATFORM_SUPPORT
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-[#374151] bg-[#F5F7FA] px-2 py-0.5 rounded-[4px] border border-[#E5E7EB]">
+                          <UserCheck className="size-3 text-[#6B7280]" /> PLATFORM_SUPPORT
                         </span>
                       )}
                     </td>

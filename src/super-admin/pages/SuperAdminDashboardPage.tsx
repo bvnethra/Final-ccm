@@ -67,7 +67,7 @@ export default function SuperAdminDashboardPage() {
               variant="default"
               size="sm"
               onClick={() => navigate('/tenants/new')}
-              className="text-xs gap-1.5 h-9 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xs"
+              className="text-xs gap-1.5 h-9 px-4 rounded-[4px] bg-[#0274BB] hover:bg-[#003B8C] text-white font-semibold shadow-xs"
             >
               <Plus className="size-4" />
               <span>Onboard New Tenant</span>
@@ -87,39 +87,39 @@ export default function SuperAdminDashboardPage() {
         />
 
         {/* Recently Onboarded Tenants Card */}
-        <Card className="p-5 bg-white border-slate-200 shadow-xs">
+        <Card className="p-5 bg-white border-[#E5E7EB] rounded-[8px] shadow-xs">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="size-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+              <div className="size-8 rounded-[4px] bg-[#E6F2FF] text-[#0274BB] flex items-center justify-center shrink-0">
                 <Building2 className="size-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Recently Onboarded</h3>
-                <p className="text-xs text-slate-500">Latest enterprise registrations in PostgreSQL</p>
+                <h3 className="text-sm font-bold text-[#111827]">Recently Onboarded</h3>
+                <p className="text-xs text-[#6B7280]">Latest enterprise registrations</p>
               </div>
             </div>
             <Link
               to="/tenants"
-              className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold transition-colors flex items-center gap-1"
+              className="text-xs text-[#0274BB] hover:text-[#003B8C] font-semibold transition-colors flex items-center gap-1"
             >
               View All &rarr;
             </Link>
           </div>
 
           {data.recentTenants.length === 0 ? (
-            <div className="py-8 text-center text-xs text-slate-400">
+            <div className="py-8 text-center text-xs text-[#9CA3AF]">
               No recent tenants registered.
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-[#E5E7EB]">
               {data.recentTenants.map((t) => (
                 <div key={t.id} className="py-3.5 flex items-center justify-between gap-4 first:pt-0 last:pb-0 text-xs">
                   <div>
-                    <div className="font-semibold text-slate-900 hover:text-indigo-600 transition-colors">
+                    <div className="font-semibold text-[#111827] hover:text-[#0274BB] transition-colors">
                       <Link to={`/tenants/${t.id}`}>{t.name}</Link>
                     </div>
-                    <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                      {t.code} {t.adminEmail ? <>&bull; <span className="text-slate-400">{t.adminEmail}</span></> : null}
+                    <div className="text-[11px] text-[#6B7280] font-mono mt-0.5">
+                      {t.code} {t.adminEmail ? <>&bull; <span className="text-[#9CA3AF]">{t.adminEmail}</span></> : null}
                     </div>
                   </div>
 
@@ -129,7 +129,7 @@ export default function SuperAdminDashboardPage() {
                     </Badge>
                     <Link
                       to={`/tenants/${t.id}`}
-                      className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                      className="p-1 rounded-[4px] text-[#9CA3AF] hover:text-[#111827] hover:bg-[#F5F7FA] transition-colors"
                     >
                       <ArrowUpRight className="size-4" />
                     </Link>

@@ -114,7 +114,7 @@ export default function CreatePlatformUserPage() {
                 id="user-role"
                 value={role}
                 onChange={(e) => setRole(e.target.value as PlatformRole)}
-                className="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
               >
                 <option value="PLATFORM_SUPPORT">PLATFORM_SUPPORT — Read-only telemetry, support oversight</option>
                 <option value="SUPER_ADMIN">SUPER_ADMIN — Full platform authority, tenant mutations</option>

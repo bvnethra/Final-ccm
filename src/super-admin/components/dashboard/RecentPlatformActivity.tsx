@@ -33,20 +33,20 @@ export const RecentPlatformActivity: React.FC<Props> = ({ activity }) => {
   };
 
   return (
-    <Card className="p-5 bg-white border-slate-200 shadow-xs">
+    <Card className="p-5 bg-white border-[#E5E7EB] rounded-[8px] shadow-xs">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="size-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+          <div className="size-8 rounded-[4px] bg-[#E6F2FF] text-[#0274BB] flex items-center justify-center shrink-0">
             <Activity className="size-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Recent Platform Activity</h3>
-            <p className="text-xs text-slate-500">Immutable audit telemetry from platform, audit logs</p>
+            <h3 className="text-sm font-bold text-[#111827]">Recent Platform Activity</h3>
+            <p className="text-xs text-[#6B7280]">Immutable audit telemetry from platform audit logs</p>
           </div>
         </div>
         <Link
           to="/audit"
-          className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold transition-colors flex items-center gap-1"
+          className="text-xs text-[#0274BB] hover:text-[#003B8C] font-semibold transition-colors flex items-center gap-1"
         >
           View Full Trail &rarr;
         </Link>

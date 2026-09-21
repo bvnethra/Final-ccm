@@ -191,21 +191,21 @@ export const OnboardingWizard: React.FC = () => {
           return (
             <div
               key={s.num}
-              className={`p-3 rounded-lg border flex items-center gap-3 transition-colors ${
+              className={`p-3 rounded-[8px] border flex items-center gap-3 transition-colors ${
                 isCurrent
-                  ? 'bg-indigo-50/80 border-indigo-200 text-indigo-900 shadow-xs'
+                  ? 'bg-[#E6F2FF] border-[#b8dcff] text-[#003B8C] shadow-xs'
                   : isDone
-                  ? 'bg-emerald-50/80 border-emerald-200 text-emerald-800'
-                  : 'bg-white border-slate-200 text-slate-400'
+                  ? 'bg-emerald-50 border-emerald-200 text-[#16A34A]'
+                  : 'bg-white border-[#E5E7EB] text-[#9CA3AF]'
               }`}
             >
               <div
-                className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-semibold ${
+                className={`w-7 h-7 rounded-[4px] flex items-center justify-center text-xs font-semibold ${
                   isCurrent
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-[#0274BB] text-white'
                     : isDone
-                    ? 'bg-emerald-200/60 text-emerald-800'
-                    : 'bg-slate-100 text-slate-400'
+                    ? 'bg-emerald-100 text-[#16A34A]'
+                    : 'bg-[#F5F7FA] text-[#9CA3AF]'
                 }`}
               >
                 {isDone ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
@@ -265,7 +265,7 @@ export const OnboardingWizard: React.FC = () => {
                     <select
                       value={formData.tenantType}
                       onChange={(e) => handleChange('tenantType', e.target.value)}
-                      className="bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className="bg-white border border-[#E5E7EB] rounded-[4px] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:border-[#0274BB] transition"
                     >
                       {tenantTypes.map((t) => (
                         <option key={t.code} value={t.code}>
@@ -357,7 +357,7 @@ export const OnboardingWizard: React.FC = () => {
                     <select
                       value={formData.country}
                       onChange={(e) => handleChange('country', e.target.value)}
-                      className="bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className="bg-white border border-[#E5E7EB] rounded-[4px] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:border-[#0274BB] transition"
                     >
                       {countries.map((c) => (
                         <option key={c.code} value={c.label}>
@@ -368,13 +368,13 @@ export const OnboardingWizard: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-700">
+                    <label className="text-xs font-medium text-[#4B5563]">
                       Currency (Dynamic from DB) *
                     </label>
                     <select
                       value={formData.currency}
                       onChange={(e) => handleChange('currency', e.target.value)}
-                      className="bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className="bg-white border border-[#E5E7EB] rounded-[4px] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:border-[#0274BB] transition"
                     >
                       {currencies.map((curr) => (
                         <option key={curr.code} value={curr.code}>
@@ -385,13 +385,13 @@ export const OnboardingWizard: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-700">
+                    <label className="text-xs font-medium text-[#4B5563]">
                       Timezone (Dynamic from DB) *
                     </label>
                     <select
                       value={formData.timezone}
                       onChange={(e) => handleChange('timezone', e.target.value)}
-                      className="bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className="bg-white border border-[#E5E7EB] rounded-[4px] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:border-[#0274BB] transition"
                     >
                       {timezones.map((tz) => (
                         <option key={tz.code} value={tz.code}>

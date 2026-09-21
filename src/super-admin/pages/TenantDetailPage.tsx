@@ -25,7 +25,6 @@ import {
   AlertCircle, 
   Plus, 
   Network,
-  AlertTriangle,
   X,
   ChevronDown,
   Pencil
@@ -271,7 +270,7 @@ export default function TenantDetailPage() {
               size="sm"
               onClick={handleInvite}
               disabled={triggerInviteMutation.isPending}
-              className="text-xs gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              className="text-xs gap-1.5 bg-[#0274BB] hover:bg-[#003B8C] text-white rounded-[4px] shadow-xs"
             >
               <Mail className="size-3.5" />
               <span>{triggerInviteMutation.isPending ? 'Dispatching...' : 'Invite Admin'}</span>
@@ -281,25 +280,25 @@ export default function TenantDetailPage() {
       </div>
 
       {feedbackMsg && (
-        <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between animate-fadeIn">
+        <div className="p-3 rounded-[4px] bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between animate-fadeIn">
           <span>{feedbackMsg}</span>
-          <button onClick={() => setFeedbackMsg('')} className="text-slate-400 hover:text-slate-700">✕</button>
+          <button onClick={() => setFeedbackMsg('')} className="text-[#9CA3AF] hover:text-[#111827]">✕</button>
         </div>
       )}
 
       {/* In-Page Governance Status Change Panel (Zero Modal Architecture) */}
       {isStatusPanelOpen && (
-        <Card className="p-5 border-slate-200 bg-white shadow-md space-y-4 animate-fadeIn">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <Card className="p-5 border-[#E5E7EB] bg-white rounded-[8px] shadow-md space-y-4 animate-fadeIn">
+          <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
             <div className="flex items-center gap-2">
-              <Shield className="size-4 text-indigo-600" />
-              <h3 className="text-sm font-semibold text-slate-900">
+              <Shield className="size-4 text-[#0274BB]" />
+              <h3 className="text-sm font-semibold text-[#111827]">
                 Governance Status Transition: {tenant.name}
               </h3>
             </div>
             <button
               onClick={() => setIsStatusPanelOpen(false)}
-              className="text-slate-400 hover:text-slate-700 text-xs"
+              className="text-[#9CA3AF] hover:text-[#111827] text-xs"
             >
               <X className="size-4" />
             </button>
@@ -307,74 +306,57 @@ export default function TenantDetailPage() {
 
           <form onSubmit={handleCommitStatusChange} className="space-y-4">
             {statusError && (
-              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+              <div className="p-3 rounded-[4px] bg-rose-50 border border-rose-200 text-rose-700 text-xs">
                 {statusError}
               </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="flex flex-col gap-1.5">
-                <label className="text-slate-600 font-medium uppercase tracking-wider">
+                <label className="text-[#4B5563] font-medium uppercase tracking-wider">
                   Target Status *
                 </label>
                 <select
                   value={targetStatus}
                   onChange={(e) => setTargetStatus(e.target.value as TenantStatus)}
-                  className="flex h-9 rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs text-slate-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                  className="flex h-9 rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-xs text-[#374151] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
                 >
                   <option value="ACTIVE">ACTIVE (Operational & Calibrating)</option>
                   <option value="DEACTIVATED">DEACTIVATED (Archived / Closed Tenant)</option>
                 </select>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-slate-600 font-medium uppercase tracking-wider">
-                  Current Status
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label className="text-[#4B5563] font-medium uppercase tracking-wider">
+                  Audit Reason / Governance Justification *
                 </label>
-                <div className="h-9 px-3 flex items-center bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-mono">
-                  {tenant.status}
-                </div>
+                <textarea
+                  required
+                  rows={2}
+                  value={statusReason}
+                  onChange={(e) => setStatusReason(e.target.value)}
+                  placeholder="State the regulatory or operational reason for this status change..."
+                  className="flex w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-2 text-xs text-[#111827] placeholder:text-[#9CA3AF] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
+                />
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-slate-600 font-medium uppercase tracking-wider">
-                Mandatory Compliance Audit Reason *
-              </label>
-              <textarea
-                rows={2}
-                required
-                value={statusReason}
-                onChange={(e) => setStatusReason(e.target.value)}
-                placeholder="Explain why this status transition is being committed (written to platform_audit_logs)..."
-                className="flex w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
-              />
-            </div>
-
-            {targetStatus === 'DEACTIVATED' && (
-              <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
-                <AlertTriangle className="size-4 shrink-0 text-amber-600" />
-                <span>
-                  Deactivating this enterprise will restrict operational staff from initiating new calibrations.
-                </span>
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
               <Button
                 variant="outline"
                 size="sm"
                 type="button"
                 onClick={() => setIsStatusPanelOpen(false)}
-                className="border-slate-200 text-slate-700 hover:bg-slate-50"
+                disabled={updateStatusMutation.isPending}
               >
                 Cancel
               </Button>
               <Button
-                variant={targetStatus === 'ACTIVE' ? 'default' : 'destructive'}
+                variant="default"
                 size="sm"
                 type="submit"
                 disabled={updateStatusMutation.isPending}
+                className="bg-[#0274BB] hover:bg-[#003B8C] text-white"
               >
                 {updateStatusMutation.isPending ? 'Committing...' : 'Commit Status Change'}
               </Button>
@@ -397,7 +379,7 @@ export default function TenantDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 px-2.5 text-xs text-slate-600 gap-1 hover:text-indigo-600 hover:border-indigo-200 shadow-none"
+                  className="h-7 px-2.5 text-xs text-[#4B5563] gap-1 hover:text-[#0274BB] hover:border-[#b8dcff] hover:bg-[#E6F2FF] shadow-none rounded-[4px]"
                   onClick={() => {
                     setEnterpriseForm({
                       name: tenant.name,
@@ -410,7 +392,7 @@ export default function TenantDetailPage() {
                     setIsEditingEnterprise(true);
                   }}
                 >
-                  <Pencil className="size-3 text-slate-400" />
+                  <Pencil className="size-3 text-[#9CA3AF]" />
                   <span>Edit</span>
                 </Button>
               )}
@@ -428,13 +410,13 @@ export default function TenantDetailPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                    <label className="text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Tenant Classification
                     </label>
                     <select
                       value={enterpriseForm.tenantType}
                       onChange={(e) => setEnterpriseForm(prev => ({ ...prev, tenantType: e.target.value }))}
-                      className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-900 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                      className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
                     >
                       {tenantTypes.length > 0 ? (
                         tenantTypes.map(t => (
@@ -538,7 +520,7 @@ export default function TenantDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 px-2.5 text-xs text-slate-600 gap-1 hover:text-indigo-600 hover:border-indigo-200 shadow-none"
+                  className="h-7 px-2.5 text-xs text-[#4B5563] gap-1 hover:text-[#0274BB] hover:border-[#b8dcff] hover:bg-[#E6F2FF] shadow-none rounded-[4px]"
                   onClick={() => {
                     setLocationForm({
                       addressLine1: tenant.addressLine1 || '',
@@ -553,7 +535,7 @@ export default function TenantDetailPage() {
                     setIsEditingLocation(true);
                   }}
                 >
-                  <Pencil className="size-3 text-slate-400" />
+                  <Pencil className="size-3 text-[#9CA3AF]" />
                   <span>Edit</span>
                 </Button>
               )}
@@ -597,13 +579,13 @@ export default function TenantDetailPage() {
                     placeholder="e.g. 560001"
                   />
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                    <label className="text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Country
                     </label>
                     <select
                       value={locationForm.country}
                       onChange={(e) => setLocationForm(prev => ({ ...prev, country: e.target.value }))}
-                      className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-900 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                      className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
                     >
                       {countries.length > 0 ? (
                         countries.map(c => (
@@ -620,13 +602,13 @@ export default function TenantDetailPage() {
                     </select>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                    <label className="text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Timezone
                     </label>
                     <select
                       value={locationForm.timezone}
                       onChange={(e) => setLocationForm(prev => ({ ...prev, timezone: e.target.value }))}
-                      className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-900 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                      className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
                     >
                       {timezones.length > 0 ? (
                         timezones.map(tz => (
@@ -643,13 +625,13 @@ export default function TenantDetailPage() {
                     </select>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                    <label className="text-xs font-medium text-[#4B5563] uppercase tracking-wider">
                       Operational Currency
                     </label>
                     <select
                       value={locationForm.currency}
                       onChange={(e) => setLocationForm(prev => ({ ...prev, currency: e.target.value }))}
-                      className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm text-slate-900 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                      className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
                     >
                       {currencies.length > 0 ? (
                         currencies.map(curr => (
@@ -666,7 +648,7 @@ export default function TenantDetailPage() {
                     </select>
                   </div>
                 </div>
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
                   <Button
                     variant="outline"
                     size="sm"
@@ -730,7 +712,7 @@ export default function TenantDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 px-2.5 text-xs text-slate-600 gap-1 hover:text-indigo-600 hover:border-indigo-200 shadow-none"
+                  className="h-7 px-2.5 text-xs text-[#4B5563] gap-1 hover:text-[#0274BB] hover:border-[#b8dcff] hover:bg-[#E6F2FF] shadow-none rounded-[4px]"
                   onClick={() => {
                     setAdminForm({
                       adminName: tenant.adminName || '',
@@ -739,7 +721,7 @@ export default function TenantDetailPage() {
                     setIsEditingAdmin(true);
                   }}
                 >
-                  <Pencil className="size-3 text-slate-400" />
+                  <Pencil className="size-3 text-[#9CA3AF]" />
                   <span>Edit</span>
                 </Button>
               )}
