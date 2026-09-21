@@ -288,8 +288,30 @@ export const PlatformUserTable: React.FC = () => {
             </div>
 
             <p className="text-xs text-[#4B5563] leading-relaxed">
-              Are you sure you want to change the platform role of <strong className="text-[#111827]">{roleChangeTarget.user.fullName}</strong> (<span className="font-mono">{roleChangeTarget.user.email}</span>) from <span className="font-mono font-medium text-[#6B7280]">{roleChangeTarget.user.role}</span> to <strong className="font-mono text-[#0274BB]">{roleChangeTarget.targetRole}</strong>?
+              Select the new platform governance role for <strong className="text-[#111827]">{roleChangeTarget.user.fullName}</strong> (<span className="font-mono text-xs">{roleChangeTarget.user.email}</span>). Current role: <span className="font-mono font-semibold text-[#0274BB]">{roleChangeTarget.user.role}</span>.
             </p>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-[#374151] uppercase tracking-wider mb-1">
+                Platform Role
+              </label>
+              <select
+                value={roleChangeTarget.targetRole}
+                onChange={(e) => {
+                  const newRole = e.target.value as PlatformRole;
+                  setRoleChangeTarget({
+                    ...roleChangeTarget,
+                    targetRole: newRole,
+                  });
+                  setRoleChangeReason(`Role changed to ${newRole} for access governance`);
+                  setRoleChangeError('');
+                }}
+                className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-2 text-xs text-[#111827] font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
+              >
+                <option value="SUPER_ADMIN">SUPER_ADMIN — Full platform authority, tenant mutations</option>
+                <option value="PLATFORM_SUPPORT">PLATFORM_SUPPORT — Read-only telemetry, support oversight</option>
+              </select>
+            </div>
 
             {roleChangeError && (
               <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-[4px] text-xs text-rose-700">
@@ -326,6 +348,10 @@ export const PlatformUserTable: React.FC = () => {
                 className="text-xs bg-[#0274BB] hover:bg-[#003B8C] text-white rounded-[4px]"
                 disabled={updateRoleMutation.isPending}
                 onClick={() => {
+                  if (roleChangeTarget.targetRole === roleChangeTarget.user.role) {
+                    setRoleChangeError(`Operator already has the '${roleChangeTarget.targetRole}' role. Please select a different role.`);
+                    return;
+                  }
                   if (!roleChangeReason.trim()) {
                     setRoleChangeError('An audit reason is required.');
                     return;
