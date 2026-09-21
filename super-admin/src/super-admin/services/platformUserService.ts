@@ -30,11 +30,16 @@ export async function createPlatformUser(payload: {
   password?: string;
 }): Promise<PlatformUser> {
   const email = payload.email.trim().toLowerCase();
+  const password = payload.password?.trim();
+
+  if (!password) {
+    throw new Error('Initial provisioning password is required.');
+  }
 
   // Create auth user or check if user exists in auth
   const { data: authData, error: authErr } = await supabase.auth.signUp({
     email,
-    password: payload.password || 'Temporary@12345',
+    password,
     options: {
       data: {
         full_name: payload.fullName.trim(),

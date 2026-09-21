@@ -1,7 +1,7 @@
 // application/src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { getCurrentUserProfile, loginWithCredentials, logoutUser, DEV_AUTH_SESSION_KEY } from '../services/authService';
+import { getCurrentUserProfile, loginWithCredentials, logoutUser } from '../services/authService';
 import type { AuthUser } from '../types/auth';
 
 interface AuthContextType {
@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // 1. Initial Session Check
+    // 1. Initial Session Check directly from live Supabase Auth
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         getCurrentUserProfile(session.user.id)
@@ -30,37 +30,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .catch(() => setUser(null))
           .finally(() => setIsLoading(false));
       } else {
-        const stored = localStorage.getItem(DEV_AUTH_SESSION_KEY);
-        if (stored) {
-          try {
-            setUser(JSON.parse(stored));
-          } catch {
-            setUser(null);
-          }
-        } else {
-          setUser(null);
-        }
+        setUser(null);
         setIsLoading(false);
       }
     });
 
-    // 2. Auth state listener
+    // 2. Live Supabase Auth State Change Listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         getCurrentUserProfile(session.user.id).then(setUser).catch(() => setUser(null));
       } else {
-        const stored = localStorage.getItem(DEV_AUTH_SESSION_KEY);
-        if (stored) {
-          try {
-            setUser(JSON.parse(stored));
-          } catch {
-            setUser(null);
-          }
-        } else {
-          setUser(null);
-        }
+        setUser(null);
       }
     });
 
