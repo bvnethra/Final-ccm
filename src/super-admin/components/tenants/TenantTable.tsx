@@ -1,6 +1,6 @@
 // src/super-admin/components/tenants/TenantTable.tsx
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Card, Button, Badge } from '../../../components/ui/UIPrimitives';
 import { useTenants, useTriggerAdminInvite } from '../../hooks/useTenants';
 import { usePlatformConfig } from '../../hooks/usePlatformConfig';
@@ -17,15 +17,28 @@ import {
 
 export const TenantTable: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { data: platformSession } = usePlatformAuth();
   const isSupport = platformSession?.isPlatformSupport;
 
+  const urlStatus = searchParams.get('status');
+
   // Filters state
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState(urlStatus || 'ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [page, setPage] = useState(1);
   const pageSize = 8;
+
+  useEffect(() => {
+    const s = searchParams.get('status');
+    if (s && (s === 'ACTIVE' || s === 'DEACTIVATED' || s === 'ALL')) {
+      setStatusFilter(s);
+      setPage(1);
+    } else if (!s) {
+      setStatusFilter('ALL');
+    }
+  }, [searchParams]);
 
   // Dynamic config for tenant types (zero hardcoding)
   const { data: tenantTypes = [] } = usePlatformConfig('tenant_types');
