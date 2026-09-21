@@ -2,6 +2,7 @@
 import React, { Suspense } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { usePlatformAuth } from '../../hooks/usePlatformAuth';
+import { usePlatformConfig } from '../../hooks/usePlatformConfig';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { Button } from '../../../components/ui/UIPrimitives';
 import { 
@@ -17,10 +18,17 @@ import { cn } from '../../../lib/utils';
 
 export const SuperAdminLayout: React.FC = () => {
   const { data: platformSession } = usePlatformAuth();
+  const { data: brandingConfigs } = usePlatformConfig('platform_branding');
   const { user, logout } = useAuthContext();
   const navigate = useNavigate();
 
   const isSupport = platformSession?.isPlatformSupport;
+
+  const platformName =
+    brandingConfigs?.find((c) => c.code === 'PLATFORM_NAME')?.label || 'CCM PLATFORM';
+  const platformTagline =
+    brandingConfigs?.find((c) => c.code === 'PLATFORM_TAGLINE')?.label ||
+    'Calibration Commercial Module Governance';
 
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -45,7 +53,7 @@ export const SuperAdminLayout: React.FC = () => {
     return name.slice(0, 2).toUpperCase();
   };
 
-  const displayName = platformSession?.user?.fullName || user?.fullName || 'Nethra Super Admin';
+  const displayName = platformSession?.user?.fullName || user?.fullName || 'Platform Administrator';
   const displayRole = platformSession?.user?.role || 'SUPER_ADMIN';
 
   return (
@@ -60,10 +68,10 @@ export const SuperAdminLayout: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm tracking-tight text-slate-900">
-                  NETHRA PLATFORM
+                  {platformName}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-normal">Calibration Commercial Module Governance</p>
+              <p className="text-[11px] text-slate-500 font-normal">{platformTagline}</p>
             </div>
           </div>
 

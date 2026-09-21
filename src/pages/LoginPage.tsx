@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { loginWithCredentials } from '../services/authService';
 import { useAuthContext } from '../contexts/AuthContext';
+import { usePlatformConfig } from '../super-admin/hooks/usePlatformConfig';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,6 +13,13 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAuthContext();
+  const { data: brandingConfigs } = usePlatformConfig('platform_branding');
+
+  const platformName =
+    brandingConfigs?.find((c) => c.code === 'PLATFORM_NAME')?.label || 'CCM PLATFORM';
+  const platformTagline =
+    brandingConfigs?.find((c) => c.code === 'PLATFORM_TAGLINE')?.label ||
+    'Super Admin Platform Governance';
 
   const from = (location.state as any)?.from?.pathname || '/dashboard';
 
@@ -54,10 +62,10 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight">
             <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-              NETHRA CCM
+              {platformName}
             </span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1">Super Admin Platform Governance</p>
+          <p className="text-slate-400 text-sm mt-1">{platformTagline}</p>
           <p className="text-slate-500 text-xs mt-1">Enterprise Multi-Tenant Platform</p>
         </div>
 
@@ -138,7 +146,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-slate-600 text-xs mt-6">
-          © {new Date().getFullYear()} Nethra CCM Platform — Dynamic Role-Based Multi-Tenant System
+          © {new Date().getFullYear()} {platformName} — Dynamic Role-Based Multi-Tenant System
         </p>
       </div>
     </div>
