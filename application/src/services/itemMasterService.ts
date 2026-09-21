@@ -349,3 +349,55 @@ export async function toggleItemMasterStatus(
   const nextStatus = current.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
   return updateItemMaster(id, tenantId, { status: nextStatus }, modifier);
 }
+
+export async function createItemMastersBulk(
+  tenantId: string,
+  organizationId: string | undefined,
+  records: Array<{
+    item_name: string;
+    item_code?: string;
+    item_type?: string;
+    manufacturer?: string;
+    model?: string;
+    serial_number?: string;
+    measurement_range?: string;
+    least_count?: string;
+    standard_cost?: number;
+    calibration_frequency?: number;
+    status?: 'ACTIVE' | 'INACTIVE';
+  }>
+): Promise<{ count: number }> {
+  if (!tenantId) throw new Error('tenantId is required');
+  if (!records.length) return { count: 0 };
+
+  const now = new Date().toISOString();
+  const dbRows = records.map((r, idx) => ({
+    tenant_id: tenantId,
+    organization_id: organizationId || null,
+    item_code: r.item_code?.trim() || `ITM-${Date.now()}-${idx + 1}`,
+    item_name: r.item_name.trim(),
+    item_type: r.item_type?.trim() || 'EQUIPMENT',
+    manufacturer: r.manufacturer?.trim() || null,
+    model: r.model?.trim() || null,
+    serial_number: r.serial_number?.trim() || null,
+    measurement_range: r.measurement_range?.trim() || 'Standard Range',
+    least_count: r.least_count?.trim() || '0.01 mm',
+    standard_cost: typeof r.standard_cost === 'number' ? r.standard_cost : 0,
+    calibration_frequency: typeof r.calibration_frequency === 'number' ? r.calibration_frequency : 365,
+    status: r.status || 'ACTIVE',
+    created_at: now,
+    updated_at: now,
+  }));
+
+  const CHUNK_SIZE = 50;
+  for (let i = 0; i < dbRows.length; i += CHUNK_SIZE) {
+    const chunk = dbRows.slice(i, i + CHUNK_SIZE);
+    const { error } = await supabase.from('item_masters').insert(chunk);
+    if (error) {
+      console.error('Supabase bulk insert error:', error);
+      throw new Error(`Bulk insert failed: ${error.message}`);
+    }
+  }
+
+  return { count: dbRows.length };
+}

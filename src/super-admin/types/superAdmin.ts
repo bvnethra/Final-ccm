@@ -1,7 +1,7 @@
 // src/super-admin/types/superAdmin.ts
 
 export type TenantStatus = 'ACTIVE' | 'DEACTIVATED';
-export type PlatformRole = 'SUPER_ADMIN' | 'PLATFORM_SUPPORT' | 'ADMIN' | 'LAB_APPROVER' | 'LAB_ENTRY_PERSON' | 'COLLECTION_AGENT' | string;
+export type PlatformRole = 'SUPER_ADMIN' | 'PLATFORM_SUPPORT';
 export type PlatformUserStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface PlatformTenant {
@@ -76,9 +76,6 @@ export interface PlatformUser {
   fullName: string;
   role: PlatformRole;
   status: PlatformUserStatus;
-  tenantId?: string | null;
-  tenantName?: string | null;
-  tenantCode?: string | null;
   lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;

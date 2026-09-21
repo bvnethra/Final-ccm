@@ -1,30 +1,16 @@
 // src/super-admin/components/users/PlatformUserTable.tsx
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Badge } from '../../../components/ui/UIPrimitives';
 import { 
   usePlatformUsers, 
   useUpdatePlatformUserStatus, 
   useUpdatePlatformUserRole,
-  useUpdatePlatformUserTenant,
   useDeletePlatformUser,
 } from '../../hooks/usePlatformUsers';
-import { useAllTenants } from '../../hooks/useTenants';
 import { usePlatformAuth } from '../../hooks/usePlatformAuth';
 import type { PlatformUser, PlatformRole, PlatformUserStatus } from '../../types/superAdmin';
-import { 
-  Users, 
-  Plus, 
-  Shield, 
-  UserCheck, 
-  UserX, 
-  Trash2, 
-  AlertTriangle, 
-  X, 
-  Building2, 
-  Search, 
-  CheckCircle2 
-} from 'lucide-react';
+import { Users, Plus, Shield, UserCheck, UserX, Trash2, AlertTriangle, X } from 'lucide-react';
 
 export const PlatformUserTable: React.FC = () => {
   const navigate = useNavigate();
@@ -33,34 +19,19 @@ export const PlatformUserTable: React.FC = () => {
   const currentUserId = platformSession?.user?.id;
 
   const { data: users = [], isLoading, error } = usePlatformUsers();
-  const { data: allTenants = [], isLoading: isTenantsLoading } = useAllTenants();
-
   const updateStatusMutation = useUpdatePlatformUserStatus();
   const updateRoleMutation = useUpdatePlatformUserRole();
-  const updateTenantMutation = useUpdatePlatformUserTenant();
   const deleteUserMutation = useDeletePlatformUser();
 
-  // Search & Filter State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [tenantFilter, setTenantFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [userToDelete, setUserToDelete] = React.useState<PlatformUser | null>(null);
+  const [deleteReason, setDeleteReason] = React.useState('');
+  const [deleteError, setDeleteError] = React.useState('');
 
-  // Inline tenant updating state & feedback notification
-  const [updatingTenantUserId, setUpdatingTenantUserId] = useState<string | null>(null);
-  const [tenantFeedbackMsg, setTenantFeedbackMsg] = useState('');
+  const [roleChangeTarget, setRoleChangeTarget] = React.useState<{ user: PlatformUser; targetRole: PlatformRole } | null>(null);
+  const [roleChangeError, setRoleChangeError] = React.useState('');
 
-  // Delete modal state
-  const [userToDelete, setUserToDelete] = useState<PlatformUser | null>(null);
-  const [deleteReason, setDeleteReason] = useState('');
-  const [deleteError, setDeleteError] = useState('');
-
-  // Role change modal state
-  const [roleChangeTarget, setRoleChangeTarget] = useState<{ user: PlatformUser; targetRole: PlatformRole } | null>(null);
-  const [roleChangeError, setRoleChangeError] = useState('');
-
-  // Status change modal state
-  const [statusChangeTarget, setStatusChangeTarget] = useState<{ user: PlatformUser; targetStatus: PlatformUserStatus } | null>(null);
-  const [statusChangeError, setStatusChangeError] = useState('');
+  const [statusChangeTarget, setStatusChangeTarget] = React.useState<{ user: PlatformUser; targetStatus: PlatformUserStatus } | null>(null);
+  const [statusChangeError, setStatusChangeError] = React.useState('');
 
   const handleOpenRoleModal = (u: PlatformUser) => {
     const targetRole: PlatformRole = u.role === 'SUPER_ADMIN' ? 'PLATFORM_SUPPORT' : 'SUPER_ADMIN';
@@ -74,116 +45,16 @@ export const PlatformUserTable: React.FC = () => {
     setStatusChangeError('');
   };
 
-  const handleTenantSelect = (user: PlatformUser, newTenantId: string) => {
-    setUpdatingTenantUserId(user.id);
-    const matchedTenant = allTenants.find((t) => t.id === newTenantId);
-    const tenantLabel = matchedTenant ? matchedTenant.name : 'Unassigned / Global Platform';
-
-    updateTenantMutation.mutate(
-      {
-        userId: user.id,
-        tenantId: newTenantId || null,
-      },
-      {
-        onSuccess: () => {
-          setUpdatingTenantUserId(null);
-          setTenantFeedbackMsg(`Tenant for '${user.fullName}' successfully assigned to ${tenantLabel}`);
-          setTimeout(() => setTenantFeedbackMsg(''), 4000);
-        },
-        onError: (err: any) => {
-          setUpdatingTenantUserId(null);
-          alert(`Failed to update tenant: ${err.message}`);
-        },
-      }
-    );
-  };
-
-  // Filtered users list
-  const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
-      // Search
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesName = u.fullName.toLowerCase().includes(q);
-        const matchesEmail = u.email.toLowerCase().includes(q);
-        const matchesRole = u.role.toLowerCase().includes(q);
-        const matchesTenant = (u.tenantName || '').toLowerCase().includes(q);
-        if (!matchesName && !matchesEmail && !matchesRole && !matchesTenant) return false;
-      }
-      // Tenant filter
-      if (tenantFilter !== 'ALL') {
-        if (tenantFilter === 'UNASSIGNED') {
-          if (u.tenantId) return false;
-        } else if (u.tenantId !== tenantFilter) {
-          return false;
-        }
-      }
-      // Status filter
-      if (statusFilter !== 'ALL' && u.status !== statusFilter) {
-        return false;
-      }
-      return true;
-    });
-  }, [users, searchQuery, tenantFilter, statusFilter]);
-
-  const renderRoleBadge = (role: string) => {
-    switch (role) {
-      case 'SUPER_ADMIN':
-        return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-[#0274BB] bg-[#E6F2FF] px-2 py-0.5 rounded-[4px] border border-[#b8dcff]">
-            <Shield className="size-3 text-[#0274BB]" /> SUPER_ADMIN
-          </span>
-        );
-      case 'ADMIN':
-        return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-purple-700 bg-purple-50 px-2 py-0.5 rounded-[4px] border border-purple-200">
-            <Shield className="size-3 text-purple-600" /> ADMIN
-          </span>
-        );
-      case 'LAB_APPROVER':
-        return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-[4px] border border-amber-200">
-            <UserCheck className="size-3 text-amber-600" /> LAB_APPROVER
-          </span>
-        );
-      case 'LAB_ENTRY_PERSON':
-        return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-teal-700 bg-teal-50 px-2 py-0.5 rounded-[4px] border border-teal-200">
-            <UserCheck className="size-3 text-teal-600" /> LAB_ENTRY_PERSON
-          </span>
-        );
-      case 'COLLECTION_AGENT':
-        return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-[4px] border border-indigo-200">
-            <UserCheck className="size-3 text-indigo-600" /> COLLECTION_AGENT
-          </span>
-        );
-      case 'PLATFORM_SUPPORT':
-        return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-[#374151] bg-[#F5F7FA] px-2 py-0.5 rounded-[4px] border border-[#E5E7EB]">
-            <UserCheck className="size-3 text-[#6B7280]" /> PLATFORM_SUPPORT
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded-[4px] border border-slate-200">
-            <UserCheck className="size-3 text-slate-500" /> {role}
-          </span>
-        );
-    }
-  };
-
   return (
     <div className="space-y-4">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
             <Users className="size-4 text-slate-500" />
             <span>Platform Governance Operators</span>
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            System administrators, platform operators, and tenant users with their assigned enterprise tenants.
+            System administrators and platform support personnel with platform-level privileges.
           </p>
         </div>
 
@@ -212,83 +83,18 @@ export const PlatformUserTable: React.FC = () => {
         )}
       </div>
 
-      {/* Success Notification Alert */}
-      {tenantFeedbackMsg && (
-        <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between animate-fadeIn shadow-xs">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
-            <span className="font-medium">{tenantFeedbackMsg}</span>
-          </div>
-          <button 
-            onClick={() => setTenantFeedbackMsg('')} 
-            className="text-emerald-500 hover:text-emerald-800 p-0.5 rounded transition"
-          >
-            <X className="size-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* Search & Filter Toolbar */}
-      <Card className="p-3.5 bg-white border-[#E5E7EB] rounded-[8px] shadow-xs">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Search bar */}
-          <div className="relative">
-            <Search className="size-3.5 text-[#9CA3AF] absolute left-3 top-3" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, email, role..."
-              className="w-full bg-white border border-[#E5E7EB] rounded-[4px] pl-8 pr-3 py-1.5 text-xs text-[#111827] placeholder:text-[#9CA3AF] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB] transition"
-            />
-          </div>
-
-          {/* Tenant Filter Dropdown */}
-          <div className="flex items-center gap-2">
-            <Building2 className="size-3.5 text-[#6B7280] shrink-0" />
-            <select
-              value={tenantFilter}
-              onChange={(e) => setTenantFilter(e.target.value)}
-              className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-1.5 text-xs text-[#374151] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB] transition font-medium"
-            >
-              <option value="ALL">All Tenants ({allTenants.length} registered)</option>
-              <option value="UNASSIGNED">— Unassigned Tenants —</option>
-              {allTenants.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} ({t.code})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status Filter Dropdown */}
-          <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-1.5 text-xs text-[#374151] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB] transition"
-            >
-              <option value="ALL">All Account Statuses</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-            </select>
-          </div>
-        </div>
-      </Card>
-
-      {/* Users Table */}
       <Card className="p-0 overflow-hidden bg-white border border-[#E5E7EB] rounded-[8px] shadow-xs">
-        {isLoading || isTenantsLoading ? (
+        {isLoading ? (
           <div className="py-16 text-center text-[#9CA3AF] font-mono text-xs animate-pulse">
-            Querying platform users & tenants from PostgreSQL...
+            Querying platform_users from PostgreSQL...
           </div>
         ) : error ? (
           <div className="py-12 text-center text-[#DC2626] text-sm">
             Error: {(error as Error).message}
           </div>
-        ) : filteredUsers.length === 0 ? (
+        ) : users.length === 0 ? (
           <div className="py-12 text-center text-[#9CA3AF] text-xs">
-            No platform operators found matching your filters.
+            No platform operators registered.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -297,52 +103,29 @@ export const PlatformUserTable: React.FC = () => {
                 <tr className="border-b border-[#E5E7EB] bg-[#F5F7FA] text-[11px] font-semibold text-[#4B5563] uppercase tracking-wider">
                   <th className="py-3 px-4">Operator Name & Email</th>
                   <th className="py-3 px-4">Platform Role</th>
-                  <th className="py-3 px-4">Tenant Name</th>
                   <th className="py-3 px-4">Account Status</th>
                   <th className="py-3 px-4">Registration Date</th>
                   {isSuperAdmin && <th className="py-3 px-4 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB] text-sm">
-                {filteredUsers.map((u) => (
+                {users.map((u) => (
                   <tr key={u.id} className="hover:bg-[#F5F7FA] transition-colors">
-                    {/* Operator Name & Email */}
                     <td className="py-3.5 px-4">
                       <div className="font-medium text-[#111827]">{u.fullName}</div>
                       <div className="text-xs text-[#6B7280] font-mono">{u.email}</div>
                     </td>
-
-                    {/* Platform Role */}
                     <td className="py-3.5 px-4">
-                      {renderRoleBadge(u.role)}
+                      {u.role === 'SUPER_ADMIN' ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-[#0274BB] bg-[#E6F2FF] px-2 py-0.5 rounded-[4px] border border-[#b8dcff]">
+                          <Shield className="size-3 text-[#0274BB]" /> SUPER_ADMIN
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-[#374151] bg-[#F5F7FA] px-2 py-0.5 rounded-[4px] border border-[#E5E7EB]">
+                          <UserCheck className="size-3 text-[#6B7280]" /> PLATFORM_SUPPORT
+                        </span>
+                      )}
                     </td>
-
-                    {/* Tenant Name Column with Dropdown Listing Superadmin Tenants */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={u.tenantId || ''}
-                          disabled={!isSuperAdmin || updatingTenantUserId === u.id}
-                          onChange={(e) => handleTenantSelect(u, e.target.value)}
-                          aria-label={`Tenant name for ${u.fullName}`}
-                          className="bg-white border border-[#E5E7EB] hover:border-[#0274BB] rounded-[4px] px-2.5 py-1.5 text-xs text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB] transition font-medium cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed max-w-[220px]"
-                        >
-                          <option value="">— Unassigned / Global —</option>
-                          {allTenants.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.name} ({t.code})
-                            </option>
-                          ))}
-                        </select>
-                        {updatingTenantUserId === u.id && (
-                          <span className="text-[11px] text-[#0274BB] font-mono animate-pulse whitespace-nowrap">
-                            Saving...
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Account Status */}
                     <td className="py-3.5 px-4">
                       {u.status === 'ACTIVE' ? (
                         <Badge variant="success">ACTIVE</Badge>
@@ -350,13 +133,9 @@ export const PlatformUserTable: React.FC = () => {
                         <Badge variant="outline">INACTIVE</Badge>
                       )}
                     </td>
-
-                    {/* Registration Date */}
                     <td className="py-3.5 px-4 text-xs text-slate-500 font-mono">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
-
-                    {/* Actions */}
                     {isSuperAdmin && (
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
@@ -547,10 +326,6 @@ export const PlatformUserTable: React.FC = () => {
               >
                 <option value="SUPER_ADMIN">SUPER_ADMIN — Full platform authority, tenant mutations</option>
                 <option value="PLATFORM_SUPPORT">PLATFORM_SUPPORT — Read-only telemetry, support oversight</option>
-                <option value="ADMIN">ADMIN — Internal master data and lab administrator</option>
-                <option value="LAB_APPROVER">LAB_APPROVER — Senior calibration approver</option>
-                <option value="LAB_ENTRY_PERSON">LAB_ENTRY_PERSON — Lab entry and test technician</option>
-                <option value="COLLECTION_AGENT">COLLECTION_AGENT — Field logistics collection agent</option>
               </select>
             </div>
 

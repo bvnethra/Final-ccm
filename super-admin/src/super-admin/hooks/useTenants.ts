@@ -2,7 +2,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchTenants,
-  fetchAllTenants,
   fetchTenantById,
   onboardTenant,
   updateTenantStatus,
@@ -24,13 +23,6 @@ export function useTenants(filters: TenantFilters = {}) {
   return useQuery({
     queryKey: ['platformTenants', filters],
     queryFn: () => fetchTenants(filters),
-  });
-}
-
-export function useAllTenants() {
-  return useQuery({
-    queryKey: ['allTenantsList'],
-    queryFn: fetchAllTenants,
   });
 }
 

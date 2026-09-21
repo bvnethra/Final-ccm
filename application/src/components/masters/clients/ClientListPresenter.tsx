@@ -12,6 +12,11 @@ interface ClientListPresenterProps {
   onStatusFilterChange: (status: string) => void;
   onToggleStatus: (id: string) => void;
   isTogglingId?: string;
+  isImportOpen: boolean;
+  onToggleImport: () => void;
+  onCloseImport: () => void;
+  onImportBulk: (rows: any[]) => Promise<{ count: number }>;
+  onImportSuccess: () => void;
   errorMessage?: string | null;
 }
 
@@ -24,6 +29,11 @@ export const ClientListPresenter: React.FC<ClientListPresenterProps> = ({
   onStatusFilterChange,
   onToggleStatus,
   isTogglingId,
+  isImportOpen,
+  onToggleImport,
+  onCloseImport,
+  onImportBulk,
+  onImportSuccess,
   errorMessage,
 }) => {
   return (
@@ -43,6 +53,11 @@ export const ClientListPresenter: React.FC<ClientListPresenterProps> = ({
         onStatusFilterChange={onStatusFilterChange}
         onToggleStatus={onToggleStatus}
         isTogglingId={isTogglingId}
+        isImportOpen={isImportOpen}
+        onToggleImport={onToggleImport}
+        onCloseImport={onCloseImport}
+        onImportBulk={onImportBulk}
+        onImportSuccess={onImportSuccess}
       />
     </div>
   );

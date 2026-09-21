@@ -5,7 +5,6 @@ import {
   createPlatformUser,
   updatePlatformUserStatus,
   updatePlatformUserRole,
-  updatePlatformUserTenant,
   deletePlatformUser,
 } from '../services/platformUserService';
 import type { PlatformRole, PlatformUserStatus } from '../types/superAdmin';
@@ -21,18 +20,6 @@ export function useCreatePlatformUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createPlatformUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['platformUsers'] });
-      queryClient.invalidateQueries({ queryKey: ['platformAuditLogs'] });
-    },
-  });
-}
-
-export function useUpdatePlatformUserTenant() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ userId, tenantId }: { userId: string; tenantId: string | null }) =>
-      updatePlatformUserTenant(userId, tenantId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['platformUsers'] });
       queryClient.invalidateQueries({ queryKey: ['platformAuditLogs'] });

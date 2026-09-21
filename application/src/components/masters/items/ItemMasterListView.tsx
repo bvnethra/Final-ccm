@@ -22,9 +22,51 @@ import {
   Layers,
   Ruler,
   IndianRupee,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { ITEM_METROLOGY_CATEGORIES } from '../../../services/itemMasterService';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import { ExcelBulkImportPanel, type FieldMapping } from '../../ui/ExcelBulkImportPanel';
+
+const ITEM_IMPORT_FIELDS: FieldMapping[] = [
+  { key: 'item_name', label: 'Item / Instrument Name', required: true },
+  { key: 'item_code', label: 'Item Code' },
+  { key: 'item_type', label: 'Category / Type' },
+  { key: 'manufacturer', label: 'Manufacturer / Brand' },
+  { key: 'model', label: 'Model' },
+  { key: 'serial_number', label: 'Serial Number' },
+  { key: 'measurement_range', label: 'Measurement Range' },
+  { key: 'least_count', label: 'Least Count' },
+  { key: 'standard_cost', label: 'Standard Cost (INR)' },
+  { key: 'calibration_frequency', label: 'Calibration Frequency (Days)' },
+];
+
+const SAMPLE_ITEMS = [
+  {
+    'Item Name': 'Digital Vernier Caliper 0-150mm',
+    'Item Code': 'ITM-2026-0001',
+    'Category': 'Dimensional Metrology',
+    'Manufacturer': 'Mitutoyo',
+    'Model': 'CD-6" CSX',
+    'Serial Number': 'MIT-2026-1029',
+    'Measurement Range': '0 - 150 mm',
+    'Least Count': '0.01 mm',
+    'Standard Cost': 1200,
+    'Calibration Frequency': 365,
+  },
+  {
+    'Item Name': 'External Micrometer 0-25mm',
+    'Item Code': 'ITM-2026-0002',
+    'Category': 'Dimensional Metrology',
+    'Manufacturer': 'Mitutoyo',
+    'Model': '103-137',
+    'Serial Number': 'MIT-2026-5542',
+    'Measurement Range': '0 - 25 mm',
+    'Least Count': '0.001 mm',
+    'Standard Cost': 950,
+    'Calibration Frequency': 365,
+  },
+];
 
 interface ItemMasterListViewProps {
   items: ItemMaster[];
@@ -37,6 +79,11 @@ interface ItemMasterListViewProps {
   onCategoryFilterChange: (cat: string) => void;
   onToggleStatus: (id: string) => void;
   isTogglingId?: string;
+  isImportOpen: boolean;
+  onToggleImport: () => void;
+  onCloseImport: () => void;
+  onImportBulk: (rows: any[]) => Promise<{ count: number }>;
+  onImportSuccess: () => void;
 }
 
 export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
@@ -50,6 +97,11 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
   onCategoryFilterChange,
   onToggleStatus,
   isTogglingId,
+  isImportOpen,
+  onToggleImport,
+  onCloseImport,
+  onImportBulk,
+  onImportSuccess,
 }) => {
   const { isCollectionAgent, isLabApprover } = useAuthContext();
   const isViewOnlyMaster = isCollectionAgent || isLabApprover;
@@ -68,18 +120,40 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
             </h1>
           </div>
           <p className="text-sm text-[#6B7280] mt-1">
-            Metrology Instruments & Measurement Equipment Catalog for Inward, Testing & Commercial Billing {isViewOnlyMaster && '(View Only)'}
+            Metrology Instruments & Measurement Equipment Catalog ({items.length} Registered) {isViewOnlyMaster && '(View Only)'}
           </p>
         </div>
 
         {!isViewOnlyMaster && (
-          <Link to="/masters/items/new">
-            <Button variant="primary">
-              <Plus className="size-4" /> Add New Item
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={onToggleImport}
+              className="flex items-center gap-2 border-[#0274BB] text-[#0274BB] hover:bg-[#F0F9FF]"
+            >
+              <FileSpreadsheet className="size-4" /> Import from Excel
             </Button>
-          </Link>
+            <Link to="/masters/items/new">
+              <Button variant="primary">
+                <Plus className="size-4" /> Add New Item
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
+
+      {/* Excel Bulk Import Panel (Zero-Modal, In-Page) */}
+      <ExcelBulkImportPanel
+        isOpen={isImportOpen}
+        onClose={onCloseImport}
+        title="Import Equipment Items in Bulk"
+        description="Upload an Excel or CSV file containing instruments, serial numbers, calibration ranges, and costs."
+        fields={ITEM_IMPORT_FIELDS}
+        sampleTemplateFileName="Nethra_Item_Master_Template.xlsx"
+        sampleData={SAMPLE_ITEMS}
+        onImport={onImportBulk}
+        onSuccess={onImportSuccess}
+      />
 
       {/* Filter and Search Bar */}
       <Card>

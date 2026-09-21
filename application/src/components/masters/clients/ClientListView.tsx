@@ -21,7 +21,40 @@ import {
   ToggleRight,
   Clock,
   User,
+  FileSpreadsheet,
 } from 'lucide-react';
+import { ExcelBulkImportPanel, type FieldMapping } from '../../ui/ExcelBulkImportPanel';
+
+const CLIENT_IMPORT_FIELDS: FieldMapping[] = [
+  { key: 'client_name', label: 'Client / Customer Name', required: true },
+  { key: 'client_code', label: 'Client Code' },
+  { key: 'contact_person', label: 'Contact Person' },
+  { key: 'phone', label: 'Phone Number' },
+  { key: 'email', label: 'Email Address' },
+  { key: 'address', label: 'Address' },
+  { key: 'gst_tax_number', label: 'GST Number' },
+];
+
+const SAMPLE_CLIENTS = [
+  {
+    'Customer Name': 'ABI-SHOWATECH (INDIA) PVT LTD-CAL CHE',
+    'Client Code': 'CLI-2026-00001',
+    'Contact Person': 'Quality Manager',
+    'Phone': '+91 98400 12345',
+    'Email': 'contact@abi-showatech.com',
+    'Address': 'Industrial Estate, Chennai, Tamil Nadu',
+    'GST Number': '33AAACN0001Z1Z5',
+  },
+  {
+    'Customer Name': 'ACCURA INDUSTRIES - CAL CHE',
+    'Client Code': 'CLI-2026-00002',
+    'Contact Person': 'Metrology Head',
+    'Phone': '+91 98400 67890',
+    'Email': 'quality@accuraind.com',
+    'Address': 'Guindy Industrial Estate, Chennai',
+    'GST Number': '33AAACN0002Z1Z5',
+  },
+];
 
 interface ClientListViewProps {
   clients: Client[];
@@ -32,6 +65,11 @@ interface ClientListViewProps {
   onStatusFilterChange: (status: string) => void;
   onToggleStatus: (id: string) => void;
   isTogglingId?: string;
+  isImportOpen: boolean;
+  onToggleImport: () => void;
+  onCloseImport: () => void;
+  onImportBulk: (rows: any[]) => Promise<{ count: number }>;
+  onImportSuccess: () => void;
 }
 
 export const ClientListView: React.FC<ClientListViewProps> = ({
@@ -43,6 +81,11 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
   onStatusFilterChange,
   onToggleStatus,
   isTogglingId,
+  isImportOpen,
+  onToggleImport,
+  onCloseImport,
+  onImportBulk,
+  onImportSuccess,
 }) => {
   const { isCollectionAgent, isLabEntryPerson, isLabApprover } = useAuthContext();
   const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson || isLabApprover;
@@ -61,18 +104,40 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
             </h1>
           </div>
           <p className="text-sm text-[#6B7280] mt-1">
-            Enterprise Client Registry & Commercial Billing Profiles {isViewOnlyMaster && '(View Only)'}
+            Enterprise Client Registry & Commercial Billing Profiles ({clients.length} Registered) {isViewOnlyMaster && '(View Only)'}
           </p>
         </div>
 
         {!isViewOnlyMaster && (
-          <Link to="/masters/clients/new">
-            <Button variant="primary">
-              <Plus className="size-4" /> Add New Client
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={onToggleImport}
+              className="flex items-center gap-2 border-[#0274BB] text-[#0274BB] hover:bg-[#F0F9FF]"
+            >
+              <FileSpreadsheet className="size-4" /> Import from Excel
             </Button>
-          </Link>
+            <Link to="/masters/clients/new">
+              <Button variant="primary">
+                <Plus className="size-4" /> Add New Client
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
+
+      {/* Excel Bulk Import Panel (Zero-Modal, In-Page) */}
+      <ExcelBulkImportPanel
+        isOpen={isImportOpen}
+        onClose={onCloseImport}
+        title="Import Clients in Bulk"
+        description="Upload your client or customer spreadsheet to automatically register multiple commercial billing profiles."
+        fields={CLIENT_IMPORT_FIELDS}
+        sampleTemplateFileName="Nethra_Client_Master_Template.xlsx"
+        sampleData={SAMPLE_CLIENTS}
+        onImport={onImportBulk}
+        onSuccess={onImportSuccess}
+      />
 
       {/* Filter and Search Bar */}
       <Card>

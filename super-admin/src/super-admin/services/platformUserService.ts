@@ -6,7 +6,7 @@ import { logPlatformEvent } from './platformAuditService';
 export async function fetchPlatformUsers(): Promise<PlatformUser[]> {
   const { data, error } = await supabase
     .from('platform_users')
-    .select('*, tenants(id, name, code)')
+    .select('*')
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Fetch platform users failed: ${error.message}`);
@@ -17,9 +17,6 @@ export async function fetchPlatformUsers(): Promise<PlatformUser[]> {
     fullName: u.full_name,
     role: u.role,
     status: u.status,
-    tenantId: u.tenant_id || null,
-    tenantName: u.tenants?.name || null,
-    tenantCode: u.tenants?.code || null,
     lastLoginAt: u.last_login_at,
     createdAt: u.created_at,
     updatedAt: u.updated_at,
@@ -31,7 +28,6 @@ export async function createPlatformUser(payload: {
   fullName: string;
   role: PlatformRole;
   password?: string;
-  tenantId?: string | null;
 }): Promise<PlatformUser> {
   const email = payload.email.trim().toLowerCase();
   const password = payload.password?.trim();
@@ -65,9 +61,8 @@ export async function createPlatformUser(payload: {
       full_name: payload.fullName.trim(),
       role: payload.role,
       status: 'ACTIVE',
-      tenant_id: payload.tenantId || null,
     }])
-    .select('*, tenants(id, name, code)')
+    .select()
     .single();
 
   if (error) throw new Error(`Failed to register platform user: ${error.message}`);
@@ -85,48 +80,10 @@ export async function createPlatformUser(payload: {
     fullName: data.full_name,
     role: data.role,
     status: data.status,
-    tenantId: data.tenant_id || null,
-    tenantName: data.tenants?.name || null,
-    tenantCode: data.tenants?.code || null,
     lastLoginAt: data.last_login_at,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
-}
-
-export async function updatePlatformUserTenant(userId: string, tenantId: string | null): Promise<void> {
-  const { data: previous } = await supabase.from('platform_users').select('*, tenants(id, name, code)').eq('id', userId).single();
-
-  const { error } = await supabase
-    .from('platform_users')
-    .update({
-      tenant_id: tenantId || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId);
-
-  if (error) throw new Error(`Update platform user tenant failed: ${error.message}`);
-
-  // Also sync tenant_id in user_profiles if user exists there
-  await supabase
-    .from('user_profiles')
-    .update({
-      tenant_id: tenantId || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId);
-
-  const { data: tenantData } = tenantId 
-    ? await supabase.from('tenants').select('name').eq('id', tenantId).single()
-    : { data: null };
-
-  await logPlatformEvent({
-    action: 'PLATFORM_USER_TENANT_ASSIGNED',
-    referenceId: userId,
-    previousState: previous,
-    newState: { ...previous, tenant_id: tenantId, tenant_name: tenantData?.name },
-    reason: `Updated operator '${previous?.full_name}' tenant assignment to ${tenantData?.name || 'Unassigned / Global Platform'}`,
-  });
 }
 
 export async function updatePlatformUserStatus(userId: string, status: PlatformUserStatus, reason: string): Promise<void> {

@@ -346,3 +346,51 @@ export async function toggleClientStatus(
   const nextStatus = current.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
   return updateClient(id, tenantId, { status: nextStatus }, modifier);
 }
+
+export async function createClientsBulk(
+  tenantId: string,
+  organizationId: string | undefined,
+  records: Array<{
+    client_name: string;
+    client_code?: string;
+    address?: string;
+    billing_address?: string;
+    gst_tax_number?: string;
+    contact_person?: string;
+    email?: string;
+    phone?: string;
+    status?: 'ACTIVE' | 'INACTIVE';
+  }>
+): Promise<{ count: number }> {
+  if (!tenantId) throw new Error('tenantId is required');
+  if (!records.length) return { count: 0 };
+
+  const now = new Date().toISOString();
+  const dbRows = records.map((r, idx) => ({
+    tenant_id: tenantId,
+    organization_id: organizationId || null,
+    client_code: r.client_code?.trim() || `CLI-${Date.now()}-${idx + 1}`,
+    client_name: r.client_name.trim(),
+    address: r.address?.trim() || 'Facility Address',
+    billing_address: r.billing_address?.trim() || r.address?.trim() || 'Facility Address',
+    gst_tax_number: r.gst_tax_number?.trim() || null,
+    contact_person: r.contact_person?.trim() || 'Quality Manager',
+    email: r.email?.trim() || null,
+    phone: r.phone?.trim() || null,
+    status: r.status || 'ACTIVE',
+    created_at: now,
+    updated_at: now,
+  }));
+
+  const CHUNK_SIZE = 50;
+  for (let i = 0; i < dbRows.length; i += CHUNK_SIZE) {
+    const chunk = dbRows.slice(i, i + CHUNK_SIZE);
+    const { error } = await supabase.from('clients').insert(chunk);
+    if (error) {
+      console.error('Supabase bulk insert error:', error);
+      throw new Error(`Bulk insert failed: ${error.message}`);
+    }
+  }
+
+  return { count: dbRows.length };
+}
