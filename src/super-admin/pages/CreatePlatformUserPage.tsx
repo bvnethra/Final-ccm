@@ -3,16 +3,19 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Input, FieldGroup, Field, FieldLabel, FieldDescription } from '../../components/ui/UIPrimitives';
 import { useCreatePlatformUser } from '../hooks/usePlatformUsers';
+import { useAllTenants } from '../hooks/useTenants';
 import type { PlatformRole } from '../types/superAdmin';
-import { ArrowLeft, Shield, User, Mail, Lock, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Shield, User, Mail, Lock, ShieldAlert, Building2 } from 'lucide-react';
 
 export default function CreatePlatformUserPage() {
   const navigate = useNavigate();
   const createMutation = useCreatePlatformUser();
+  const { data: tenants = [] } = useAllTenants();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<PlatformRole>('PLATFORM_SUPPORT');
+  const [tenantId, setTenantId] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -33,6 +36,7 @@ export default function CreatePlatformUserPage() {
         fullName: fullName.trim(),
         email: email.trim().toLowerCase(),
         role,
+        tenantId: tenantId || null,
         password: password.trim(),
       },
       {
@@ -66,7 +70,7 @@ export default function CreatePlatformUserPage() {
           Provision Platform User
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Create an enterprise administrative account with platform-wide oversight or support permissions.
+          Create an enterprise administrative account with platform-wide oversight or tenant operator permissions.
         </p>
       </div>
 
@@ -106,7 +110,7 @@ export default function CreatePlatformUserPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="operator@company.com"
               />
-              <FieldDescription>The user will log into the Super Admin platform with this email.</FieldDescription>
+              <FieldDescription>The user will log into the platform with this email.</FieldDescription>
             </Field>
 
             <Field>
@@ -120,9 +124,34 @@ export default function CreatePlatformUserPage() {
                 onChange={(e) => setRole(e.target.value as PlatformRole)}
                 className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
               >
-                <option value="PLATFORM_SUPPORT">PLATFORM_SUPPORT — Read-only telemetry, support oversight</option>
                 <option value="SUPER_ADMIN">SUPER_ADMIN — Full platform authority, tenant mutations</option>
+                <option value="PLATFORM_SUPPORT">PLATFORM_SUPPORT — Read-only telemetry, support oversight</option>
+                <option value="ADMIN">ADMIN — Internal master data and lab administrator</option>
+                <option value="LAB_APPROVER">LAB_APPROVER — Senior calibration approver</option>
+                <option value="LAB_ENTRY_PERSON">LAB_ENTRY_PERSON — Lab entry and test technician</option>
+                <option value="COLLECTION_AGENT">COLLECTION_AGENT — Field logistics collection agent</option>
               </select>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="user-tenant" className="flex items-center gap-1.5">
+                <Building2 className="size-3 text-slate-400" />
+                <span>Tenant Name</span>
+              </FieldLabel>
+              <select
+                id="user-tenant"
+                value={tenantId}
+                onChange={(e) => setTenantId(e.target.value)}
+                className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
+              >
+                <option value="">— Unassigned / Global Platform Operator —</option>
+                {tenants.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.code})
+                  </option>
+                ))}
+              </select>
+              <FieldDescription>Select the enterprise tenant created by Super Admin for this user.</FieldDescription>
             </Field>
 
             <Field>

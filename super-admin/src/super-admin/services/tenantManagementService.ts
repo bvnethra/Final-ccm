@@ -425,3 +425,31 @@ export async function deleteTenant(tenantId: string, reason?: string): Promise<v
   });
 }
 
+export async function fetchAllTenants(): Promise<PlatformTenant[]> {
+  const { data, error } = await supabase
+    .from('tenants')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) throw new Error(`Fetch all tenants failed: ${error.message}`);
+
+  return (data || []).map((t: any) => ({
+    id: t.id,
+    name: t.name,
+    code: t.code,
+    status: t.status,
+    tenantType: t.tenant_type,
+    country: t.country,
+    city: t.city,
+    state: t.state,
+    pincode: t.pincode,
+    phone: t.phone,
+    branchesCount: t.branches_count,
+    adminName: t.admin_name,
+    adminEmail: t.admin_email,
+    setupStatus: t.setup_status,
+    createdAt: t.created_at,
+    updatedAt: t.updated_at,
+  }));
+}
+
