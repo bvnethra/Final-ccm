@@ -299,7 +299,7 @@ export const CalibrationDueListPage: React.FC = () => {
               <span className="text-2xl font-bold text-[#16A34A] mt-1 block font-mono">
                 {metrics.due30}
               </span>
-              <span className="text-xs text-[#16A34A] mt-0.5 block">Scheduled for Re-intake</span>
+              <span className="text-xs text-[#16A34A] mt-0.5 block">Scheduled for Re-inward</span>
             </div>
             <div className="size-10 rounded-[4px] bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center">
               <Clock className="size-5" />
@@ -483,7 +483,7 @@ export const CalibrationDueListPage: React.FC = () => {
                       size="sm"
                       onClick={() => navigate(`/requests/new?clientId=${group.clientId}`)}
                     >
-                      <Plus className="size-3.5" /> New Intake for Client
+                      <Plus className="size-3.5" /> New Inward for Client
                     </Button>
                   </div>
                 </div>
@@ -559,9 +559,9 @@ export const CalibrationDueListPage: React.FC = () => {
                                       )}`
                                     )
                                   }
-                                  title="Create New Intake Request for this item"
+                                  title="Create New Inward Request for this item"
                                 >
-                                  <Plus className="size-3" /> Intake
+                                  <Plus className="size-3" /> Inward
                                 </Button>
                                 <Button
                                   variant="secondary"
@@ -660,7 +660,7 @@ export const CalibrationDueListPage: React.FC = () => {
                             )
                           }
                         >
-                          <Plus className="size-3" /> Intake
+                          <Plus className="size-3" /> Inward
                         </Button>
                         <Button
                           variant="secondary"

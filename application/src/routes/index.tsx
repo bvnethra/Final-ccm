@@ -74,7 +74,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="masters/items/:id" element={<ItemMasterDetailPage />} />
           <Route path="masters/items/:id/edit" element={<ItemMasterEditPage />} />
 
-          {/* Process 1: Equipment Intake */}
+          {/* Process 1: Equipment Inward */}
           <Route path="requests" element={<RequestListPage />} />
           <Route path="requests/new" element={<NewRequestPage />} />
           <Route path="requests/:id" element={<RequestDetailPage />} />

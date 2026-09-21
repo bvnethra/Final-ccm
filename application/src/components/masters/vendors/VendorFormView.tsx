@@ -218,7 +218,7 @@ export const VendorFormView: React.FC<VendorFormViewProps> = ({
             <MapPin className="size-5 text-[#EF7626]" />
             <div>
               <CardTitle>Physical Lab & Facility Address</CardTitle>
-              <CardDescription>Official dispatch and calibration intake destination</CardDescription>
+              <CardDescription>Official dispatch and calibration inward destination</CardDescription>
             </div>
           </div>
         </CardHeader>

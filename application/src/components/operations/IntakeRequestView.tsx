@@ -139,16 +139,16 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-[#111827]">New Equipment Intake Request</h1>
+            <h1 className="text-2xl font-bold text-[#111827]">New Equipment Inward Request</h1>
             <p className="text-sm text-[#6B7280]">
-              Lifecycle Step 4 &amp; 5: Equipment Collection &amp; Intake Registration into Lab Queue
+              Lifecycle Step 4 &amp; 5: Equipment Collection &amp; Inward Registration into Lab Queue
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 bg-[#F5F7FA] border border-[#E5E7EB] px-3 py-1.5 rounded-[4px] text-xs font-semibold text-[#374151]">
           <Gauge className="size-4 text-[#0274BB]" />
-          <span>Total Intake Units: </span>
+          <span>Total Inward Units: </span>
           <span className="text-[#0274BB] font-mono font-bold">{totalItemCount}</span>
         </div>
       </div>
@@ -238,7 +238,7 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
                 </Field>
 
                 <Field>
-                  <FieldLabel>Intake &amp; Transport Notes</FieldLabel>
+                  <FieldLabel>Inward &amp; Transport Notes</FieldLabel>
                   <Textarea
                     placeholder="Special handling requirements, fragile packaging, or collection instructions..."
                     value={remarks}
@@ -452,7 +452,7 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
                     </Button>
                   </Link>
                   <Button variant="primary" type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Registering Intake...' : 'Submit Equipment Intake'}
+                    {isSubmitting ? 'Registering Inward...' : 'Submit Equipment Inward'}
                   </Button>
                 </div>
               </CardFooter>

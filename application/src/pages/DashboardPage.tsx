@@ -45,7 +45,7 @@ export const DashboardPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <Link to="/requests/new">
             <Button variant="primary">
-              <Plus className="size-4" /> New Intake Request
+              <Plus className="size-4" /> New Inward Request
             </Button>
           </Link>
           <Link to="/lab/queue">

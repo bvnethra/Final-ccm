@@ -131,7 +131,7 @@ export const IntakeRequestContainer: React.FC = () => {
       // Full-page route navigation back to /requests list
       navigate('/requests');
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to submit equipment intake request.');
+      setErrorMessage(err.message || 'Failed to submit equipment inward request.');
     }
   };
 

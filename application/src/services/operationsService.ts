@@ -25,7 +25,7 @@ import type {
 } from '../types/domain';
 
 // ============================================================================
-// Process 1: Equipment Intake Requests
+// Process 1: Equipment Inward Requests
 // ============================================================================
 
 const REQUESTS_STORAGE_PREFIX = 'ccm_tenant_requests_';
@@ -192,7 +192,7 @@ export async function getLabQueueRequests(
 
   // Priority-Based Scheduling:
   // 1. URGENT priority work orders must be placed first at the top of the queue
-  // 2. Secondary order: FIFO by collection_date ascending (earliest intake first)
+  // 2. Secondary order: FIFO by collection_date ascending (earliest inward first)
   return filtered.sort((a, b) => {
     if (a.priority === 'URGENT' && b.priority !== 'URGENT') return -1;
     if (a.priority !== 'URGENT' && b.priority === 'URGENT') return 1;

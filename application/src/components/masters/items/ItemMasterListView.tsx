@@ -64,7 +64,7 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
             </h1>
           </div>
           <p className="text-sm text-[#6B7280] mt-1">
-            Metrology Instruments & Measurement Equipment Catalog for Intake, Testing & Commercial Billing
+            Metrology Instruments & Measurement Equipment Catalog for Inward, Testing & Commercial Billing
           </p>
         </div>
 

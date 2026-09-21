@@ -305,7 +305,7 @@ export const VerificationPage: React.FC = () => {
           {/* Request Header Metadata */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Intake Information</CardTitle>
+              <CardTitle className="text-sm">Inward Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-xs divide-y divide-[#E5E7EB]">
               <div className="pt-1">
@@ -356,7 +356,7 @@ export const VerificationPage: React.FC = () => {
                       Physical Verification — Unit {selectedItemIndex + 1} of {items.length}
                     </CardTitle>
                     <CardDescription>
-                      Compare received instrument against client intake declaration
+                      Compare received instrument against client inward declaration
                     </CardDescription>
                   </div>
                   <Badge
@@ -383,7 +383,7 @@ export const VerificationPage: React.FC = () => {
                     <span className="font-mono text-[#0274BB]">{currentItem.item_masters?.item_code}</span>
                   </div>
                   <div>
-                    <span className="text-[#6B7280] block">Intake Serial # / Tag</span>
+                    <span className="text-[#6B7280] block">Inward Serial # / Tag</span>
                     <span className="font-mono font-bold text-[#111827] text-xs">
                       {currentItem.serial_number || <span className="text-[#9CA3AF] italic">Not Recorded</span>}
                     </span>
@@ -400,7 +400,7 @@ export const VerificationPage: React.FC = () => {
                     </span>
                   </div>
                   <div>
-                    <span className="text-[#6B7280] block">Intake Condition</span>
+                    <span className="text-[#6B7280] block">Inward Condition</span>
                     <Badge variant="secondary">{currentItem.item_condition}</Badge>
                   </div>
                 </div>

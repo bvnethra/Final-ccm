@@ -472,7 +472,7 @@ export const CalibrationPage: React.FC = () => {
       {items.length > 1 && (
         <div className="flex items-center gap-2 border-b border-[#E5E7EB] pb-2 overflow-x-auto">
           <span className="text-xs font-bold text-[#6B7280] uppercase mr-2 shrink-0">
-            Intake Units ({items.length}):
+            Inward Units ({items.length}):
           </span>
           {items.map((it, idx) => {
             const isSelected = idx === selectedItemIndex;
@@ -526,7 +526,7 @@ export const CalibrationPage: React.FC = () => {
             </span>
           </div>
           <div>
-            <span className="text-[#6B7280] block">Verified Intake Count</span>
+            <span className="text-[#6B7280] block">Verified Inward Count</span>
             <span className="font-mono font-bold text-[#111827] text-sm">
               {currentItem.received_quantity || currentItem.quantity || 1} unit(s)
             </span>

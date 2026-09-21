@@ -106,7 +106,7 @@ export const RequestDetailPage: React.FC = () => {
 
   // Stepper steps
   const steps = [
-    { key: 'CREATED', label: '1. Intake' },
+    { key: 'CREATED', label: '1. Inward' },
     { key: 'VERIFIED', label: '2. Verification' },
     { key: 'CALIBRATED', label: '3. Calibration' },
     { key: 'CERTIFICATE', label: '4. Certificate' },
@@ -553,7 +553,7 @@ export const RequestDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Intake &amp; Collection Details</CardTitle>
+            <CardTitle>Inward &amp; Collection Details</CardTitle>
             <CardDescription>Step 4 &amp; 5: Pickup Metadata</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm divide-y divide-[#E5E7EB]">
@@ -599,7 +599,7 @@ export const RequestDetailPage: React.FC = () => {
               )}
             </div>
             <div className="pt-3">
-              <span className="text-xs text-[#6B7280] block">Intake &amp; Handling Notes</span>
+              <span className="text-xs text-[#6B7280] block">Inward &amp; Handling Notes</span>
               <span className="text-[#374151] italic">
                 {request.remarks || 'No special handling instructions provided.'}
               </span>
@@ -651,7 +651,7 @@ export const RequestDetailPage: React.FC = () => {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Equipment Line Items ({request.request_items?.length || 0})</CardTitle>
-              <CardDescription>Customer instruments in this calibration intake batch</CardDescription>
+              <CardDescription>Customer instruments in this calibration inward batch</CardDescription>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-[#6B7280] bg-[#F5F7FA] px-2.5 py-1 rounded-[4px] border border-[#E5E7EB]">
               <Gauge className="size-3.5 text-[#0274BB]" />

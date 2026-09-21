@@ -22,7 +22,7 @@ interface NavItem {
 
 const operationalItems: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard },
-  { label: 'Intake Requests', to: '/requests', icon: ClipboardList },
+  { label: 'Inward Requests', to: '/requests', icon: ClipboardList },
   { label: 'Lab & Calibration', to: '/lab/queue', icon: CheckCircle2 },
   { label: 'Calibration Due List', to: '/lab/due-list', icon: CalendarClock },
   { label: 'Commercial Billing', to: '/commercial/quotations', icon: FileText },

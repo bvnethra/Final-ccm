@@ -20,7 +20,7 @@ export const RequestListPage: React.FC = () => {
 
   const tabs = [
     { id: 'ALL', label: 'All Requests' },
-    { id: 'CREATED', label: 'Created / Intake' },
+    { id: 'CREATED', label: 'Created / Inward' },
     { id: 'VERIFIED', label: 'Verified' },
     { id: 'CALIBRATED', label: 'Calibrated' },
     { id: 'QUOTATION', label: 'Quotation / Commercial' },
@@ -33,14 +33,16 @@ export const RequestListPage: React.FC = () => {
         return <Badge variant="primary">CREATED</Badge>;
       case 'VERIFIED':
         return <Badge variant="info">VERIFIED</Badge>;
-      case 'DISCREPANCY':
-      case 'FAULTY':
-        return <Badge variant="error">{status}</Badge>;
       case 'CALIBRATED':
-      case 'COMPLETED':
-        return <Badge variant="success">{status}</Badge>;
+        return <Badge variant="success">CALIBRATED</Badge>;
       case 'QUOTATION':
-        return <Badge variant="analytics">QUOTATION</Badge>;
+        return <Badge variant="warning">QUOTATION</Badge>;
+      case 'PARTIALLY_INVOICED':
+        return <Badge variant="warning">PARTIAL INVOICE</Badge>;
+      case 'INVOICED':
+        return <Badge variant="success">INVOICED</Badge>;
+      case 'COMPLETED':
+        return <Badge variant="success">COMPLETED</Badge>;
       case 'DISPATCHED':
         return <Badge variant="warning">DISPATCHED</Badge>;
       default:
@@ -52,15 +54,15 @@ export const RequestListPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#111827]">Equipment Intake Requests</h1>
+          <h1 className="text-2xl font-bold text-[#111827]">Equipment Inward Requests</h1>
           <p className="text-sm text-[#6B7280]">
-            Lifecycle Process 1: Equipment Intake & Inspection Registration
+            Lifecycle Process 1: Equipment Inward & Inspection Registration
           </p>
         </div>
 
         <Link to="/requests/new">
           <Button variant="primary">
-            <Plus className="size-4" /> New Intake Request
+            <Plus className="size-4" /> New Inward Request
           </Button>
         </Link>
       </div>
@@ -71,7 +73,7 @@ export const RequestListPage: React.FC = () => {
         <CardHeader>
           <CardTitle>Registered Calibration Requests</CardTitle>
           <CardDescription>
-            Live intake records scoped to your tenant and branch facility
+            Live inward records scoped to your tenant and branch facility
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -90,11 +92,11 @@ export const RequestListPage: React.FC = () => {
               <Clock className="size-8 mx-auto text-[#9CA3AF]" />
               <p className="text-base font-semibold text-[#374151]">No calibration requests found</p>
               <p className="text-xs text-[#6B7280]">
-                Get started by clicking &ldquo;New Intake Request&rdquo; to register customer instruments.
+                Get started by clicking &ldquo;New Inward Request&rdquo; to register customer instruments.
               </p>
               <Link to="/requests/new">
                 <Button variant="secondary" size="sm" className="mt-2">
-                  <Plus className="size-4" /> Register First Intake Request
+                  <Plus className="size-4" /> Register First Inward Request
                 </Button>
               </Link>
             </div>

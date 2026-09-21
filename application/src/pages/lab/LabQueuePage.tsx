@@ -129,7 +129,7 @@ export const LabQueuePage: React.FC = () => {
             )}
           </div>
           <p className="text-sm text-[#6B7280] mt-0.5">
-            Step 6 &amp; 7: Priority-Scheduled Intake Queue, Inward Inspection &amp; Calibration
+            Step 6 &amp; 7: Priority-Scheduled Inward Queue, Inward Inspection &amp; Calibration
           </p>
         </div>
 
@@ -179,7 +179,7 @@ export const LabQueuePage: React.FC = () => {
             <div>
               <CardTitle>Lab Bench Active Work Orders ({sortedLabQueue.length})</CardTitle>
               <CardDescription>
-                Work orders sorted by Urgency Priority (URGENT top priority, followed by FIFO intake date)
+                Work orders sorted by Urgency Priority (URGENT top priority, followed by FIFO inward date)
               </CardDescription>
             </div>
             <div className="text-xs text-[#6B7280] flex items-center gap-2">
@@ -215,7 +215,7 @@ export const LabQueuePage: React.FC = () => {
                     <th className="px-5 py-3">Priority / SLA</th>
                     <th className="px-5 py-3">Request #</th>
                     <th className="px-5 py-3">Client Account</th>
-                    <th className="px-4 py-3">Intake Instruments</th>
+                    <th className="px-4 py-3">Inward Instruments</th>
                     <th className="px-4 py-3">Proof &amp; Docs</th>
                     <th className="px-4 py-3">Current Stage</th>
                     <th className="px-5 py-3 text-right">Lab Action</th>
@@ -274,7 +274,7 @@ export const LabQueuePage: React.FC = () => {
                           </span>
                         </td>
 
-                        {/* Intake Instruments */}
+                        {/* Inward Instruments */}
                         <td className="px-4 py-4 text-[#374151]">
                           <div className="font-semibold">
                             {req.request_items?.reduce((sum, it) => sum + (it.quantity || 0), 0) || 0} unit(s)
