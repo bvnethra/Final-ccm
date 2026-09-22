@@ -48,6 +48,11 @@ import {
   Download,
   X,
   Layers,
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  Sliders,
+  ShieldCheck,
 } from 'lucide-react';
 import { OfficialVendorPOView } from '../../components/commercial/OfficialVendorPOView';
 
@@ -78,6 +83,7 @@ export const CalibrationPage: React.FC = () => {
   const receiveOutsourceMutation = useReceiveOutsourceReturn();
 
   const [selectedItemIndex, setSelectedItemIndex] = useState<number>(0);
+  const [expandedItemIndex, setExpandedItemIndex] = useState<number | null>(0);
   const [activeWorkflowTab, setActiveWorkflowTab] = useState<'IN_HOUSE' | 'IN_LAB_REPAIR' | 'OUTSOURCE_PO'>('IN_HOUSE');
   const [viewingOutsourcePO, setViewingOutsourcePO] = useState<OutsourcePO | null>(null);
 
@@ -468,7 +474,7 @@ export const CalibrationPage: React.FC = () => {
             </CardTitle>
           </div>
           <span className="text-xs text-[#6B7280] dark:text-neutral-400">
-            Click an item row or &quot;Select&quot; to load into calibration station
+            Click any instrument row or &quot;View Details&quot; to inspect full technical specs and inward dossier
           </span>
         </CardHeader>
         <CardContent className="p-0">
@@ -476,7 +482,7 @@ export const CalibrationPage: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-[#F1F5F9] dark:bg-neutral-800 text-[#475569] dark:text-neutral-300 font-semibold uppercase tracking-wider border-b border-[#E5E7EB] dark:border-neutral-700">
                 <tr>
-                  <th className="px-3 py-2.5 w-12 text-center">#</th>
+                  <th className="px-3 py-2.5 w-10 text-center">#</th>
                   <th className="px-3 py-2.5">Target Instrument &amp; Code</th>
                   <th className="px-3 py-2.5">Serial # / Tag</th>
                   <th className="px-3 py-2.5">Range / Spec</th>
@@ -485,78 +491,348 @@ export const CalibrationPage: React.FC = () => {
                   <th className="px-3 py-2.5 text-center">Verified Inward</th>
                   <th className="px-3 py-2.5 text-center">Condition</th>
                   <th className="px-3 py-2.5 text-center">Status</th>
-                  <th className="px-3 py-2.5 text-right">Bench Action</th>
+                  <th className="px-3 py-2.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB] dark:divide-neutral-700">
                 {items.map((it, idx) => {
                   const isSelected = idx === selectedItemIndex;
+                  const isExpanded = idx === expandedItemIndex;
                   return (
-                    <tr
-                      key={it.id}
-                      onClick={() => setSelectedItemIndex(idx)}
-                      className={`cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'bg-[#EFF6FF] dark:bg-blue-950/30 border-l-4 border-l-[#0274BB] font-medium'
-                          : 'hover:bg-[#F8FAFC] dark:hover:bg-neutral-800/40'
-                      }`}
-                    >
-                      <td className="px-3 py-2.5 text-center font-mono font-bold text-[#6B7280]">
-                        {idx + 1}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <div className="font-bold text-[#111827] dark:text-white">
-                          {it.item_masters?.item_name || 'Standard Gauge'}
-                        </div>
-                        <div className="font-mono text-[11px] text-[#0274BB]">
-                          {it.item_masters?.item_code || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2.5 font-mono font-semibold text-[#111827] dark:text-neutral-200">
-                        {it.serial_number || 'N/A'}
-                      </td>
-                      <td className="px-3 py-2.5 text-[#4B5563] dark:text-neutral-400">
-                        {it.item_masters?.measurement_range || 'Standard'}
-                      </td>
-                      <td className="px-3 py-2.5 font-mono text-[#6B7280] dark:text-neutral-400">
-                        {request.client_po_ref || 'No Ref'}
-                      </td>
-                      <td className="px-3 py-2.5 text-center font-mono text-[#4B5563] dark:text-neutral-300">
-                        {it.quantity || 1}
-                      </td>
-                      <td className="px-3 py-2.5 text-center font-mono font-bold text-[#111827] dark:text-white">
-                        {it.received_quantity || it.quantity || 1}
-                      </td>
-                      <td className="px-3 py-2.5 text-center">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#DCFCE7] text-[#15803D] dark:bg-green-950/50 dark:text-green-400">
-                          {it.item_condition || 'GOOD'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-center">
-                        {it.status === 'CALIBRATED' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-[#DCFCE7] text-[#15803D]">
-                            <Check className="size-3" /> Calibrated
+                    <React.Fragment key={it.id}>
+                      <tr
+                        onClick={() => {
+                          setSelectedItemIndex(idx);
+                          setExpandedItemIndex((prev) => (prev === idx ? null : idx));
+                        }}
+                        className={`cursor-pointer transition-colors ${
+                          isSelected
+                            ? 'bg-[#EFF6FF] dark:bg-blue-950/30 border-l-4 border-l-[#0274BB] font-medium'
+                            : 'hover:bg-[#F8FAFC] dark:hover:bg-neutral-800/40'
+                        }`}
+                      >
+                        <td className="px-3 py-2.5 text-center font-mono font-bold text-[#6B7280]">
+                          <div className="flex items-center justify-center gap-1">
+                            {isExpanded ? (
+                              <ChevronUp className="size-3.5 text-[#0274BB]" />
+                            ) : (
+                              <ChevronDown className="size-3.5 text-[#9CA3AF]" />
+                            )}
+                            <span>{idx + 1}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="font-bold text-[#111827] dark:text-white">
+                            {it.item_masters?.item_name || 'Standard Gauge'}
+                          </div>
+                          <div className="font-mono text-[11px] text-[#0274BB]">
+                            {it.item_masters?.item_code || 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 font-mono font-semibold text-[#111827] dark:text-neutral-200">
+                          {it.serial_number || 'N/A'}
+                        </td>
+                        <td className="px-3 py-2.5 text-[#4B5563] dark:text-neutral-400">
+                          {it.item_masters?.measurement_range || 'Standard'}
+                        </td>
+                        <td className="px-3 py-2.5 font-mono text-[#6B7280] dark:text-neutral-400">
+                          {request.client_po_ref || 'No Ref'}
+                        </td>
+                        <td className="px-3 py-2.5 text-center font-mono text-[#4B5563] dark:text-neutral-300">
+                          {it.quantity || 1}
+                        </td>
+                        <td className="px-3 py-2.5 text-center font-mono font-bold text-[#111827] dark:text-white">
+                          {it.received_quantity || it.quantity || 1}
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#DCFCE7] text-[#15803D] dark:bg-green-950/50 dark:text-green-400">
+                            {it.item_condition || 'GOOD'}
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#FEF3C7] text-[#B45309]">
-                            {it.status || 'IN_QUEUE'}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedItemIndex(idx)}
-                          className={`px-3 py-1 rounded text-xs font-semibold cursor-pointer transition-colors ${
-                            isSelected
-                              ? 'bg-[#0274BB] text-white shadow-xs'
-                              : 'bg-[#F3F4F6] text-[#374151] hover:bg-[#E5E7EB] dark:bg-neutral-800 dark:text-neutral-300'
-                          }`}
-                        >
-                          {isSelected ? 'Active on Bench' : 'Select'}
-                        </button>
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          {it.status === 'CALIBRATED' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-[#DCFCE7] text-[#15803D]">
+                              <Check className="size-3" /> Calibrated
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#FEF3C7] text-[#B45309]">
+                              {it.status || 'IN_QUEUE'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedItemIndex(idx);
+                                setExpandedItemIndex((prev) => (prev === idx ? null : idx));
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-[#F0FDF4] text-[#15803D] hover:bg-[#DCFCE7] border border-[#BBF7D0] transition-colors cursor-pointer"
+                              title="Toggle detailed instrument dossier"
+                            >
+                              <Eye className="size-3.5" />
+                              <span>{isExpanded ? 'Hide' : 'Details'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedItemIndex(idx)}
+                              className={`px-3 py-1 rounded text-xs font-semibold cursor-pointer transition-colors ${
+                                isSelected
+                                  ? 'bg-[#0274BB] text-white shadow-xs'
+                                  : 'bg-[#F3F4F6] text-[#374151] hover:bg-[#E5E7EB] dark:bg-neutral-800 dark:text-neutral-300'
+                              }`}
+                            >
+                              {isSelected ? 'Active' : 'Select'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Detailed View of Clicked Instrument (100% Modal-Free Inline Accordion) */}
+                      {isExpanded && (
+                        <tr className="bg-[#F8FAFC] dark:bg-neutral-900/90 border-b-2 border-b-[#0274BB]">
+                          <td colSpan={10} className="p-4">
+                            <div className="bg-white dark:bg-neutral-800 rounded-lg border border-[#E2E8F0] dark:border-neutral-700 shadow-xs p-4 space-y-4">
+                              {/* Dossier Header */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#E2E8F0] dark:border-neutral-700 gap-2">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="size-8 rounded-md bg-[#0274BB]/10 text-[#0274BB] flex items-center justify-center font-bold">
+                                    <Sliders className="size-4" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="font-bold text-sm text-[#0F172A] dark:text-white">
+                                        {it.item_masters?.item_name || 'Standard Gauge'}
+                                      </h4>
+                                      <span className="font-mono text-xs px-2 py-0.5 rounded bg-[#EFF6FF] text-[#0274BB] font-semibold">
+                                        {it.item_masters?.item_code || 'N/A'}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-[#64748B] dark:text-neutral-400">
+                                      Comprehensive Technical Specifications, Verification Findings &amp; Metrology History
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={it.status === 'CALIBRATED' ? 'success' : 'warning'}>
+                                    {it.status || 'IN_QUEUE'}
+                                  </Badge>
+                                  {!isSelected && (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="primary"
+                                      onClick={() => setSelectedItemIndex(idx)}
+                                    >
+                                      Load into Test Bench
+                                    </Button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedItemIndex(null)}
+                                    className="p-1 text-[#64748B] hover:text-[#0F172A] cursor-pointer"
+                                    title="Close details"
+                                  >
+                                    <X className="size-4" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* 4-Quadrant Specifications & History Grid */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 text-xs">
+                                {/* 1. Master Technical Specifications */}
+                                <div className="p-3 bg-[#F8FAFC] dark:bg-neutral-900/50 rounded border border-[#E2E8F0] dark:border-neutral-700 space-y-2">
+                                  <div className="flex items-center gap-1.5 font-bold text-[#1E293B] dark:text-neutral-200 uppercase tracking-wide text-[11px] pb-1 border-b border-[#E2E8F0] dark:border-neutral-700">
+                                    <Sliders className="size-3.5 text-[#0274BB]" /> Technical Specifications
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Measurement Range</span>
+                                    <span className="font-semibold text-[#0F172A] dark:text-white">
+                                      {it.item_masters?.measurement_range ||
+                                        `${it.item_masters?.range_min ?? 0} - ${it.item_masters?.range_max ?? 100} ${it.item_masters?.range_unit || 'mm'}`}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Least Count / Resolution</span>
+                                    <span className="font-semibold text-[#0F172A] dark:text-white">
+                                      {it.item_masters?.least_count ?? 0.01} {it.item_masters?.least_count_unit || 'mm'}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <span className="text-[#64748B] block text-[11px]">Category</span>
+                                      <span className="font-medium text-[#334155] dark:text-neutral-300">
+                                        {it.item_masters?.item_category || 'Dimensional'}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[#64748B] block text-[11px]">Interval</span>
+                                      <span className="font-medium text-[#334155] dark:text-neutral-300">
+                                        {it.item_masters?.calibration_frequency || 12} Mos
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Standard Calibration Cost</span>
+                                    <span className="font-mono font-bold text-[#0F172A] dark:text-white">
+                                      ₹{it.item_masters?.standard_cost?.toLocaleString() || '0'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* 2. Inward Physical Verification Findings */}
+                                <div className="p-3 bg-[#F8FAFC] dark:bg-neutral-900/50 rounded border border-[#E2E8F0] dark:border-neutral-700 space-y-2">
+                                  <div className="flex items-center gap-1.5 font-bold text-[#1E293B] dark:text-neutral-200 uppercase tracking-wide text-[11px] pb-1 border-b border-[#E2E8F0] dark:border-neutral-700">
+                                    <ShieldCheck className="size-3.5 text-[#16A34A]" /> Inward Physical Inspection
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Permanent Serial # / Tag</span>
+                                    <span className="font-mono font-bold text-[#0F172A] dark:text-white">
+                                      {it.serial_number || 'N/A (No Tag Found)'}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <span className="text-[#64748B] block text-[11px]">Declared Qty</span>
+                                      <span className="font-mono font-semibold text-[#334155] dark:text-neutral-300">
+                                        {it.quantity || 1} unit(s)
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[#64748B] block text-[11px]">Verified Inward</span>
+                                      <span className="font-mono font-bold text-[#15803D] dark:text-green-400">
+                                        {it.received_quantity || it.quantity || 1} unit(s)
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Observed Physical Condition</span>
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#DCFCE7] text-[#15803D] dark:bg-green-950/50 dark:text-green-400 mt-0.5">
+                                      {it.item_condition || 'GOOD'}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Accessories Received</span>
+                                    <span className="font-medium text-[#334155] dark:text-neutral-300">
+                                      {it.accessories || 'Standard casing / None'}
+                                    </span>
+                                  </div>
+                                  {it.remarks && (
+                                    <div>
+                                      <span className="text-[#64748B] block text-[11px]">Inspection Remarks</span>
+                                      <span className="text-[#334155] dark:text-neutral-300 italic">
+                                        {it.remarks}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* 3. Client & Work Order Context */}
+                                <div className="p-3 bg-[#F8FAFC] dark:bg-neutral-900/50 rounded border border-[#E2E8F0] dark:border-neutral-700 space-y-2">
+                                  <div className="flex items-center gap-1.5 font-bold text-[#1E293B] dark:text-neutral-200 uppercase tracking-wide text-[11px] pb-1 border-b border-[#E2E8F0] dark:border-neutral-700">
+                                    <Building2 className="size-3.5 text-[#0274BB]" /> Client &amp; Work Order
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Client Organization</span>
+                                    <span className="font-bold text-[#0F172A] dark:text-white">
+                                      {request.clients?.client_name || 'Client Account'}
+                                    </span>
+                                    {request.clients?.client_code && (
+                                      <span className="text-[11px] font-mono text-[#64748B] block">
+                                        Code: {request.clients.client_code}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Client PO Ref</span>
+                                    <span className="font-mono font-semibold text-[#0F172A] dark:text-white">
+                                      {request.client_po_ref || 'No PO Ref'}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Work Order Request #</span>
+                                    <span className="font-mono font-semibold text-[#0274BB]">
+                                      {request.request_number}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Inward Intake Date</span>
+                                    <span className="text-[#334155] dark:text-neutral-300 font-medium">
+                                      {request.collection_date
+                                        ? new Date(request.collection_date).toLocaleDateString()
+                                        : 'N/A'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* 4. Operational Status & Bench Actions */}
+                                <div className="p-3 bg-[#F8FAFC] dark:bg-neutral-900/50 rounded border border-[#E2E8F0] dark:border-neutral-700 space-y-2">
+                                  <div className="flex items-center gap-1.5 font-bold text-[#1E293B] dark:text-neutral-200 uppercase tracking-wide text-[11px] pb-1 border-b border-[#E2E8F0] dark:border-neutral-700">
+                                    <FlaskConical className="size-3.5 text-[#EF7626]" /> Bench Routing
+                                  </div>
+                                  <div>
+                                    <span className="text-[#64748B] block text-[11px]">Current Status</span>
+                                    <span className="font-semibold text-[#0F172A] dark:text-white">
+                                      {it.status === 'CALIBRATED'
+                                        ? 'Calibration Completed'
+                                        : it.status === 'REPAIR_IN_PROGRESS'
+                                        ? 'Under In-Lab Repair'
+                                        : it.status === 'OUTSOURCED'
+                                        ? 'Dispatched to External Vendor'
+                                        : 'Awaiting Metrology Testing'}
+                                    </span>
+                                  </div>
+                                  {it.status === 'CALIBRATED' && (
+                                    <div className="p-2 bg-[#DCFCE7] text-[#15803D] rounded text-[11px] space-y-0.5">
+                                      <div className="font-bold flex items-center gap-1">
+                                        <CheckCircle2 className="size-3.5" /> ISO Certificate Generated
+                                      </div>
+                                      <div>Ready for Commercial Invoicing &amp; Dispatch</div>
+                                    </div>
+                                  )}
+                                  <div className="pt-1 space-y-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedItemIndex(idx);
+                                        setActiveWorkflowTab('IN_HOUSE');
+                                      }}
+                                      className="w-full text-left px-2 py-1 rounded bg-white hover:bg-[#EBF5FF] border border-[#E2E8F0] text-[#0274BB] font-semibold text-[11px] transition-colors cursor-pointer flex items-center justify-between"
+                                    >
+                                      <span>1. In-Lab Calibration</span>
+                                      <ArrowRight className="size-3" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedItemIndex(idx);
+                                        setActiveWorkflowTab('IN_LAB_REPAIR');
+                                      }}
+                                      className="w-full text-left px-2 py-1 rounded bg-white hover:bg-[#FFF7ED] border border-[#E2E8F0] text-[#EF7626] font-semibold text-[11px] transition-colors cursor-pointer flex items-center justify-between"
+                                    >
+                                      <span>2. In-Lab Repair</span>
+                                      <ArrowRight className="size-3" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedItemIndex(idx);
+                                        setActiveWorkflowTab('OUTSOURCE_PO');
+                                      }}
+                                      className="w-full text-left px-2 py-1 rounded bg-white hover:bg-[#F5F3FF] border border-[#E2E8F0] text-[#7C3AED] font-semibold text-[11px] transition-colors cursor-pointer flex items-center justify-between"
+                                    >
+                                      <span>3. Outsource Vendor PO</span>
+                                      <ArrowRight className="size-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
