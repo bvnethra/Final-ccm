@@ -9,9 +9,9 @@ console.log('================================================================\n'
 
 // 1. Check environment files
 const envLocations = [
-  { name: 'Monorepo Root', path: '.env.local' },
-  { name: 'Super Admin Workspace', path: 'super-admin/.env.local' },
-  { name: 'Operational App Workspace', path: 'application/.env.local' },
+  { name: 'Monorepo Root', path: fs.existsSync('.env.local') ? '.env.local' : '.env' },
+  { name: 'Super Admin Workspace', path: fs.existsSync('super-admin/.env.local') ? 'super-admin/.env.local' : 'super-admin/.env' },
+  { name: 'Operational App Workspace', path: fs.existsSync('application/.env.local') ? 'application/.env.local' : 'application/.env' },
 ];
 
 let allEnvFilesPresent = true;
@@ -36,7 +36,8 @@ for (const loc of envLocations) {
 }
 
 // 2. Initialize Supabase Client
-const rootEnv = fs.readFileSync('.env.local', 'utf-8');
+const rootEnvPath = fs.existsSync('.env.local') ? '.env.local' : '.env';
+const rootEnv = fs.readFileSync(rootEnvPath, 'utf-8');
 const supabaseUrl = rootEnv.match(/VITE_SUPABASE_URL\s*=\s*(.+)/)?.[1]?.trim();
 const supabaseAnonKey = rootEnv.match(/VITE_SUPABASE_ANON_KEY\s*=\s*(.+)/)?.[1]?.trim();
 
