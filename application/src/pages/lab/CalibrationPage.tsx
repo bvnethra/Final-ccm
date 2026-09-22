@@ -45,6 +45,7 @@ import {
   FileCheck,
   Check,
   Building2,
+  Clock,
 } from 'lucide-react';
 
 interface MeasurementFormState {
@@ -59,7 +60,11 @@ interface MeasurementFormState {
 
 export const CalibrationPage: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
-  const { tenantId, organizationId, isLabApprover, isAdmin } = useAuthContext();
+  const { tenantId, organizationId, isLabApprover, isSuperAdmin, canPerform } = useAuthContext();
+  const canRecordCalibration = isSuperAdmin || canPerform('RECORD_CALIBRATION_FREQUENCY', 'CREATE_EDIT') || canPerform('RECORD_CALIBRATION_FREQUENCY', 'CREATE');
+  const canRaiseServiceFlag = isSuperAdmin || canPerform('RAISE_SERVICE_FLAG', 'CREATE');
+  const canApproveServiceFlag = isSuperAdmin || isLabApprover || canPerform('RAISE_SERVICE_FLAG', 'APPROVE');
+  const canManageOutsource = isSuperAdmin || canPerform('RAISE_PO_VENDOR_OUTSOURCING', 'CREATE_EDIT') || canPerform('RAISE_PO_VENDOR_OUTSOURCING', 'CREATE');
   const { data: request, isLoading } = useCalibrationRequest(requestId);
   const { data: vendors = [] } = useVendors();
   const { data: requestRepairs = [] } = useRepairs(requestId);
@@ -412,7 +417,7 @@ export const CalibrationPage: React.FC = () => {
         </div>
 
         {isCalibrated && (
-          <Link to="/commercial/quotations/new">
+          <Link to={`/commercial/quotations/new?requestId=${requestId}`}>
             <Button variant="primary">
               Generate Commercial Quotation (Step 10) <ArrowRight className="size-4" />
             </Button>
@@ -460,7 +465,7 @@ export const CalibrationPage: React.FC = () => {
               </p>
             </div>
           </div>
-          <Link to="/commercial/quotations/new">
+          <Link to={`/commercial/quotations/new?requestId=${requestId}`}>
             <Button variant="primary" size="sm">
               Create Commercial Quotation (Step 10) <ArrowRight className="size-3.5" />
             </Button>
@@ -800,7 +805,7 @@ export const CalibrationPage: React.FC = () => {
                       Cancel
                     </Button>
                   </Link>
-                  {!isLabApprover && !isAdmin ? (
+                  {canRecordCalibration ? (
                     <Button
                       variant="primary"
                       type="submit"
@@ -813,7 +818,7 @@ export const CalibrationPage: React.FC = () => {
                     </Button>
                   ) : (
                     <span className="text-xs text-[#6B7280] self-center">
-                      {isAdmin ? 'Admin View Mode (Calibration Records Read-Only)' : 'Lab Approver Review Mode (Calibration Records Read-Only)'}
+                      Read-Only View Mode (Calibration Records Read-Only)
                     </span>
                   )}
                 </div>
@@ -878,7 +883,7 @@ export const CalibrationPage: React.FC = () => {
                   <div>
                     <span className="text-[#6B7280] block">Estimated Repair Charge</span>
                     <span className="font-mono font-bold text-[#0274BB] text-sm">
-                      ${currentItemRepair.estimated_cost.toFixed(2)}
+                      ₹{currentItemRepair.estimated_cost.toFixed(2)}
                     </span>
                   </div>
                   <div>
@@ -893,33 +898,40 @@ export const CalibrationPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Sub-step A: Client Approval Action */}
+                {/* Sub-step A: Service Flag Lab Approver Authorization Action */}
                 {currentItemRepair.status === 'PENDING_APPROVAL' && (
                   <div className="p-4 bg-white border border-[#CBD5E1] rounded-[4px] space-y-3">
                     <h4 className="font-bold text-sm text-[#1E293B] flex items-center gap-2">
-                      <FileCheck className="size-4 text-[#0274BB]" /> Step B: Record Client Authorization
+                      <FileCheck className="size-4 text-[#0274BB]" /> Step B: Lab Approver Service Flag Authorization
                     </h4>
                     <p className="text-xs text-[#64748B]">
-                      Enter the client Purchase Order reference or written authorization confirmation:
+                      Review defect diagnosis, estimated charges, and authorize service execution:
                     </p>
-                    <div className="flex gap-3">
-                      <Input
-                        placeholder="Client PO # / Approval Ref (e.g. PO-CLIENT-991)"
-                        value={clientPoForRepair}
-                        onChange={(e) => setClientPoForRepair(e.target.value)}
-                        className="max-w-md"
-                      />
-                      {!isAdmin && (
+                    {canApproveServiceFlag ? (
+                      <div className="flex gap-3">
+                        <Input
+                          placeholder="Client PO # / Approval Ref (e.g. PO-CLIENT-991)"
+                          value={clientPoForRepair}
+                          onChange={(e) => setClientPoForRepair(e.target.value)}
+                          className="max-w-md"
+                        />
                         <Button
                           variant="primary"
                           type="button"
                           onClick={() => handleApproveRepair(currentItemRepair.id)}
                           disabled={approveRepairMutation.isPending}
                         >
-                          <Check className="size-4" /> Authorize &amp; Begin Repair
+                          <Check className="size-4" /> Approve Service Flag &amp; Begin Repair
                         </Button>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-center gap-2">
+                        <Clock className="size-4 text-amber-600 shrink-0" />
+                        <span>
+                          <strong>Service Flag Raised:</strong> Awaiting approval from <strong>Lab Technical Approver</strong> before repair work can commence.
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -938,7 +950,7 @@ export const CalibrationPage: React.FC = () => {
                       onChange={(e) => setTechnicianRepairNotes(e.target.value)}
                       rows={2}
                     />
-                    {!isAdmin && !isLabApprover && (
+                    {canRecordCalibration && (
                       <div className="flex justify-end">
                         <Button
                           variant="primary"
@@ -1007,7 +1019,7 @@ export const CalibrationPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field>
-                      <FieldLabel>Estimated Repair Cost ($ USD)</FieldLabel>
+                      <FieldLabel>Estimated Repair Cost (₹ INR)</FieldLabel>
                       <Input
                         type="number"
                         min={0}
@@ -1029,7 +1041,7 @@ export const CalibrationPage: React.FC = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-3 p-4 bg-[#F9FAFB] border-t border-[#E5E7EB]">
-                  {!isLabApprover && !isAdmin && (
+                  {canRaiseServiceFlag && (
                     <Button
                       variant="primary"
                       type="submit"
@@ -1088,7 +1100,7 @@ export const CalibrationPage: React.FC = () => {
                   <div>
                     <span className="text-[#6B7280] block">Vendor Service Cost</span>
                     <span className="font-mono font-bold text-[#111827] text-sm mt-0.5 block">
-                      ${currentItemOutsource.vendor_cost?.toFixed(2) || '0.00'}
+                      ₹{currentItemOutsource.vendor_cost?.toFixed(2) || '0.00'}
                     </span>
                   </div>
                   <div>
@@ -1133,7 +1145,7 @@ export const CalibrationPage: React.FC = () => {
                       </Field>
                     </div>
 
-                    {!isAdmin && !isLabApprover && (
+                    {canManageOutsource && (
                       <div className="flex justify-end">
                         <Button
                           variant="primary"
@@ -1153,7 +1165,7 @@ export const CalibrationPage: React.FC = () => {
                     <div className="text-xs text-[#166534]">
                       <strong>Returned &amp; Accepted!</strong> Vendor Certificate: {currentItemOutsource.vendor_certificate_number}
                     </div>
-                    <Link to="/commercial/quotations/new">
+                    <Link to={`/commercial/quotations/new?requestId=${requestId}`}>
                       <Button variant="primary" size="sm">
                         Proceed to Quotation (Step 10) <ArrowRight className="size-3.5" />
                       </Button>
@@ -1192,7 +1204,7 @@ export const CalibrationPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field>
-                      <FieldLabel>Agreed Outsource Calibration Fee ($ USD)</FieldLabel>
+                      <FieldLabel>Agreed Outsource Calibration Fee (₹ INR)</FieldLabel>
                       <Input
                         type="number"
                         min={0}
@@ -1225,7 +1237,7 @@ export const CalibrationPage: React.FC = () => {
                   </Field>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-3 p-4 bg-[#F9FAFB] border-t border-[#E5E7EB]">
-                  {!isLabApprover && !isAdmin && (
+                  {canManageOutsource && (
                     <Button
                       variant="primary"
                       type="submit"

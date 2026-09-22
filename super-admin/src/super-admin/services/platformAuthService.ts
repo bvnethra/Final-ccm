@@ -53,6 +53,6 @@ export async function getCurrentPlatformUser(): Promise<PlatformSession> {
     },
     isPlatformUser: true,
     isSuperAdmin: role === 'SUPER_ADMIN',
-    isPlatformSupport: role === 'PLATFORM_SUPPORT',
+    isPlatformSupport: false,
   };
 }

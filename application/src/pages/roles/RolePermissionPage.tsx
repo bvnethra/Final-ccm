@@ -39,8 +39,8 @@ const PERMISSION_LEVELS: {
 
 export const RolePermissionPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuthContext();
-  const isAuthorized = Boolean(isAdmin || user?.isSuperAdmin);
+  const { isAdmin, isSuperAdmin, canPerform, refreshPermissions } = useAuthContext();
+  const isAuthorized = Boolean(isSuperAdmin || isAdmin || canPerform('ROLE_PERMISSION_MANAGEMENT', 'VIEW'));
 
   const { data, isLoading, error } = useRolesWithPermissions();
   const updatePermissionsMutation = useUpdateRolePermissions();
@@ -112,7 +112,9 @@ export const RolePermissionPage: React.FC = () => {
         }
       }
       setIsDirty(false);
-      setSuccessMsg('Role & permission matrix saved successfully.');
+      // Reload the current user's permissions from DB immediately
+      await refreshPermissions();
+      setSuccessMsg('Role & permission matrix saved successfully. Permissions updated.');
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to save permissions matrix.');

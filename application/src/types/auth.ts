@@ -1,4 +1,4 @@
-// application/src/types/auth.ts
+export type PermissionLevel = 'NONE' | 'VIEW' | 'CREATE' | 'CREATE_EDIT' | 'APPROVE';
 
 export interface AuthUser {
   id: string;
@@ -6,8 +6,13 @@ export interface AuthUser {
   fullName: string;
   phone?: string;
   tenantId: string;
+  tenantName?: string;
+  tenantCode?: string;
   organizationId: string;
+  organizationName?: string;
+  organizationCode?: string;
   roles: string[];
   permissions: string[];
+  modulePermissions?: Record<string, PermissionLevel>;
   isSuperAdmin: boolean;
 }

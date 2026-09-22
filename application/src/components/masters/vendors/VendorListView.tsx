@@ -51,8 +51,10 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
   onToggleStatus,
   isTogglingId,
 }) => {
-  const { isCollectionAgent, isLabEntryPerson, isLabApprover } = useAuthContext();
-  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson || isLabApprover;
+  const { canPerform, isSuperAdmin } = useAuthContext();
+  const canCreateMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE');
+  const canEditMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE_EDIT') || canCreateMaster;
+  const isViewOnlyMaster = !canCreateMaster;
 
   return (
     <div className="space-y-6">
@@ -260,7 +262,7 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                       </td>
 
                       <td className="px-5 py-4">
-                        {isViewOnlyMaster ? (
+                        {!canEditMaster ? (
                           <Badge variant={vendor.status === 'ACTIVE' ? 'success' : 'outline'}>
                             {vendor.status}
                           </Badge>
@@ -314,7 +316,7 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                               <Eye className="size-4" />
                             </button>
                           </Link>
-                          {!isViewOnlyMaster && (
+                          {canEditMaster && (
                             <Link to={`/masters/vendors/${vendor.id}/edit`}>
                               <button
                                 className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"

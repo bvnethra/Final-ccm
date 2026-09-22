@@ -45,7 +45,10 @@ import { useAuthContext } from '../../contexts/AuthContext';
 export const RequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isLabEntryPerson, isLabApprover, isAdmin } = useAuthContext();
+  const { isSuperAdmin, canPerform, getPermissionLevel } = useAuthContext();
+  const canCreateInvoice = isSuperAdmin || canPerform('CREATE_INVOICE', 'CREATE');
+  const canCreateQuotation = isSuperAdmin || (getPermissionLevel('CREATE_QUOTATION') !== 'APPROVE' && canPerform('CREATE_QUOTATION', 'CREATE'));
+  const backToQueue = !canPerform('CREATE_REQUEST', 'VIEW') && (canPerform('LAB_VERIFICATION_RECEIPT', 'VIEW') || canPerform('RECORD_CALIBRATION_FREQUENCY', 'VIEW'));
   const { data: request, isLoading, error } = useCalibrationRequest(id);
   const { data: certificates = [] } = useCertificates(id);
   const { data: repairs = [] } = useRepairs(id);
@@ -255,9 +258,9 @@ export const RequestDetailPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link to={isLabEntryPerson ? "/lab/queue" : "/requests"}>
+          <Link to={backToQueue ? "/lab/queue" : "/requests"}>
             <Button variant="secondary" size="sm">
-              <ArrowLeft className="size-4" /> {isLabEntryPerson ? 'Back to Lab Queue' : 'Back to Requests'}
+              <ArrowLeft className="size-4" /> {backToQueue ? 'Back to Lab Queue' : 'Back to Requests'}
             </Button>
           </Link>
           <div>
@@ -318,14 +321,14 @@ export const RequestDetailPage: React.FC = () => {
             </Link>
           )}          {(request.status === 'CALIBRATED' || request.status === 'PARTIALLY_INVOICED') && (
             <div className="flex items-center gap-2">
-              {!isLabApprover && !isAdmin && (
+              {canCreateInvoice && (
                 <Button variant="primary" onClick={handleOpenDirectInvoice}>
                   <Receipt className="size-4" />
                   {request.status === 'PARTIALLY_INVOICED' ? 'Invoice Remaining Items' : 'Generate Tax Invoice Directly'}
                 </Button>
               )}
-              {!isLabApprover && !isAdmin ? (
-                <Link to="/commercial/quotations/new">
+              {canCreateQuotation ? (
+                <Link to={`/commercial/quotations/new?requestId=${request.id}`}>
                   <Button variant="outlineInk">
                     <FileText className="size-4" /> Create Quotation (Optional)
                   </Button>
@@ -341,7 +344,7 @@ export const RequestDetailPage: React.FC = () => {
           )}
           {request.status === 'QUOTATION' && (
             <div className="flex items-center gap-2">
-              {!isLabApprover && !isAdmin && (
+              {canCreateInvoice && (
                 <Button variant="primary" onClick={handleOpenDirectInvoice}>
                   <Receipt className="size-4" /> Generate Tax Invoice Directly
                 </Button>
@@ -355,7 +358,7 @@ export const RequestDetailPage: React.FC = () => {
           )}
           {request.status === 'APPROVED' && (
             <div className="flex items-center gap-2">
-              {!isLabApprover && !isAdmin && (
+              {canCreateInvoice && (
                 <Button variant="primary" onClick={handleOpenDirectInvoice}>
                   <Receipt className="size-4" /> Generate Tax Invoice
                 </Button>
@@ -505,14 +508,18 @@ export const RequestDetailPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="primary" size="sm" onClick={handleOpenDirectInvoice}>
-              <Receipt className="size-3.5" /> Generate Tax Invoice Directly
-            </Button>
-            <Link to="/commercial/quotations/new">
-              <Button variant="secondary" size="sm">
-                Create Quotation (Optional) <ArrowRight className="size-3.5" />
+            {canCreateInvoice && (
+              <Button variant="primary" size="sm" onClick={handleOpenDirectInvoice}>
+                <Receipt className="size-3.5" /> Generate Tax Invoice Directly
               </Button>
-            </Link>
+            )}
+            {canCreateQuotation && (
+              <Link to={`/commercial/quotations/new?requestId=${request.id}`}>
+                <Button variant="secondary" size="sm">
+                  Create Quotation (Optional) <ArrowRight className="size-3.5" />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       )}
@@ -528,7 +535,7 @@ export const RequestDetailPage: React.FC = () => {
                   In-Lab Repair Service Record ({repairs[0].status})
                 </span>
                 <span className="text-xs text-[#6B7280]">
-                  Defect: {repairs[0].defect_description} • Cost: ${repairs[0].estimated_cost.toFixed(2)}
+                  Defect: {repairs[0].defect_description} • Cost: ₹{repairs[0].estimated_cost.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -862,7 +869,7 @@ export const RequestDetailPage: React.FC = () => {
                                 <span className="text-[11px] text-[#64748B]">
                                   SN: {it.serial_number || 'N/A'} • Qty: {qty}
                                 </span>
-                                <span className="text-[11px] text-[#64748B]">• Unit Rate ($):</span>
+                                <span className="text-[11px] text-[#64748B]">• Unit Rate (₹):</span>
                                 <input
                                   type="number"
                                   min="0"
@@ -878,7 +885,7 @@ export const RequestDetailPage: React.FC = () => {
                           </label>
                           <div className="text-right shrink-0 ml-4">
                             <span className="font-mono font-bold text-[#111827] block">
-                              ${totalItemPrice.toFixed(2)}
+                              ₹{totalItemPrice.toFixed(2)}
                             </span>
                             {isAlreadyInvoiced && (
                               <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
@@ -916,7 +923,7 @@ export const RequestDetailPage: React.FC = () => {
                           discountTypeDirect === 'FLAT' ? 'bg-[#0274BB] text-white' : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
-                        $ Flat
+                        ₹ Flat
                       </button>
                     </div>
                     <div className="flex items-center">
@@ -931,12 +938,12 @@ export const RequestDetailPage: React.FC = () => {
                         className="w-20 px-2 py-1 border border-slate-300 rounded text-right font-mono font-bold text-xs bg-white"
                       />
                       <span className="ml-1 text-xs font-bold text-slate-500">
-                        {discountTypeDirect === 'PERCENT' ? '%' : '$'}
+                        {discountTypeDirect === 'PERCENT' ? '%' : '₹'}
                       </span>
                     </div>
                     {discountCalc > 0 && (
                       <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded text-xs border border-emerald-200 shrink-0">
-                        -${discountCalc.toFixed(2)} off
+                        -₹{discountCalc.toFixed(2)} off
                       </span>
                     )}
                   </div>
@@ -946,25 +953,25 @@ export const RequestDetailPage: React.FC = () => {
                 <div className="p-4 bg-[#F8FAFC] rounded-[4px] border border-[#E5E7EB] flex flex-col items-end gap-1.5 text-xs">
                   <div className="flex justify-between w-72 text-[#64748B]">
                     <span>Selected Items Subtotal:</span>
-                    <span className="font-mono text-[#1E293B] font-semibold">${subtotalCalc.toFixed(2)}</span>
+                    <span className="font-mono text-[#1E293B] font-semibold">₹{subtotalCalc.toFixed(2)}</span>
                   </div>
                   {discountCalc > 0 && (
                     <div className="flex justify-between w-72 text-emerald-700 font-semibold">
                       <span>Client Discount Applied:</span>
-                      <span className="font-mono">-${discountCalc.toFixed(2)}</span>
+                      <span className="font-mono">-₹{discountCalc.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between w-72 text-[#64748B]">
                     <span>Net Taxable Subtotal:</span>
-                    <span className="font-mono text-[#1E293B] font-semibold">${taxableCalc.toFixed(2)}</span>
+                    <span className="font-mono text-[#1E293B] font-semibold">₹{taxableCalc.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between w-72 text-[#64748B]">
                     <span>GST (18%):</span>
-                    <span className="font-mono text-[#1E293B] font-semibold">${taxCalc.toFixed(2)}</span>
+                    <span className="font-mono text-[#1E293B] font-semibold">₹{taxCalc.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between w-72 text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5 mt-1">
                     <span>Total Tax Invoice:</span>
-                    <span className="font-mono text-[#0274BB]">${grandTotalCalc.toFixed(2)}</span>
+                    <span className="font-mono text-[#0274BB]">₹{grandTotalCalc.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -983,8 +990,8 @@ export const RequestDetailPage: React.FC = () => {
                   {createInvoiceMutation.isPending
                     ? 'Issuing Invoice...'
                     : isActualInvoice
-                    ? `Generate Actual Invoice ($${grandTotalCalc.toFixed(2)})`
-                    : `Generate Partial Invoice ($${grandTotalCalc.toFixed(2)})`}
+                    ? `Generate Actual Invoice (₹${grandTotalCalc.toFixed(2)})`
+                    : `Generate Partial Invoice (₹${grandTotalCalc.toFixed(2)})`}
                 </Button>
               </div>
             </div>

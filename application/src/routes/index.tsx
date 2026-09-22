@@ -218,9 +218,7 @@ export const AppRoutes: React.FC = () => {
             path="commercial/quotations"
             element={
               <DisallowCollectionAgentRoute>
-                <DisallowLabEntryRoute>
-                  <QuotationListPage />
-                </DisallowLabEntryRoute>
+                <QuotationListPage />
               </DisallowCollectionAgentRoute>
             }
           />
@@ -228,13 +226,11 @@ export const AppRoutes: React.FC = () => {
             path="commercial/quotations/new"
             element={
               <DisallowCollectionAgentRoute>
-                <DisallowLabEntryRoute>
-                  <DisallowLabApproverRoute>
-                    <DisallowAdminRoute>
-                      <QuotationBuilderPage />
-                    </DisallowAdminRoute>
-                  </DisallowLabApproverRoute>
-                </DisallowLabEntryRoute>
+                <DisallowLabApproverRoute>
+                  <DisallowAdminRoute>
+                    <QuotationBuilderPage />
+                  </DisallowAdminRoute>
+                </DisallowLabApproverRoute>
               </DisallowCollectionAgentRoute>
             }
           />

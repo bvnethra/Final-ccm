@@ -31,8 +31,9 @@ interface ClientDetailViewProps {
 }
 
 export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ client }) => {
-  const { isCollectionAgent, isLabEntryPerson, isLabApprover } = useAuthContext();
-  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson || isLabApprover;
+  const { canPerform, isSuperAdmin } = useAuthContext();
+  const canEditMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE_EDIT') || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE');
+  const isViewOnlyMaster = !canEditMaster;
   const phoneNumbers = client.phone_numbers || [client.phone];
   const emailAddresses = client.email_addresses || [client.email];
 

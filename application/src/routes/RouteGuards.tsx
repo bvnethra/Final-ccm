@@ -2,6 +2,48 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
+import type { PermissionLevel } from '../types/auth';
+
+function getRequiredModuleForLocation(pathname: string): { moduleCode: string; level: PermissionLevel } | null {
+  if (pathname.includes('/commercial/quotations/new')) return { moduleCode: 'CREATE_QUOTATION', level: 'CREATE' };
+  if (pathname.includes('/commercial/quotations')) return { moduleCode: 'CREATE_QUOTATION', level: 'VIEW' };
+  if (pathname.includes('/commercial/invoices')) return { moduleCode: 'CREATE_INVOICE', level: 'VIEW' };
+  if (pathname.includes('/lab/due-list')) return { moduleCode: 'CALIBRATION_DUE_LIST', level: 'VIEW' };
+  if (pathname.includes('/lab/calibration')) return { moduleCode: 'RECORD_CALIBRATION_FREQUENCY', level: 'VIEW' };
+  if (pathname.includes('/lab/queue') || pathname.includes('/lab/verification')) return { moduleCode: 'LAB_VERIFICATION_RECEIPT', level: 'VIEW' };
+  if (pathname.includes('/requests/new')) return { moduleCode: 'CREATE_REQUEST', level: 'CREATE' };
+  if (pathname.includes('/requests')) return { moduleCode: 'CREATE_REQUEST', level: 'VIEW' };
+  if (pathname.includes('/roles')) return { moduleCode: 'ROLE_PERMISSION_MANAGEMENT', level: 'VIEW' };
+  if (
+    pathname.includes('/masters/clients/new') ||
+    pathname.includes('/masters/vendors/new') ||
+    pathname.includes('/masters/items/new') ||
+    pathname.includes('/clients/new') ||
+    pathname.includes('/vendors/new') ||
+    pathname.includes('/items/new') ||
+    pathname.endsWith('/edit')
+  ) {
+    return { moduleCode: 'CLIENT_VENDOR_ITEM_MASTER', level: 'CREATE' };
+  }
+  if (
+    pathname.includes('/masters/clients') ||
+    pathname.includes('/masters/vendors') ||
+    pathname.includes('/masters/items')
+  ) {
+    return { moduleCode: 'CLIENT_VENDOR_ITEM_MASTER', level: 'VIEW' };
+  }
+  return null;
+}
+
+function getDefaultRouteForUser(canPerform: (mod: string, lvl?: PermissionLevel) => boolean): string {
+  if (canPerform('CREATE_REQUEST', 'VIEW')) return '/requests';
+  if (canPerform('LAB_VERIFICATION_RECEIPT', 'VIEW') || canPerform('RECORD_CALIBRATION_FREQUENCY', 'VIEW')) return '/lab/queue';
+  if (canPerform('CALIBRATION_DUE_LIST', 'VIEW')) return '/lab/due-list';
+  if (canPerform('CREATE_QUOTATION', 'VIEW')) return '/commercial/quotations';
+  if (canPerform('CREATE_INVOICE', 'VIEW')) return '/commercial/invoices';
+  if (canPerform('CLIENT_VENDOR_ITEM_MASTER', 'VIEW')) return '/masters/clients';
+  return '/requests';
+}
 
 export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuthContext();
@@ -29,11 +71,15 @@ export const PermissionRoute: React.FC<{
   permission: string;
   children: React.ReactNode;
 }> = ({ permission, children }) => {
-  const { hasPermission, isLoading } = useAuthContext();
+  const { hasPermission, canPerform, isLoading } = useAuthContext();
 
   if (isLoading) return null;
 
-  if (!hasPermission(permission)) {
+  const permitted = permission.includes(':')
+    ? canPerform(permission.split(':')[0], permission.split(':')[1] as PermissionLevel)
+    : hasPermission(permission);
+
+  if (!permitted) {
     return (
       <div className="p-8 max-w-lg mx-auto text-center space-y-3">
         <div className="p-4 bg-[#fef2f2] border border-[#DC2626]/30 text-[#DC2626] rounded-[4px]">
@@ -50,109 +96,110 @@ export const PermissionRoute: React.FC<{
 };
 
 /**
- * Route guard that prevents Collection Agent from accessing screens outside
- * their designated role scope (only Client, Vendor, Item Master view, and Create/View Requests).
+ * Route guard that validates access against live module permissions.
  */
 export const DisallowCollectionAgentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isCollectionAgent, isLoading } = useAuthContext();
+  const { isSuperAdmin, canPerform, isLoading } = useAuthContext();
+  const location = useLocation();
 
   if (isLoading) return null;
+  if (isSuperAdmin) return <>{children}</>;
 
-  if (isCollectionAgent) {
-    return <Navigate to="/requests" replace />;
+  const req = getRequiredModuleForLocation(location.pathname);
+  if (req && !canPerform(req.moduleCode, req.level)) {
+    return <Navigate to={getDefaultRouteForUser(canPerform)} replace />;
   }
 
   return <>{children}</>;
 };
 
 /**
- * Route guard that prevents Lab Entry Person from accessing screens outside
- * their designated role scope (only Client, Vendor, Calibration Due List view, Lab Queue/Verification,
- * Record Calibration, Invoices, Service Flag, Outsource PO).
+ * Route guard that validates access against live module permissions.
  */
 export const DisallowLabEntryRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isLabEntryPerson, isLoading } = useAuthContext();
+  const { isSuperAdmin, canPerform, isLoading } = useAuthContext();
+  const location = useLocation();
 
   if (isLoading) return null;
+  if (isSuperAdmin) return <>{children}</>;
 
-  if (isLabEntryPerson) {
-    return <Navigate to="/lab/queue" replace />;
+  const req = getRequiredModuleForLocation(location.pathname);
+  if (req && !canPerform(req.moduleCode, req.level)) {
+    return <Navigate to={getDefaultRouteForUser(canPerform)} replace />;
   }
 
   return <>{children}</>;
 };
 
 /**
- * Route guard that prevents Lab Approver from accessing screens outside
- * their designated role scope (only Client, Vendor, Item Master view, Request view,
- * Lab Verification/Proof view, Calibration frequency view, Invoice view, Outsource PO view,
- * and Repair/Quotation approval).
+ * Route guard that validates access against live module permissions.
+ * Prevents Approvers from generating draft quotations (Maker-Checker separation).
  */
 export const DisallowLabApproverRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isLabApprover, isLoading } = useAuthContext();
+  const { isSuperAdmin, canPerform, getPermissionLevel, isLoading } = useAuthContext();
+  const location = useLocation();
 
   if (isLoading) return null;
+  if (isSuperAdmin) return <>{children}</>;
 
-  if (isLabApprover) {
-    return <Navigate to="/lab/queue" replace />;
+  // Approvers approve quotations; they do not create draft quotations (Maker-Checker)
+  if (location.pathname.includes('/commercial/quotations/new')) {
+    const permLevel = getPermissionLevel('CREATE_QUOTATION');
+    if (permLevel === 'APPROVE') {
+      return <Navigate to="/commercial/quotations" replace />;
+    }
+  }
+
+  const req = getRequiredModuleForLocation(location.pathname);
+  if (req && !canPerform(req.moduleCode, req.level)) {
+    return <Navigate to={getDefaultRouteForUser(canPerform)} replace />;
   }
 
   return <>{children}</>;
 };
 
 /**
- * Route guard that prevents Admin from accessing operational creation workflows
- * (New Request, New Quotation, Logistics & Dispatch) where Admin is view-only or unauthorized.
+ * Route guard that validates access against live module permissions.
  */
 export const DisallowAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAdmin, isLoading } = useAuthContext();
+  const { isSuperAdmin, canPerform, isLoading } = useAuthContext();
+  const location = useLocation();
 
   if (isLoading) return null;
+  if (isSuperAdmin) return <>{children}</>;
 
-  if (isAdmin) {
-    return <Navigate to="/requests" replace />;
+  const req = getRequiredModuleForLocation(location.pathname);
+  if (req && !canPerform(req.moduleCode, req.level)) {
+    return <Navigate to={getDefaultRouteForUser(canPerform)} replace />;
   }
 
   return <>{children}</>;
 };
 
 /**
- * Route guard preventing view-only roles (Collection Agent, Lab Entry Person, Lab Approver)
- * from accessing Master creation or editing screens.
+ * Route guard requiring Master creation or editing permissions.
  */
 export const RequireMasterEditRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isCollectionAgent, isLabEntryPerson, isLabApprover, isLoading } = useAuthContext();
+  const { isSuperAdmin, canPerform, isLoading } = useAuthContext();
 
   if (isLoading) return null;
+  if (isSuperAdmin) return <>{children}</>;
 
-  if (isCollectionAgent) {
-    return <Navigate to="/requests" replace />;
-  }
-  if (isLabEntryPerson || isLabApprover) {
-    return <Navigate to="/lab/queue" replace />;
+  if (!canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE')) {
+    return <Navigate to={getDefaultRouteForUser(canPerform)} replace />;
   }
 
   return <>{children}</>;
 };
 
 /**
- * Root dashboard redirect:
- * - Collection Agent -> /requests
- * - Lab Entry Person -> /lab/queue
- * - Lab Approver -> /lab/queue
- * - Others -> DashboardPage
+ * Root dashboard redirect based on active operational permissions.
  */
 export const DashboardRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isCollectionAgent, isLabEntryPerson, isLabApprover, isLoading } = useAuthContext();
+  const { canPerform, isLoading, isSuperAdmin } = useAuthContext();
 
   if (isLoading) return null;
+  if (isSuperAdmin) return <>{children}</>;
 
-  if (isCollectionAgent) {
-    return <Navigate to="/requests" replace />;
-  }
-  if (isLabEntryPerson || isLabApprover) {
-    return <Navigate to="/lab/queue" replace />;
-  }
-
-  return <>{children}</>;
+  return <Navigate to={getDefaultRouteForUser(canPerform)} replace />;
 };

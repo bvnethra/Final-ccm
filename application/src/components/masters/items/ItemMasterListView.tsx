@@ -43,27 +43,27 @@ const ITEM_IMPORT_FIELDS: FieldMapping[] = [
 
 const SAMPLE_ITEMS = [
   {
-    'Item Name': 'Digital Vernier Caliper 0-150mm',
-    'Item Code': 'ITM-2026-0001',
+    'Item Name': 'SLIP GAUGE BLOCK (0.5-100mm)',
+    'Item Code': 'TCC-MAS-001',
     'Category': 'Dimensional Metrology',
-    'Manufacturer': 'Mitutoyo',
-    'Model': 'CD-6" CSX',
-    'Serial Number': 'MIT-2026-1029',
-    'Measurement Range': '0 - 150 mm',
+    'Manufacturer': 'Standard',
+    'Model': 'Grade 0',
+    'Serial Number': 'SGB-2026-001',
+    'Measurement Range': '0.5-100mm',
     'Least Count': '0.01 mm',
-    'Standard Cost': 1200,
+    'Standard Cost': 70,
     'Calibration Frequency': 365,
   },
   {
-    'Item Name': 'External Micrometer 0-25mm',
-    'Item Code': 'ITM-2026-0002',
+    'Item Name': 'VERNIER CALIPER (0-150mm)',
+    'Item Code': 'TCC-MAS-002',
     'Category': 'Dimensional Metrology',
     'Manufacturer': 'Mitutoyo',
-    'Model': '103-137',
-    'Serial Number': 'MIT-2026-5542',
-    'Measurement Range': '0 - 25 mm',
-    'Least Count': '0.001 mm',
-    'Standard Cost': 950,
+    'Model': 'CD-6" CSX',
+    'Serial Number': 'VC-2026-002',
+    'Measurement Range': '0-150mm',
+    'Least Count': '0.01 mm',
+    'Standard Cost': 160,
     'Calibration Frequency': 365,
   },
 ];
@@ -103,8 +103,10 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
   onImportBulk,
   onImportSuccess,
 }) => {
-  const { isCollectionAgent, isLabApprover } = useAuthContext();
-  const isViewOnlyMaster = isCollectionAgent || isLabApprover;
+  const { canPerform, isSuperAdmin } = useAuthContext();
+  const canCreateMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE');
+  const canEditMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE_EDIT') || canCreateMaster;
+  const isViewOnlyMaster = !canCreateMaster;
 
   return (
     <div className="space-y-6">
@@ -149,7 +151,7 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
         title="Import Equipment Items in Bulk"
         description="Upload an Excel or CSV file containing instruments, serial numbers, calibration ranges, and costs."
         fields={ITEM_IMPORT_FIELDS}
-        sampleTemplateFileName="Nethra_Item_Master_Template.xlsx"
+        sampleTemplateFileName="Item_Master_Template.xlsx"
         sampleData={SAMPLE_ITEMS}
         onImport={onImportBulk}
         onSuccess={onImportSuccess}
@@ -310,7 +312,7 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
                       </td>
 
                       <td className="px-5 py-4">
-                        {isViewOnlyMaster ? (
+                        {!canEditMaster ? (
                           <Badge variant={item.status === 'ACTIVE' ? 'success' : 'outline'}>
                             {item.status}
                           </Badge>
@@ -364,7 +366,7 @@ export const ItemMasterListView: React.FC<ItemMasterListViewProps> = ({
                               <Eye className="size-4" />
                             </button>
                           </Link>
-                          {!isViewOnlyMaster && (
+                          {canEditMaster && (
                             <Link to={`/masters/items/${item.id}/edit`}>
                               <button
                                 className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"

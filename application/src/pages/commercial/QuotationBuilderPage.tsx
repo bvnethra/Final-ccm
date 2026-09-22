@@ -227,7 +227,7 @@ export const QuotationBuilderPage: React.FC = () => {
                         />
                       </td>
                       <td className="p-3 text-right font-mono font-semibold text-[#111827]">
-                        ${it.totalPrice.toFixed(2)}
+                        ₹{it.totalPrice.toFixed(2)}
                       </td>
                       <td className="p-3 text-center">
                         {items.length > 1 && (
@@ -250,10 +250,10 @@ export const QuotationBuilderPage: React.FC = () => {
             <div className="p-6 bg-[#F5F7FA] border-t border-[#E5E7EB] flex flex-col items-end gap-2 text-sm">
               <div className="flex justify-between w-64 text-[#6B7280]">
                 <span>Subtotal:</span>
-                <span className="font-mono text-[#111827]">${subtotal.toFixed(2)}</span>
+                <span className="font-mono text-[#111827]">₹{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between w-64 items-center">
-                <span className="text-[#6B7280]">Discount ($):</span>
+                <span className="text-[#6B7280]">Discount (₹):</span>
                 <Input
                   type="number"
                   step="any"
@@ -276,11 +276,11 @@ export const QuotationBuilderPage: React.FC = () => {
               </div>
               <div className="flex justify-between w-64 text-[#6B7280]">
                 <span>Tax Amount:</span>
-                <span className="font-mono text-[#111827]">${taxAmount.toFixed(2)}</span>
+                <span className="font-mono text-[#111827]">₹{taxAmount.toFixed(2)}</span>
               </div>
               <div className="flex justify-between w-64 border-t border-[#E5E7EB] pt-2 text-base font-bold text-[#111827]">
                 <span>Grand Total:</span>
-                <span className="font-mono text-[#0274BB]">${grandTotal.toFixed(2)}</span>
+                <span className="font-mono text-[#0274BB]">₹{grandTotal.toFixed(2)}</span>
               </div>
             </div>
           </CardContent>

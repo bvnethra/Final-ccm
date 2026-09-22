@@ -32,6 +32,10 @@ export async function createPlatformUser(payload: {
   const email = payload.email.trim().toLowerCase();
 
   // Create auth user or check if user exists in auth
+  // Fetch primary tenant and organization
+  const { data: tenant } = await supabase.from('tenants').select('id').limit(1).maybeSingle();
+  const { data: org } = await supabase.from('organizations').select('id').limit(1).maybeSingle();
+
   const { data: authData, error: authErr } = await supabase.auth.signUp({
     email,
     password: payload.password || 'Temporary@12345',
@@ -48,9 +52,10 @@ export async function createPlatformUser(payload: {
 
   const userId = authData.user?.id || crypto.randomUUID();
 
+  // 1. Register in platform_users
   const { data, error } = await supabase
     .from('platform_users')
-    .insert([{
+    .upsert([{
       id: userId,
       email,
       full_name: payload.fullName.trim(),
@@ -61,6 +66,39 @@ export async function createPlatformUser(payload: {
     .single();
 
   if (error) throw new Error(`Failed to register platform user: ${error.message}`);
+
+  // 2. Provision user_profiles for operational application (port 5174)
+  try {
+    await supabase.from('user_profiles').upsert([{
+      id: userId,
+      tenant_id: tenant?.id,
+      organization_id: org?.id,
+      email,
+      full_name: payload.fullName.trim(),
+      status: 'ACTIVE',
+    }]);
+  } catch (profErr) {
+    console.warn('Could not provision user_profile:', profErr);
+  }
+
+  // 3. Link role in user_roles
+  try {
+    const { data: roleRow } = await supabase
+      .from('roles')
+      .select('id')
+      .eq('code', payload.role)
+      .maybeSingle();
+
+    if (roleRow?.id) {
+      await supabase.from('user_roles').delete().eq('user_id', userId);
+      await supabase.from('user_roles').insert([{
+        user_id: userId,
+        role_id: roleRow.id,
+      }]);
+    }
+  } catch (roleErr) {
+    console.warn('Could not link role in user_roles:', roleErr);
+  }
 
   await logPlatformEvent({
     action: 'PLATFORM_USER_CREATED',
@@ -115,6 +153,25 @@ export async function updatePlatformUserRole(userId: string, role: PlatformRole,
     .eq('id', userId);
 
   if (error) throw new Error(`Update platform user role failed: ${error.message}`);
+
+  // Synchronize user_roles table for operational application (port 5174)
+  try {
+    const { data: roleRow } = await supabase
+      .from('roles')
+      .select('id')
+      .eq('code', role)
+      .maybeSingle();
+
+    if (roleRow?.id) {
+      await supabase.from('user_roles').delete().eq('user_id', userId);
+      await supabase.from('user_roles').insert({
+        user_id: userId,
+        role_id: roleRow.id,
+      });
+    }
+  } catch (syncErr) {
+    console.warn('Could not synchronize role into user_roles:', syncErr);
+  }
 
   await logPlatformEvent({
     action: 'PLATFORM_USER_ROLE_CHANGED',

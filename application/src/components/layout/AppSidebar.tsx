@@ -12,11 +12,9 @@ import {
   Gauge,
   CalendarClock,
   Shield,
-  ExternalLink,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuthContext } from '../../contexts/AuthContext';
-import { openSuperAdminApp } from '../../services/crossAppNav';
 
 interface NavItem {
   label: string;
@@ -42,45 +40,34 @@ const masterDataItems: NavItem[] = [
 ];
 
 export const AppSidebar: React.FC = () => {
-  const { user, isCollectionAgent, isLabEntryPerson, isLabApprover, isAdmin } = useAuthContext();
+  const { user, canPerform } = useAuthContext();
 
-  // Role-based operational items filtering:
-  // - Collection Agent: Inward Requests only
-  // - Lab Entry Person: Lab Verification & Queue, Calibration Due List, Tax Invoices
-  // - Lab Approver: Inward Requests, Lab & Calibration, Commercial Quotations, Tax Invoices
-  // - Admin: Inward Requests, Lab & Calibration, Calibration Due List, Commercial Quotations, Tax Invoices (Logistics hidden)
   let visibleOperationalItems = operationalItems;
-  if (isCollectionAgent) {
-    visibleOperationalItems = operationalItems.filter((item) => item.to === '/requests');
-  } else if (isLabEntryPerson) {
-    visibleOperationalItems = operationalItems.filter((item) =>
-      ['/lab/queue', '/lab/due-list', '/commercial/invoices'].includes(item.to)
-    );
-  } else if (isLabApprover) {
-    visibleOperationalItems = operationalItems.filter((item) =>
-      ['/requests', '/lab/queue', '/commercial/quotations', '/commercial/invoices'].includes(item.to)
-    );
-  } else if (isAdmin) {
-    visibleOperationalItems = operationalItems.filter((item) =>
-      ['/requests', '/lab/queue', '/lab/due-list', '/commercial/quotations', '/commercial/invoices'].includes(item.to)
-    );
-  }
-
-  // Master Data filtering:
-  // - Lab Entry Person: View only Client and Vendor Master (Item Master & Roles hidden)
-  // - Collection Agent & Lab Approver: View Client, Vendor, Item (Roles hidden)
-  // - Admin & Super Admin: View and manage all: Client, Vendor, Item, and Role & Permissions
   let visibleMasterDataItems = masterDataItems;
-  if (isLabEntryPerson) {
-    visibleMasterDataItems = masterDataItems.filter((item) =>
-      ['/masters/clients', '/masters/vendors'].includes(item.to)
-    );
-  } else if (isCollectionAgent || isLabApprover) {
-    visibleMasterDataItems = masterDataItems.filter((item) =>
-      ['/masters/clients', '/masters/vendors', '/masters/items'].includes(item.to)
-    );
-  } else if (!isAdmin && !user?.isSuperAdmin) {
-    visibleMasterDataItems = masterDataItems.filter((item) => item.to !== '/roles');
+
+  if (!user?.isSuperAdmin) {
+    visibleOperationalItems = operationalItems.filter((item) => {
+      if (item.to === '/') return true;
+      if (item.to === '/requests') return canPerform('CREATE_REQUEST', 'VIEW');
+      if (item.to === '/lab/queue') {
+        return (
+          canPerform('LAB_VERIFICATION_RECEIPT', 'VIEW') ||
+          canPerform('RECORD_CALIBRATION_FREQUENCY', 'VIEW')
+        );
+      }
+      if (item.to === '/lab/due-list') return canPerform('CALIBRATION_DUE_LIST', 'VIEW');
+      if (item.to === '/commercial/quotations') return canPerform('CREATE_QUOTATION', 'VIEW');
+      if (item.to === '/commercial/invoices') return canPerform('CREATE_INVOICE', 'VIEW');
+      if (item.to === '/logistics/dispatches') {
+        return canPerform('CREATE_REQUEST', 'VIEW');
+      }
+      return true;
+    });
+
+    visibleMasterDataItems = masterDataItems.filter((item) => {
+      if (item.to === '/roles') return canPerform('ROLE_PERMISSION_MANAGEMENT', 'VIEW');
+      return canPerform('CLIENT_VENDOR_ITEM_MASTER', 'VIEW');
+    });
   }
 
   return (
@@ -145,20 +132,6 @@ export const AppSidebar: React.FC = () => {
       </div>
 
       <div className="pt-4 border-t border-[#E5E7EB] space-y-3">
-        {(isAdmin || user?.isSuperAdmin) && (
-          <button
-            onClick={() => openSuperAdminApp()}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-[4px] text-xs font-semibold text-[#0274BB] bg-[#E6F2FF] hover:bg-[#d0e7ff] border border-[#b8dcff] transition cursor-pointer shadow-xs"
-            title="Open Connected Super Admin Portal on localhost:5173"
-          >
-            <div className="flex items-center gap-2">
-              <Shield className="size-3.5 text-[#0274BB]" />
-              <span>Super Admin Portal</span>
-            </div>
-            <ExternalLink className="size-3.5 text-[#0274BB]" />
-          </button>
-        )}
-
         <div className="p-3 bg-[#F5F7FA] rounded-[4px] border border-[#E5E7EB]">
           <span className="text-xs font-semibold text-[#111827] block">Nethra CCM v2.0</span>
           <span className="text-[11px] text-[#6B7280] block mt-0.5">Metrology Commercial System</span>

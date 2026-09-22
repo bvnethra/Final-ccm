@@ -31,8 +31,9 @@ interface VendorDetailViewProps {
 }
 
 export const VendorDetailView: React.FC<VendorDetailViewProps> = ({ vendor }) => {
-  const { isCollectionAgent, isLabEntryPerson, isLabApprover } = useAuthContext();
-  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson || isLabApprover;
+  const { canPerform, isSuperAdmin } = useAuthContext();
+  const canEditMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE_EDIT') || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE');
+  const isViewOnlyMaster = !canEditMaster;
   const phoneNumbers = vendor.phone_numbers || [vendor.phone];
   const emailAddresses = vendor.email_addresses || [vendor.email];
 

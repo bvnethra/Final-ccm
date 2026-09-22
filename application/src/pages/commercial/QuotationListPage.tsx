@@ -33,10 +33,14 @@ import {
 
 export const QuotationListPage: React.FC = () => {
   const navigate = useNavigate();
-  const { tenantId, organizationId, isLabApprover, isAdmin } = useAuthContext();
+  const { tenantId, organizationId, isLabApprover, canPerform, getPermissionLevel, isSuperAdmin } = useAuthContext();
   const { data: quotations = [], isLoading, error } = useQuotations();
   const approveQuotationMutation = useApproveQuotation();
   const createInvoiceMutation = useCreateInvoice();
+
+  const canApproveQuotation = isSuperAdmin || isLabApprover || getPermissionLevel('CREATE_QUOTATION') === 'APPROVE';
+  const canCreateQuotation = isSuperAdmin || (!canApproveQuotation && canPerform('CREATE_QUOTATION', 'CREATE'));
+  const canCreateInvoice = isSuperAdmin || canPerform('CREATE_INVOICE', 'CREATE');
 
   // Approval Modal State
   const [approvalModalQuote, setApprovalModalQuote] = useState<Quotation | null>(null);
@@ -190,7 +194,7 @@ export const QuotationListPage: React.FC = () => {
               <Receipt className="size-4" /> View Invoices (Step 11)
             </Button>
           </Link>
-          {!isLabApprover && !isAdmin && (
+          {canCreateQuotation && (
             <Link to="/commercial/quotations/new">
               <Button variant="primary">
                 <Plus className="size-4" /> Create Quotation
@@ -238,7 +242,7 @@ export const QuotationListPage: React.FC = () => {
               <p className="text-xs text-[#6B7280]">
                 Create a new quotation for calibrated equipment awaiting client billing.
               </p>
-              {!isLabApprover && (
+              {canCreateQuotation && (
                 <Link to="/commercial/quotations/new">
                   <Button variant="secondary" size="sm" className="mt-2">
                     <Plus className="size-4" /> Generate New Quotation
@@ -289,16 +293,16 @@ export const QuotationListPage: React.FC = () => {
                           )}
                         </td>
                         <td className="px-4 py-4 font-mono text-[#374151]">
-                          ${q.subtotal.toFixed(2)}
+                          ₹{q.subtotal.toFixed(2)}
                         </td>
                         <td className="px-4 py-4 font-mono text-[#6B7280]">
-                          -${q.discount.toFixed(2)}
+                          -₹{q.discount.toFixed(2)}
                         </td>
                         <td className="px-4 py-4 font-mono text-[#6B7280]">
-                          ${q.tax_amount.toFixed(2)}
+                          ₹{q.tax_amount.toFixed(2)}
                         </td>
                         <td className="px-4 py-4 font-mono font-bold text-[#111827]">
-                          ${q.total_amount.toFixed(2)}
+                          ₹{q.total_amount.toFixed(2)}
                         </td>
                         <td className="px-4 py-4">
                           <div className="space-y-1">
@@ -326,9 +330,10 @@ export const QuotationListPage: React.FC = () => {
                         </td>
                         <td className="px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {!isFullyInvoiced && q.status !== 'REJECTED' && !isAdmin && (
+                            {/* Invoicing allowed only when approved or partially invoiced */}
+                            {(isApproved || isPartiallyInvoiced) && !isFullyInvoiced && canCreateInvoice && (
                               <Button
-                                variant={isApproved ? 'primary' : isPartiallyInvoiced ? 'secondary' : 'primary'}
+                                variant={isApproved ? 'primary' : 'secondary'}
                                 size="sm"
                                 onClick={() => handleOpenInvoiceModal(q)}
                                 disabled={createInvoiceMutation.isPending}
@@ -336,20 +341,28 @@ export const QuotationListPage: React.FC = () => {
                                 <Receipt className="size-3.5" />
                                 {isPartiallyInvoiced
                                   ? 'Invoice Remaining Items'
-                                  : isApproved
-                                  ? 'Generate Tax Invoice'
-                                  : 'Generate Invoice'}
+                                  : 'Generate Tax Invoice'}
                               </Button>
                             )}
-                            {isDraft && !isAdmin && (
+
+                            {/* Lab Approver Approval Action */}
+                            {isDraft && canApproveQuotation && (
                               <Button
-                                variant="outlineInk"
+                                variant="primary"
                                 size="sm"
                                 onClick={() => handleOpenApprovalModal(q)}
                               >
-                                <FileCheck className="size-3.5" /> Approve (Optional)
+                                <FileCheck className="size-3.5" /> Approve Quotation
                               </Button>
                             )}
+
+                            {/* Non-Approver Pending Approval Indicator */}
+                            {isDraft && !canApproveQuotation && (
+                              <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded border border-amber-200 flex items-center gap-1.5">
+                                <Clock className="size-3.5 text-amber-600" /> Pending Lab Approver Approval
+                              </span>
+                            )}
+
                             {isFullyInvoiced && (
                               <span className="text-xs text-[#16A34A] font-semibold flex items-center justify-end gap-1">
                                 <CheckCircle2 className="size-4" /> Fully Invoiced
@@ -399,7 +412,7 @@ export const QuotationListPage: React.FC = () => {
                 <div className="flex justify-between">
                   <span className="text-[#1E40AF] font-semibold">Total Payable:</span>
                   <span className="font-mono font-bold text-[#1E40AF]">
-                    ${approvalModalQuote.total_amount.toFixed(2)}
+                    ₹{approvalModalQuote.total_amount.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -613,14 +626,14 @@ export const QuotationListPage: React.FC = () => {
                                 {it.description}
                               </span>
                               <span className="text-[#64748B]">
-                                Qty: {it.quantity} • Unit: ${it.unit_price.toFixed(2)}
+                                Qty: {it.quantity} • Unit: ₹{it.unit_price.toFixed(2)}
                               </span>
                             </div>
                           </label>
 
                           <div className="text-right shrink-0 ml-3">
                             <span className="font-mono font-bold text-[#111827] block text-sm">
-                              ${it.total_price.toFixed(2)}
+                              ₹{it.total_price.toFixed(2)}
                             </span>
                             {isAlreadyInvoiced ? (
                               <Badge variant="success">
@@ -642,15 +655,15 @@ export const QuotationListPage: React.FC = () => {
                 <div className="p-4 bg-[#F8FAFC] rounded-[4px] border border-[#E5E7EB] flex flex-col items-end gap-1.5 text-xs">
                   <div className="flex justify-between w-64 text-[#64748B]">
                     <span>Selected Items Subtotal:</span>
-                    <span className="font-mono text-[#1E293B] font-semibold">${subtotalCalc.toFixed(2)}</span>
+                    <span className="font-mono text-[#1E293B] font-semibold">₹{subtotalCalc.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between w-64 text-[#64748B]">
                     <span>GST (18%):</span>
-                    <span className="font-mono text-[#1E293B] font-semibold">${taxCalc.toFixed(2)}</span>
+                    <span className="font-mono text-[#1E293B] font-semibold">₹{taxCalc.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between w-64 text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5 mt-1">
                     <span>Invoice Amount:</span>
-                    <span className="font-mono text-[#0274BB]">${grandTotalCalc.toFixed(2)}</span>
+                    <span className="font-mono text-[#0274BB]">₹{grandTotalCalc.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -669,8 +682,8 @@ export const QuotationListPage: React.FC = () => {
                   {createInvoiceMutation.isPending
                     ? 'Issuing Invoice...'
                     : isActualInvoice
-                    ? `Generate Actual Invoice ($${grandTotalCalc.toFixed(2)})`
-                    : `Generate Partial Invoice ($${grandTotalCalc.toFixed(2)})`}
+                    ? `Generate Actual Invoice (₹${grandTotalCalc.toFixed(2)})`
+                    : `Generate Partial Invoice (₹${grandTotalCalc.toFixed(2)})`}
                 </Button>
               </div>
             </div>

@@ -20,6 +20,9 @@
    - Never suppress runtime errors by adding silent fallbacks or dummy UUIDs (`00000000...0001`).
    - If an error occurs, investigate the root cause in logs and address it directly.
 
+5. **Excel Template Downloads Naming Rule:**
+   - Whenever downloading template spreadsheets (e.g. `Download Template` in `ExcelBulkImportPanel`), the downloaded file name MUST ALWAYS include the enterprise name or active organization name (e.g. `${Enterprise_Or_Org_Name}_Client_Master_Template.xlsx`). Never download generic names without the enterprise or organization name.
+
 ---
 
 ## 2. Verification Protocol Checklist
