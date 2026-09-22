@@ -199,6 +199,11 @@ export interface RequestItem {
   remarks?: string;
   created_at: string;
   item_masters?: ItemMaster;
+  destination?: 'IN_HOUSE' | 'VENDOR_OUTSOURCE';
+  vendor_id?: string;
+  vendor_name?: string;
+  expected_return_date?: string;
+  estimated_cost?: number;
 }
 
 export interface Verification {
@@ -399,6 +404,11 @@ export interface Invoice {
   client_po_ref?: string;
   dispatched_through?: string;
   invoice_status: 'ISSUED' | 'PAID' | 'CANCELLED';
+  approval_status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  approved_by?: string;
+  approved_by_name?: string;
+  approved_at?: string;
+  approver_notes?: string;
   created_at: string;
   items?: InvoiceItem[];
   clients?: Client;
@@ -427,6 +437,11 @@ export interface Dispatch {
   recipient_name: string;
   recipient_phone?: string;
   status: 'DISPATCHED' | 'IN_TRANSIT' | 'DELIVERED';
+  approval_status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  approved_by?: string;
+  approved_by_name?: string;
+  approved_at?: string;
+  approver_notes?: string;
   created_at: string;
 }
 

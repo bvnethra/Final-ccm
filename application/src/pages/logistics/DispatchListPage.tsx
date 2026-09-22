@@ -7,6 +7,7 @@ import {
   useUpdateDispatchStatus,
   useRecordDelivery,
   useDeliveries,
+  useApproveDispatch,
 } from '../../hooks/useOperations';
 import { useAuthContext } from '../../contexts/AuthContext';
 import {
@@ -45,7 +46,7 @@ import { SignaturePad } from '../../components/ui/SignaturePad';
 import type { Dispatch, Delivery } from '../../types/domain';
 
 export const DispatchListPage: React.FC = () => {
-  const { tenantId, organizationId } = useAuthContext();
+  const { tenantId, organizationId, user, isSuperAdmin, canPerform } = useAuthContext();
   const { data: dispatches = [], isLoading, error } = useDispatches();
   const { data: requests = [] } = useCalibrationRequests();
   const { data: deliveries = [] } = useDeliveries();
@@ -53,10 +54,15 @@ export const DispatchListPage: React.FC = () => {
 
   const updateStatusMutation = useUpdateDispatchStatus();
   const recordDeliveryMutation = useRecordDelivery();
+  const approveDispatchMutation = useApproveDispatch();
 
   const [selectedDispatch, setSelectedDispatch] = useState<Dispatch | null>(null);
   const [deliveryModalDispatch, setDeliveryModalDispatch] = useState<Dispatch | null>(null);
   const [selectedPODDelivery, setSelectedPODDelivery] = useState<{ dispatch: Dispatch; delivery?: Delivery } | null>(null);
+
+  // DC Approval state
+  const [approvalModalDispatch, setApprovalModalDispatch] = useState<Dispatch | null>(null);
+  const [approverNotes, setApproverNotes] = useState<string>('');
 
   // Delivery form state
   const [receiverName, setReceiverName] = useState<string>('');
@@ -67,6 +73,25 @@ export const DispatchListPage: React.FC = () => {
   );
   const [successToast, setSuccessToast] = useState<string | undefined>();
   const [deliveryError, setDeliveryError] = useState<string | undefined>();
+
+  const handleApproveDispatch = async (approved: boolean) => {
+    if (!approvalModalDispatch || !tenantId) return;
+    try {
+      await approveDispatchMutation.mutateAsync({
+        tenantId,
+        organizationId: organizationId || '',
+        dispatchId: approvalModalDispatch.id,
+        approved,
+        actorUserId: user?.id,
+        actorName: user?.fullName || user?.email || 'Logistics Incharge',
+        approverNotes,
+      });
+      setApprovalModalDispatch(null);
+      setSuccessToast(`Delivery Challan ${approvalModalDispatch.gate_pass_number} ${approved ? 'Approved' : 'Rejected'} successfully!`);
+    } catch (err: any) {
+      setDeliveryError(err.message || 'Failed to update DC approval.');
+    }
+  };
 
   const getRequestInfo = (requestId: string) => {
     return requests.find((r) => r.id === requestId);
@@ -243,6 +268,7 @@ export const DispatchListPage: React.FC = () => {
                     <th className="px-5 py-3">Package Content</th>
                     <th className="px-5 py-3">Logistics / Agent</th>
                     <th className="px-5 py-3">Recipient &amp; Client</th>
+                    <th className="px-5 py-3">DC Approval</th>
                     <th className="px-5 py-3">Client Digital Signature</th>
                     <th className="px-5 py-3">Tracking Status</th>
                     <th className="px-5 py-3 text-right">Actions</th>
@@ -333,6 +359,22 @@ export const DispatchListPage: React.FC = () => {
                         </td>
 
                         <td className="px-5 py-4">
+                          {d.approval_status === 'APPROVED' ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                              <CheckCircle2 className="size-3 text-emerald-600" /> DC Approved
+                            </span>
+                          ) : d.approval_status === 'REJECTED' ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                              <X className="size-3 text-red-600" /> DC Rejected
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                              <Clock className="size-3 text-amber-600" /> Pending Approval
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4">
                           {hasSignature ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                               <CheckCircle2 className="size-3 text-emerald-600" /> Digitally Signed
@@ -367,6 +409,20 @@ export const DispatchListPage: React.FC = () => {
 
                         <td className="px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                            {(isSuperAdmin || canPerform('CREATE_REQUEST', 'APPROVE')) && d.approval_status !== 'APPROVED' && (
+                              <Button
+                                variant="outlineInk"
+                                size="sm"
+                                onClick={() => {
+                                  setApprovalModalDispatch(d);
+                                  setApproverNotes('');
+                                }}
+                                className="text-xs h-7 px-2 border-emerald-400 text-emerald-700 hover:bg-emerald-50"
+                              >
+                                <ShieldCheck className="size-3" /> Approve DC
+                              </Button>
+                            )}
+
                             {d.status === 'DISPATCHED' && (
                               <Button
                                 variant="outlineInk"
@@ -856,6 +912,90 @@ export const DispatchListPage: React.FC = () => {
               >
                 Close
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Formal Delivery Challan (DC) Approval Modal */}
+      {approvalModalDispatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
+          <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="size-5 text-[#0274BB]" />
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm">Review &amp; Approve Delivery Challan (Gate Pass)</h3>
+                  <p className="text-xs text-gray-500 font-mono">#{approvalModalDispatch.gate_pass_number}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setApprovalModalDispatch(null)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded border border-gray-200">
+                <div>
+                  <span className="text-gray-500 block">Dispatch Mode:</span>
+                  <span className="font-bold text-gray-900">{approvalModalDispatch.dispatch_type || 'Collection Agent'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block">Package Type:</span>
+                  <span className="font-bold text-gray-900">{approvalModalDispatch.package_type || 'Items & Invoice'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block">Recipient:</span>
+                  <span className="font-semibold text-gray-900">{approvalModalDispatch.recipient_name}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block">Dispatch Date:</span>
+                  <span className="font-mono text-gray-900">{new Date(approvalModalDispatch.dispatch_date).toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-gray-700 block mb-1">DC Approver Clearance Remarks</label>
+                <textarea
+                  rows={3}
+                  value={approverNotes}
+                  onChange={(e) => setApproverNotes(e.target.value)}
+                  placeholder="Enter gate pass clearance remarks or outward authorization notes..."
+                  className="w-full text-xs border border-gray-300 rounded p-2 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setApprovalModalDispatch(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="outlineInk"
+                  size="sm"
+                  onClick={() => handleApproveDispatch(false)}
+                  disabled={approveDispatchMutation.isPending}
+                  className="border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  Reject DC
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleApproveDispatch(true)}
+                  disabled={approveDispatchMutation.isPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <CheckCircle2 className="size-3.5" /> Approve &amp; Release Gate Pass
+                </Button>
+              </div>
             </div>
           </div>
         </div>

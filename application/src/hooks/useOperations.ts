@@ -42,6 +42,12 @@ import {
   type CreateInvoicePayload,
   type CreateDispatchPayload,
   type RecordDeliveryPayload,
+  routeRequestItems,
+  type RouteRequestItemsPayload,
+  approveInvoice,
+  type ApproveInvoicePayload,
+  approveDispatch,
+  type ApproveDispatchPayload,
 } from '../services/operationsService';
 
 export function useCalibrationRequests(statusFilter?: string) {
@@ -355,4 +361,42 @@ export function useCalibrationDueList() {
     enabled: Boolean(tenantId),
   });
 }
+
+export function useRouteRequestItems() {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthContext();
+
+  return useMutation({
+    mutationFn: (payload: RouteRequestItemsPayload) => routeRequestItems(payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['calibrationRequests', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['calibrationRequest', variables.requestId, tenantId] });
+    },
+  });
+}
+
+export function useApproveInvoice() {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthContext();
+
+  return useMutation({
+    mutationFn: (payload: ApproveInvoicePayload) => approveInvoice(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices', tenantId] });
+    },
+  });
+}
+
+export function useApproveDispatch() {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthContext();
+
+  return useMutation({
+    mutationFn: (payload: ApproveDispatchPayload) => approveDispatch(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dispatches', tenantId] });
+    },
+  });
+}
+
 

@@ -6,6 +6,7 @@ import {
   useCalibrationRequests,
   useQuotations,
   useCreateInvoice,
+  useApproveInvoice,
 } from '../../hooks/useOperations';
 import { useAuthContext } from '../../contexts/AuthContext';
 import {
@@ -37,6 +38,8 @@ import {
   Check,
   Plus,
   AlertCircle,
+  ShieldCheck,
+  Clock,
 } from 'lucide-react';
 
 export interface EditableInvoiceItem {
@@ -51,14 +54,19 @@ export interface EditableInvoiceItem {
 }
 
 export const InvoiceListPage: React.FC = () => {
-  const { tenantId, organizationId, canPerform, isSuperAdmin } = useAuthContext();
+  const { tenantId, organizationId, canPerform, isSuperAdmin, user } = useAuthContext();
   const { data: invoices = [], isLoading } = useInvoices();
   const { data: requests = [] } = useCalibrationRequests();
   const { data: quotations = [] } = useQuotations();
   const createInvoiceMutation = useCreateInvoice();
+  const approveInvoiceMutation = useApproveInvoice();
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [filterType, setFilterType] = useState<'ALL' | 'PARTIAL' | 'ACTUAL'>('ALL');
+
+  // Approval Modal State
+  const [approvalModalInvoice, setApprovalModalInvoice] = useState<Invoice | null>(null);
+  const [invoiceApproverNotes, setInvoiceApproverNotes] = useState<string>('');
 
   // Generate Invoice Modal State (Fetch from Quotation OR Direct from Request)
   const [showGenerateModal, setShowGenerateModal] = useState<boolean>(false);
@@ -70,6 +78,25 @@ export const InvoiceListPage: React.FC = () => {
   const [clientPoForInvoice, setClientPoForInvoice] = useState<string>('');
   const [modalErrorMessage, setModalErrorMessage] = useState<string | undefined>();
   const [successToast, setSuccessToast] = useState<string | undefined>();
+
+  const handleApproveInvoice = async (approved: boolean) => {
+    if (!approvalModalInvoice || !tenantId) return;
+    try {
+      await approveInvoiceMutation.mutateAsync({
+        tenantId,
+        organizationId: organizationId || '',
+        invoiceId: approvalModalInvoice.id,
+        approved,
+        actorUserId: user?.id,
+        actorName: user?.fullName || user?.email || 'Commercial Manager',
+        approverNotes: invoiceApproverNotes,
+      });
+      setApprovalModalInvoice(null);
+      setSuccessToast(`Tax Invoice ${approvalModalInvoice.invoice_number} ${approved ? 'Approved' : 'Rejected'} successfully!`);
+    } catch (err: any) {
+      setModalErrorMessage(err.message || 'Failed to update invoice approval.');
+    }
+  };
 
   const partialInvoices = invoices.filter((i) => i.invoice_type === 'PARTIAL');
   const actualInvoices = invoices.filter((i) => i.invoice_type === 'ACTUAL' || !i.invoice_type);
@@ -478,6 +505,7 @@ export const InvoiceListPage: React.FC = () => {
                     <th className="px-6 py-3">Subtotal</th>
                     <th className="px-6 py-3">Tax (GST)</th>
                     <th className="px-6 py-3">Grand Total</th>
+                    <th className="px-6 py-3">Approval</th>
                     <th className="px-6 py-3">Status</th>
                     <th className="px-6 py-3">Invoice Date</th>
                     <th className="px-6 py-3 text-right">Action</th>
@@ -519,19 +547,49 @@ export const InvoiceListPage: React.FC = () => {
                         ₹{inv.total_amount.toFixed(2)}
                       </td>
                       <td className="px-6 py-4">
+                        {inv.approval_status === 'APPROVED' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <CheckCircle2 className="size-3 text-emerald-600" /> Approved
+                          </span>
+                        ) : inv.approval_status === 'REJECTED' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-300">
+                            <X className="size-3 text-red-600" /> Rejected
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                            <Clock className="size-3 text-amber-600" /> Pending
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
                         <Badge variant="success">{inv.invoice_status}</Badge>
                       </td>
                       <td className="px-6 py-4 text-[#6B7280] text-xs">
                         {new Date(inv.invoice_date).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setSelectedInvoice(inv)}
-                        >
-                          <Printer className="size-3.5" /> View / Print
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          {(isSuperAdmin || canPerform('CREATE_INVOICE', 'APPROVE')) && inv.approval_status !== 'APPROVED' && (
+                            <Button
+                              variant="outlineInk"
+                              size="sm"
+                              onClick={() => {
+                                setApprovalModalInvoice(inv);
+                                setInvoiceApproverNotes('');
+                              }}
+                              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 text-xs"
+                            >
+                              <ShieldCheck className="size-3.5" /> Approve
+                            </Button>
+                          )}
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setSelectedInvoice(inv)}
+                          >
+                            <Printer className="size-3.5" /> View / Print
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1161,6 +1219,90 @@ export const InvoiceListPage: React.FC = () => {
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => setSelectedInvoice(null)}>
                   Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Invoice Formal Approval Modal */}
+      {approvalModalInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
+          <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="size-5 text-[#0274BB]" />
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm">Review &amp; Approve Commercial Invoice</h3>
+                  <p className="text-xs text-gray-500 font-mono">#{approvalModalInvoice.invoice_number}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setApprovalModalInvoice(null)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded border border-gray-200">
+                <div>
+                  <span className="text-gray-500 block">Invoice Type:</span>
+                  <span className="font-bold text-gray-900">{approvalModalInvoice.invoice_type}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block">Client PO Ref:</span>
+                  <span className="font-mono font-bold text-gray-900">{approvalModalInvoice.client_po_ref || 'None'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block">Subtotal:</span>
+                  <span className="font-mono font-semibold text-gray-900">₹{approvalModalInvoice.subtotal.toFixed(2)}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block">Grand Total:</span>
+                  <span className="font-mono font-bold text-emerald-700 text-sm">₹{approvalModalInvoice.total_amount.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-gray-700 block mb-1">Approver Review Comments</label>
+                <textarea
+                  rows={3}
+                  value={invoiceApproverNotes}
+                  onChange={(e) => setInvoiceApproverNotes(e.target.value)}
+                  placeholder="Enter verification notes or approval authorization remarks..."
+                  className="w-full text-xs border border-gray-300 rounded p-2 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setApprovalModalInvoice(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="outlineInk"
+                  size="sm"
+                  onClick={() => handleApproveInvoice(false)}
+                  disabled={approveInvoiceMutation.isPending}
+                  className="border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  Reject
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleApproveInvoice(true)}
+                  disabled={approveInvoiceMutation.isPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <CheckCircle2 className="size-3.5" /> Approve &amp; Authorize
                 </Button>
               </div>
             </div>

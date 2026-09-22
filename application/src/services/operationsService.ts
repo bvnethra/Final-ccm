@@ -1,5 +1,6 @@
 // application/src/services/operationsService.ts
 import { supabase } from '../lib/supabaseClient';
+import { logAuditEvent } from './auditLogService';
 import type {
   CalibrationRequest,
   RequestAttachment,
@@ -1737,5 +1738,240 @@ export async function getCalibrationDueList(
 
   // Sort by daysRemaining ascending (most urgent / overdue first)
   return dueItems.sort((a, b) => a.daysRemaining - b.daysRemaining);
+}
+
+// ============================================================================
+// Process: Item Routing / Segregation (Step 2: In-House vs Outsource Vendor)
+// ============================================================================
+
+export interface ItemRouteAssignment {
+  itemId: string;
+  destination: 'IN_HOUSE' | 'VENDOR_OUTSOURCE';
+  vendorId?: string;
+  vendorName?: string;
+  expectedReturnDate?: string;
+  estimatedCost?: number;
+  remarks?: string;
+}
+
+export interface RouteRequestItemsPayload {
+  tenantId: string;
+  organizationId?: string;
+  requestId: string;
+  actorUserId?: string;
+  actorName?: string;
+  items: ItemRouteAssignment[];
+}
+
+export async function routeRequestItems(payload: RouteRequestItemsPayload): Promise<CalibrationRequest> {
+  const { tenantId, requestId, items, actorUserId, actorName } = payload;
+  const now = new Date().toISOString();
+
+  // 1. Update in Supabase if connected
+  try {
+    for (const it of items) {
+      await supabase
+        .from('request_items')
+        .update({
+          destination: it.destination,
+          vendor_id: it.vendorId || null,
+          remarks: it.remarks || null,
+        })
+        .eq('id', it.itemId)
+        .eq('tenant_id', tenantId);
+    }
+  } catch (_err) {
+    // fallback
+  }
+
+  // 2. Update local store
+  const localReqs = getLocalRequests(tenantId);
+  const reqIdx = localReqs.findIndex((r) => r.id === requestId);
+  let updatedRequest: CalibrationRequest | undefined;
+
+  if (reqIdx !== -1) {
+    const req = localReqs[reqIdx];
+    const updatedItems = (req.request_items || []).map((rit) => {
+      const routeInfo = items.find((i) => i.itemId === rit.id);
+      if (routeInfo) {
+        return {
+          ...rit,
+          destination: routeInfo.destination,
+          vendor_id: routeInfo.vendorId,
+          vendor_name: routeInfo.vendorName,
+          expected_return_date: routeInfo.expectedReturnDate,
+          estimated_cost: routeInfo.estimatedCost,
+          remarks: routeInfo.remarks || rit.remarks,
+        };
+      }
+      return rit;
+    });
+
+    req.request_items = updatedItems;
+    req.updated_at = now;
+    localReqs[reqIdx] = req;
+    saveLocalRequests(tenantId, localReqs);
+    updatedRequest = req;
+  }
+
+  // 3. Log audit event
+  const inHouseCount = items.filter((i) => i.destination === 'IN_HOUSE').length;
+  const vendorCount = items.filter((i) => i.destination === 'VENDOR_OUTSOURCE').length;
+
+  await logAuditEvent({
+    tenantId,
+    organizationId: payload.organizationId,
+    actorUserId,
+    actorName: actorName || 'Lab Supervisor / Admin',
+    action: 'SEGREGATE_ITEMS',
+    entity: 'CALIBRATION_REQUEST',
+    entityId: requestId,
+    newData: {
+      in_house_count: inHouseCount,
+      outsource_vendor_count: vendorCount,
+      routed_items: items,
+    },
+    remarks: `Segregated items: ${inHouseCount} In-House, ${vendorCount} External Vendor Outsource.`,
+  });
+
+  if (updatedRequest) return updatedRequest;
+  return getCalibrationRequestById(requestId, tenantId);
+}
+
+// ============================================================================
+// Process: Invoice & Dispatch Approvals
+// ============================================================================
+
+export interface ApproveInvoicePayload {
+  tenantId: string;
+  organizationId?: string;
+  invoiceId: string;
+  approved: boolean;
+  actorUserId?: string;
+  actorName?: string;
+  approverNotes?: string;
+}
+
+export async function approveInvoice(payload: ApproveInvoicePayload): Promise<Invoice> {
+  const now = new Date().toISOString();
+  const existingInvoices = getLocalItems<Invoice>(INVOICES_STORAGE_PREFIX, payload.tenantId);
+  const idx = existingInvoices.findIndex((i) => i.id === payload.invoiceId);
+
+  if (idx === -1) {
+    throw new Error(`Invoice with ID "${payload.invoiceId}" not found`);
+  }
+
+  const current = existingInvoices[idx];
+  const updatedInvoice: Invoice = {
+    ...current,
+    approval_status: payload.approved ? 'APPROVED' : 'REJECTED',
+    approved_by: payload.actorUserId,
+    approved_by_name: payload.actorName || 'Commercial Manager',
+    approved_at: now,
+    approver_notes: payload.approverNotes,
+  };
+
+  existingInvoices[idx] = updatedInvoice;
+  saveLocalItems(INVOICES_STORAGE_PREFIX, payload.tenantId, existingInvoices);
+
+  try {
+    await supabase
+      .from('invoices')
+      .update({
+        approval_status: updatedInvoice.approval_status,
+        approved_by: updatedInvoice.approved_by,
+        approved_at: updatedInvoice.approved_at,
+        approver_notes: updatedInvoice.approver_notes,
+      })
+      .eq('id', payload.invoiceId)
+      .eq('tenant_id', payload.tenantId);
+  } catch {
+    // fallback
+  }
+
+  await logAuditEvent({
+    tenantId: payload.tenantId,
+    organizationId: payload.organizationId,
+    actorUserId: payload.actorUserId,
+    actorName: payload.actorName || 'Commercial Manager',
+    action: payload.approved ? 'APPROVE_INVOICE' : 'REJECT_INVOICE',
+    entity: 'INVOICE',
+    entityId: payload.invoiceId,
+    newData: {
+      invoice_number: current.invoice_number,
+      total_amount: current.total_amount,
+      approval_status: updatedInvoice.approval_status,
+      approver_notes: payload.approverNotes,
+    },
+    remarks: `Invoice ${current.invoice_number} ${payload.approved ? 'Approved' : 'Rejected'}.`,
+  });
+
+  return updatedInvoice;
+}
+
+export interface ApproveDispatchPayload {
+  tenantId: string;
+  organizationId?: string;
+  dispatchId: string;
+  approved: boolean;
+  actorUserId?: string;
+  actorName?: string;
+  approverNotes?: string;
+}
+
+export async function approveDispatch(payload: ApproveDispatchPayload): Promise<Dispatch> {
+  const now = new Date().toISOString();
+  const existingDispatches = getLocalItems<Dispatch>(DISPATCHES_STORAGE_PREFIX, payload.tenantId);
+  const idx = existingDispatches.findIndex((d) => d.id === payload.dispatchId);
+
+  if (idx === -1) {
+    throw new Error(`Dispatch with ID "${payload.dispatchId}" not found`);
+  }
+
+  const current = existingDispatches[idx];
+  const updatedDispatch: Dispatch = {
+    ...current,
+    approval_status: payload.approved ? 'APPROVED' : 'REJECTED',
+    approved_by: payload.actorUserId,
+    approved_by_name: payload.actorName || 'Logistics Incharge',
+    approved_at: now,
+    approver_notes: payload.approverNotes,
+  };
+
+  existingDispatches[idx] = updatedDispatch;
+  saveLocalItems(DISPATCHES_STORAGE_PREFIX, payload.tenantId, existingDispatches);
+
+  try {
+    await supabase
+      .from('dispatches')
+      .update({
+        approval_status: updatedDispatch.approval_status,
+        approved_by: updatedDispatch.approved_by,
+        approved_at: updatedDispatch.approved_at,
+      })
+      .eq('id', payload.dispatchId)
+      .eq('tenant_id', payload.tenantId);
+  } catch {
+    // fallback
+  }
+
+  await logAuditEvent({
+    tenantId: payload.tenantId,
+    organizationId: payload.organizationId,
+    actorUserId: payload.actorUserId,
+    actorName: payload.actorName || 'Logistics Incharge',
+    action: payload.approved ? 'APPROVE_DISPATCH' : 'REJECT_DISPATCH',
+    entity: 'DISPATCH',
+    entityId: payload.dispatchId,
+    newData: {
+      gate_pass_number: current.gate_pass_number,
+      recipient_name: current.recipient_name,
+      approval_status: updatedDispatch.approval_status,
+      approver_notes: payload.approverNotes,
+    },
+    remarks: `Delivery Challan / Gate Pass ${current.gate_pass_number} ${payload.approved ? 'Approved' : 'Rejected'}.`,
+  });
+
+  return updatedDispatch;
 }
 

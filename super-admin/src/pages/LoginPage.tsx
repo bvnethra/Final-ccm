@@ -135,64 +135,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          <div className="mt-6 pt-5 border-t border-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5 text-[#0274BB]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                </svg>
-                Demo Credentials
-              </span>
-              <span className="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
-                Click to Auto-fill
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('superadmin@nethra.com');
-                  setPassword('SuperAdmin@2026!');
-                  setError('');
-                }}
-                className="w-full text-left p-2.5 rounded bg-slate-950/60 border border-slate-800 hover:border-[#0274BB]/60 hover:bg-slate-950 transition-colors flex items-center justify-between cursor-pointer group"
-              >
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                      SUPER ADMIN
-                    </span>
-                    <span className="text-xs font-medium text-slate-200">superadmin@nethra.com</span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">Password: SuperAdmin@2026!</div>
-                </div>
-                <span className="text-xs text-[#0274BB] group-hover:underline font-semibold pr-1">Use →</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('admin@nethra.com');
-                  setPassword('Password@123');
-                  setError('');
-                }}
-                className="w-full text-left p-2.5 rounded bg-slate-950/60 border border-slate-800 hover:border-[#0274BB]/60 hover:bg-slate-950 transition-colors flex items-center justify-between cursor-pointer group"
-              >
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                      PLATFORM ADMIN
-                    </span>
-                    <span className="text-xs font-medium text-slate-200">admin@nethra.com</span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">Password: Password@123</div>
-                </div>
-                <span className="text-xs text-[#0274BB] group-hover:underline font-semibold pr-1">Use →</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}

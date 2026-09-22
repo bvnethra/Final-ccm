@@ -107,7 +107,7 @@ export const IntakeRequestContainer: React.FC = () => {
     const selectedClient = clients.find((c) => c.id === clientId);
 
     try {
-      await createRequestMutation.mutateAsync({
+      const created = await createRequestMutation.mutateAsync({
         tenantId,
         organizationId,
         clientId,
@@ -135,8 +135,12 @@ export const IntakeRequestContainer: React.FC = () => {
         }),
       });
 
-      // Full-page route navigation back to /requests list
-      navigate('/requests');
+      // Seamless flow: Step 1 Intake -> Step 2 Segregation & Routing
+      if (created?.id) {
+        navigate(`/requests/${created.id}/routing`);
+      } else {
+        navigate('/requests');
+      }
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to submit equipment inward request.');
     }

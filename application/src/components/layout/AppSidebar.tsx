@@ -12,6 +12,7 @@ import {
   Gauge,
   CalendarClock,
   Shield,
+  History,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuthContext } from '../../contexts/AuthContext';
@@ -39,11 +40,16 @@ const masterDataItems: NavItem[] = [
   { label: 'Role & Permissions', to: '/roles', icon: Shield },
 ];
 
+const complianceItems: NavItem[] = [
+  { label: 'Activity & Audit Logs', to: '/logs', icon: History },
+];
+
 export const AppSidebar: React.FC = () => {
   const { user, canPerform } = useAuthContext();
 
   let visibleOperationalItems = operationalItems;
   let visibleMasterDataItems = masterDataItems;
+  let visibleComplianceItems = complianceItems;
 
   if (!user?.isSuperAdmin) {
     visibleOperationalItems = operationalItems.filter((item) => {
@@ -67,6 +73,13 @@ export const AppSidebar: React.FC = () => {
     visibleMasterDataItems = masterDataItems.filter((item) => {
       if (item.to === '/roles') return canPerform('ROLE_PERMISSION_MANAGEMENT', 'VIEW');
       return canPerform('CLIENT_VENDOR_ITEM_MASTER', 'VIEW');
+    });
+
+    visibleComplianceItems = complianceItems.filter((item) => {
+      if (item.to === '/logs') {
+        return Boolean(user?.roles?.includes('ADMIN') || canPerform('ROLE_PERMISSION_MANAGEMENT', 'VIEW'));
+      }
+      return true;
     });
   }
 
@@ -129,6 +142,36 @@ export const AppSidebar: React.FC = () => {
             })}
           </nav>
         </div>
+
+        {visibleComplianceItems.length > 0 && (
+          <div>
+            <span className="px-3 text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">
+              Compliance & Audit
+            </span>
+            <nav className="mt-2 space-y-1">
+              {visibleComplianceItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-semibold transition-colors',
+                        isActive
+                          ? 'bg-[#E6F2FF] text-[#0274BB]'
+                          : 'text-[#4B5563] hover:bg-[#F5F7FA] hover:text-[#111827]'
+                      )
+                    }
+                  >
+                    <Icon className="size-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </div>
+        )}
       </div>
 
       <div className="pt-4 border-t border-[#E5E7EB] space-y-3">

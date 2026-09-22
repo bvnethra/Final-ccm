@@ -43,6 +43,8 @@ const ItemMasterListPage = lazy(() => import('../pages/masters/ItemMasterListPag
 const ItemMasterCreatePage = lazy(() => import('../pages/masters/ItemMasterCreatePage'));
 const ItemMasterDetailPage = lazy(() => import('../pages/masters/ItemMasterDetailPage'));
 const ItemMasterEditPage = lazy(() => import('../pages/masters/ItemMasterEditPage'));
+const ItemRoutingPage = lazy(() => import('../pages/operations/ItemRoutingPage'));
+const AuditLogsPage = lazy(() => import('../pages/audit/AuditLogsPage'));
 
 const PageLoader = () => (
   <div className="min-h-[400px] flex items-center justify-center text-[#6B7280] font-sans text-xs">
@@ -158,6 +160,9 @@ export const AppRoutes: React.FC = () => {
           {/* Master Data: Role & Permission Management (Admin & Super Admin) */}
           <Route path="roles" element={<RolePermissionPage />} />
 
+          {/* Activity History & Audit Logs (Admin & Super Admin) */}
+          <Route path="logs" element={<AuditLogsPage />} />
+
           {/* Process 1: Equipment Inward (Blocked for Lab Entry Person, Creation blocked for Lab Approver & Admin) */}
           <Route
             path="requests"
@@ -180,6 +185,7 @@ export const AppRoutes: React.FC = () => {
             }
           />
           <Route path="requests/:id" element={<RequestDetailPage />} />
+          <Route path="requests/:id/routing" element={<ItemRoutingPage />} />
 
           {/* Process 2 & 3: Lab Inspection & Calibration */}
           <Route

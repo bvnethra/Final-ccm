@@ -40,8 +40,12 @@ import {
   Square,
   FileCheck,
   Download,
+  History,
+  Layers,
+  Building,
 } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { useAuditLogs } from '../../hooks/useAuditLogs';
 
 export const RequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -56,6 +60,10 @@ export const RequestDetailPage: React.FC = () => {
   const { data: outsources = [] } = useOutsourcePOs(id);
   const { data: dispatches = [] } = useDispatches();
   const { data: deliveries = [] } = useDeliveries();
+  const { data: auditLogs = [] } = useAuditLogs({
+    entityId: request?.id,
+    limit: 50,
+  });
   const createInvoiceMutation = useCreateInvoice();
 
   const relatedDispatch = dispatches.find((d: any) => d.request_id === request?.id);
@@ -292,11 +300,17 @@ export const RequestDetailPage: React.FC = () => {
         </div>
 
         {/* Dynamic Contextual Action */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to={`/requests/${request.id}/routing`}>
+            <Button variant="secondary" className="flex items-center gap-1.5 border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100">
+              <Layers className="size-3.5" /> Item Routing (Step 2)
+            </Button>
+          </Link>
+
           {request.status === 'CREATED' && (
             <Link to={`/lab/verification/${request.id}`}>
               <Button variant="primary">
-                Proceed to Lab Verification (Step 7) <ArrowRight className="size-4" />
+                Proceed to Lab Verification <ArrowRight className="size-4" />
               </Button>
             </Link>
           )}
@@ -700,6 +714,7 @@ export const RequestDetailPage: React.FC = () => {
                     <th className="px-4 py-3">Serial # / Asset Tag</th>
                     <th className="px-3 py-3 w-16 text-center">Qty</th>
                     <th className="px-4 py-3">Condition</th>
+                    <th className="px-4 py-3">Routing (Step 2)</th>
                     <th className="px-4 py-3">Accessories / Notes</th>
                     <th className="px-4 py-3">Status</th>
                   </tr>
@@ -741,6 +756,24 @@ export const RequestDetailPage: React.FC = () => {
                       <td className="px-4 py-3.5">
                         {getConditionBadge(item.item_condition)}
                       </td>
+                      <td className="px-4 py-3.5">
+                        {item.destination === 'VENDOR_OUTSOURCE' ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
+                              <Truck className="size-3 text-amber-700" /> Outsource
+                            </span>
+                            {item.vendor_name && (
+                              <div className="text-[10px] text-amber-800 font-medium truncate max-w-[140px]">
+                                {item.vendor_name}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
+                            <Building className="size-3 text-blue-600" /> In-House
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-3.5 text-xs text-[#4B5563]">
                         {item.accessories || item.remarks || <span className="text-[#9CA3AF] italic">None</span>}
                       </td>
@@ -755,6 +788,109 @@ export const RequestDetailPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Activity History & Audit Trail Timeline */}
+      <Card className="border border-[#E5E7EB] shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between pb-3 bg-gray-50/70 border-b border-[#E5E7EB]">
+          <div>
+            <CardTitle className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <History className="size-4 text-[#0274BB]" />
+              Activity History &amp; Audit Trail
+            </CardTitle>
+            <CardDescription className="text-xs text-gray-500">
+              Chronological log of all inward, routing, lab calibrations, and commercial events for this order
+            </CardDescription>
+          </div>
+          <Link
+            to="/logs"
+            className="text-xs text-[#0274BB] hover:underline font-semibold flex items-center gap-1"
+          >
+            <span>Full System Logs</span> &rarr;
+          </Link>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200">
+            {/* Step 1: Intake Event */}
+            <div className="relative flex items-start gap-4">
+              <div className="absolute -left-6 mt-1 size-5 rounded-full bg-blue-600 border-2 border-white shadow-xs flex items-center justify-center text-white">
+                <CheckCircle2 className="size-3" />
+              </div>
+              <div className="flex-1 bg-gray-50 border border-gray-200 rounded p-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-900">Step 1: Equipment Inward Intake</span>
+                  <span className="text-gray-400 font-mono text-[11px]">
+                    {new Date(request.created_at).toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-gray-600 mt-1">
+                  Inwarded {request.request_items?.length || 0} equipment line items from{' '}
+                  <strong>{request.clients?.client_name || 'Client'}</strong>. Handled by{' '}
+                  <strong>{request.collection_agent_name || 'Collection Agent'}</strong>.
+                </p>
+                {request.client_po_ref && (
+                  <div className="mt-1 text-gray-500 font-mono text-[11px]">
+                    Client PO Ref: {request.client_po_ref}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Step 2: Routing / Segregation Event */}
+            <div className="relative flex items-start gap-4">
+              <div className="absolute -left-6 mt-1 size-5 rounded-full bg-indigo-600 border-2 border-white shadow-xs flex items-center justify-center text-white">
+                <Layers className="size-3" />
+              </div>
+              <div className="flex-1 bg-gray-50 border border-gray-200 rounded p-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-900">Step 2: Routing &amp; Lab Segregation</span>
+                  <Link
+                    to={`/requests/${request.id}/routing`}
+                    className="text-[#0274BB] hover:underline font-semibold text-[11px]"
+                  >
+                    Edit Routing Matrix &rarr;
+                  </Link>
+                </div>
+                <p className="text-gray-600 mt-1">
+                  Allocated{' '}
+                  <strong className="text-blue-700">
+                    {request.request_items?.filter((i) => i.destination !== 'VENDOR_OUTSOURCE').length || 0} items
+                  </strong>{' '}
+                  to In-House Lab and{' '}
+                  <strong className="text-amber-800">
+                    {request.request_items?.filter((i) => i.destination === 'VENDOR_OUTSOURCE').length || 0} items
+                  </strong>{' '}
+                  to External Outsource Vendors.
+                </p>
+              </div>
+            </div>
+
+            {/* Recorded Audit Logs from DB */}
+            {auditLogs.map((log) => (
+              <div key={log.id} className="relative flex items-start gap-4">
+                <div className="absolute -left-6 mt-1 size-5 rounded-full bg-emerald-600 border-2 border-white shadow-xs flex items-center justify-center text-white">
+                  <Clock className="size-3" />
+                </div>
+                <div className="flex-1 bg-white border border-gray-200 rounded p-3 text-xs shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-gray-900 font-mono">
+                      {log.action.replace(/_/g, ' ')}
+                    </span>
+                    <span className="text-gray-400 font-mono text-[11px]">
+                      {new Date(log.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 mt-1">
+                    {log.remarks || `Action performed on ${log.entity}`}
+                  </p>
+                  <div className="mt-1 text-[11px] text-gray-400">
+                    By: <strong className="text-gray-700">{log.actor_name || 'System / Authorized User'}</strong>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Direct Tax Invoicing Modal (Quotation Optional / Bypassed) */}
       {showDirectInvoiceModal && (() => {
