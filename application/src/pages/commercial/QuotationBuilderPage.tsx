@@ -46,16 +46,7 @@ export const QuotationBuilderPage: React.FC = () => {
   );
   const [discount, setDiscount] = useState<number>(0);
   const [taxRate, setTaxRate] = useState<number>(18); // 18% standard GST
-  const [items, setItems] = useState<QuotationLineState[]>([
-    {
-      description: 'Pressure Gauge',
-      range: '0-16bar',
-      remarks: '',
-      quantity: 1,
-      unitPrice: 200.0,
-      totalPrice: 200.0,
-    },
-  ]);
+  const [items, setItems] = useState<QuotationLineState[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   useEffect(() => {
@@ -68,8 +59,8 @@ export const QuotationBuilderPage: React.FC = () => {
         }
         if (found.request_items && found.request_items.length > 0) {
           const mapped = found.request_items.map((it) => {
-            const name = it.item_masters?.item_name || 'Precision Gauge';
-            const cost = it.item_masters?.standard_cost || 200;
+            const name = it.item_masters?.item_name || '';
+            const cost = it.item_masters?.standard_cost || 0;
             const range =
               it.item_masters?.range_min !== undefined && it.item_masters?.range_max !== undefined
                 ? `${it.item_masters.range_min}-${it.item_masters.range_max} ${it.item_masters.range_unit || ''}`.trim()

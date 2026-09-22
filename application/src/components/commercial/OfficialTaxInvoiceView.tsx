@@ -48,7 +48,7 @@ export function numberToIndianWords(num: number): string {
 }
 
 export function formatInvoiceDate(dateStr?: string): string {
-  if (!dateStr) return '8-Sep-26';
+  if (!dateStr) return '';
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
@@ -79,25 +79,23 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
   const supplier = customIssuer || labProfile;
 
   // Buyer Details - dynamically mapped from fetched client and invoice
-  const buyerName = client?.client_name || invoice.clients?.client_name || 'SREE PAVITHRA INDUSTRIES';
+  const buyerName = client?.client_name || invoice.clients?.client_name || '';
   const addressParts = [
     client?.address || invoice.clients?.address,
     [client?.city || invoice.clients?.city, client?.pin || invoice.clients?.pin].filter(Boolean).join(' - '),
   ].filter(Boolean);
-  const buyerAddress = addressParts.length > 0
-    ? addressParts.join('\n')
-    : 'K-3, AMBATTUR INDUSTRIAL ESTATE, SOUTH PHASE, AMBATTUR, CHENNAI';
+  const buyerAddress = addressParts.length > 0 ? addressParts.join('\n') : '';
 
-  const buyerGstin = client?.gst_tax_number || invoice.clients?.gst_tax_number || '33AARFS9533M1ZF';
+  const buyerGstin = client?.gst_tax_number || invoice.clients?.gst_tax_number || '';
   const buyerStateCode =
     buyerGstin && buyerGstin.length >= 2 && !isNaN(Number(buyerGstin.slice(0, 2)))
       ? buyerGstin.slice(0, 2)
-      : '33';
-  const buyerStateName = client?.state || invoice.clients?.state || 'Tamil Nadu';
-  const buyerState = `${buyerStateName}, Code : ${buyerStateCode}`;
+      : '';
+  const buyerStateName = client?.state || invoice.clients?.state || '';
+  const buyerState = buyerStateName ? `${buyerStateName}${buyerStateCode ? `, Code : ${buyerStateCode}` : ''}` : '';
 
   // Invoice Metadata - dynamically mapped
-  const invoiceNumber = invoice.invoice_number || '262718123';
+  const invoiceNumber = invoice.invoice_number || '';
   const invoiceDate = formatInvoiceDate(invoice.invoice_date);
   const paymentTerms = client?.payment_term
     ? client.payment_term === '60_DAYS'
@@ -105,15 +103,15 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
       : client.payment_term === '30_DAYS'
       ? '30 Days'
       : 'Immediate'
-    : '30 Days';
-  const buyersOrderNo = invoice.client_po_ref || request?.client_po_ref || '181183';
+    : '';
+  const buyersOrderNo = invoice.client_po_ref || request?.client_po_ref || '';
   const orderDate = formatInvoiceDate(request?.created_at || invoice.invoice_date);
-  const refNo = `${request?.request_number || '181183'} dt. ${orderDate}`;
-  const otherRef = `Dc No. ${
-    request?.request_number ? request.request_number.replace(/\D/g, '').slice(-3) || '103' : '103'
-  }, Dt. ${orderDate}`;
-  const dispatchedThrough = 'By Hand';
-  const destination = client?.city || invoice.clients?.city || 'Chennai';
+  const refNo = request?.request_number ? `${request.request_number}${orderDate ? ` dt. ${orderDate}` : ''}` : '';
+  const otherRef = request?.request_number
+    ? `Dc No. ${request.request_number.replace(/\D/g, '').slice(-3) || request.request_number}${orderDate ? `, Dt. ${orderDate}` : ''}`
+    : '';
+  const dispatchedThrough = invoice.dispatched_through || 'By Hand';
+  const destination = client?.city || invoice.clients?.city || '';
 
   // Items formatting - dynamically mapped from invoice items or request items
   const items =
@@ -122,20 +120,13 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
       : request?.request_items && request.request_items.length > 0
       ? request.request_items.map((it: any, i: number) => ({
           id: it.id || String(i + 1),
-          description: it.item_masters?.item_name || 'Precision Gauge Equipment',
+          description: it.item_masters?.item_name || 'Calibration Service',
           hsn_sac_code: '998346',
           quantity: it.received_quantity || it.quantity || 1,
-          unit_price: it.item_masters?.standard_cost || 100,
-          total_price: (it.received_quantity || it.quantity || 1) * (it.item_masters?.standard_cost || 100),
+          unit_price: it.item_masters?.standard_cost || 0,
+          total_price: (it.received_quantity || it.quantity || 1) * (it.item_masters?.standard_cost || 0),
         }))
-      : [
-          { id: '1', description: 'Thread Ring Gauge', hsn_sac_code: '998346', quantity: 3, unit_price: 247.5, total_price: 742.5 },
-          { id: '2', description: 'Thread Plug Gauge', hsn_sac_code: '998346', quantity: 16, unit_price: 240.0, total_price: 3840.0 },
-          { id: '3', description: 'Radius Gauge 15.5-25mm', hsn_sac_code: '998346', quantity: 1, unit_price: 950.0, total_price: 950.0 },
-          { id: '4', description: 'Pitch Gauge', hsn_sac_code: '998346', quantity: 2, unit_price: 1200.0, total_price: 2400.0 },
-          { id: '5', description: 'Bevel Protractor 0-180°', hsn_sac_code: '998346', quantity: 1, unit_price: 395.0, total_price: 395.0 },
-          { id: '6', description: 'radius gauge 1-7mm Without Calibration', hsn_sac_code: '998346', quantity: 1, unit_price: 0.0, total_price: 0.0 },
-        ];
+      : [];
 
   const totalQuantity = items.reduce((sum, it) => sum + (Number(it.quantity) || 1), 0);
   const taxableSubtotal = items.reduce((sum, it) => sum + (Number(it.total_price) || 0), 0);
@@ -252,19 +243,21 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
                       <div className="flex items-center">
                         <img
                           src={supplier.logo_url}
-                          alt={supplier.name}
+                          alt={supplier.name || 'Supplier Logo'}
                           className="max-h-12 max-w-[140px] object-contain select-none mr-2"
                         />
                       </div>
                     ) : (
                       <span className="text-2xl font-black tracking-tight font-serif italic text-black">
-                        {supplier.logo_text || 'tespa'}
+                        {supplier.logo_text || supplier.name || ''}
                       </span>
                     )}
                     <div>
-                      <div className="font-bold text-xs leading-none text-black">
-                        {supplier.name}
-                      </div>
+                      {supplier.name && (
+                        <div className="font-bold text-xs leading-none text-black">
+                          {supplier.name}
+                        </div>
+                      )}
                       {supplier.division && (
                         <div className="text-[10px] text-gray-700 italic">
                           {supplier.division}
@@ -273,13 +266,15 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
                     </div>
                   </div>
                   <div className="pt-1 text-[10px] text-gray-900 leading-snug">
-                    <div>{supplier.address1}</div>
+                    {supplier.address1 && <div>{supplier.address1}</div>}
                     {supplier.address2 && <div>{supplier.address2}</div>}
-                    <div>{[supplier.city, supplier.pin].filter(Boolean).join(' - ')}</div>
+                    {(supplier.city || supplier.pin) && <div>{[supplier.city, supplier.pin].filter(Boolean).join(' - ')}</div>}
                     {supplier.udyam && <div><strong>UDYAM :</strong> {supplier.udyam}</div>}
-                    <div><strong>GSTIN/UIN:</strong> {supplier.gstin}</div>
-                    <div><strong>State Name :</strong> {supplier.state}, Code : {supplier.state_code}</div>
-                    <div><strong>E-Mail :</strong> {supplier.email}</div>
+                    {supplier.gstin && <div><strong>GSTIN/UIN:</strong> {supplier.gstin}</div>}
+                    {(supplier.state || supplier.state_code) && (
+                      <div><strong>State Name :</strong> {supplier.state}{supplier.state_code ? `, Code : ${supplier.state_code}` : ''}</div>
+                    )}
+                    {supplier.email && <div><strong>E-Mail :</strong> {supplier.email}</div>}
                   </div>
                 </div>
               </div>
@@ -358,14 +353,18 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
             <div className="grid grid-cols-2 border-b border-black">
               <div className="p-2 border-r border-black text-[10px] leading-tight">
                 <div className="text-gray-600 text-[9px] font-semibold mb-0.5">Buyer (Bill to)</div>
-                <div className="font-bold text-xs uppercase text-black">{buyerName}</div>
-                <div className="text-gray-800 whitespace-pre-line">{buyerAddress}</div>
-                <div className="mt-1">
-                  <strong>GSTIN/UIN :</strong> {buyerGstin}
-                </div>
-                <div>
-                  <strong>State Name :</strong> {buyerState}
-                </div>
+                {buyerName && <div className="font-bold text-xs uppercase text-black">{buyerName}</div>}
+                {buyerAddress && <div className="text-gray-800 whitespace-pre-line">{buyerAddress}</div>}
+                {buyerGstin && (
+                  <div className="mt-1">
+                    <strong>GSTIN/UIN :</strong> {buyerGstin}
+                  </div>
+                )}
+                {buyerState && (
+                  <div>
+                    <strong>State Name :</strong> {buyerState}
+                  </div>
+                )}
               </div>
               <div className="p-2 text-[10px]">
                 <div className="text-gray-600 text-[9px] font-semibold mb-0.5">Terms of Delivery</div>
@@ -391,7 +390,14 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {items.map((it, idx) => {
+                {items.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-4 text-center text-gray-500 italic">
+                      No invoice line items recorded.
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((it, idx) => {
                   return (
                     <tr key={it.id || idx} className="align-top leading-tight">
                       <td className="border-r border-black p-1.5 text-center font-mono">{idx + 1}</td>
@@ -424,7 +430,8 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
                       </td>
                     </tr>
                   );
-                })}
+                })
+              )}
 
                 {/* Blank rows to give authentic paper invoice height */}
                 {items.length < 7 && (
@@ -600,13 +607,13 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
               <div className="p-2 flex flex-col justify-between">
                 <div className="space-y-0.5">
                   <div className="font-bold underline text-[9px] mb-1">Company's Bank Details</div>
-                  <div><strong>Bank Name :</strong> {supplier.bank_name || 'Indian Bank'}</div>
-                  <div><strong>A/c No. :</strong> {supplier.account_no || '504946658'}</div>
-                  <div><strong>Branch &amp; IFS Code :</strong> {supplier.branch_ifsc || 'Padi, Chennai & IDIB000P001'}</div>
+                  {supplier.bank_name && <div><strong>Bank Name :</strong> {supplier.bank_name}</div>}
+                  {supplier.account_no && <div><strong>A/c No. :</strong> {supplier.account_no}</div>}
+                  {supplier.branch_ifsc && <div><strong>Branch &amp; IFS Code :</strong> {supplier.branch_ifsc}</div>}
                 </div>
 
                 <div className="pt-8 text-right">
-                  <div className="font-bold text-[10px]">for {supplier.name}</div>
+                  <div className="font-bold text-[10px]">for {supplier.name || ''}</div>
                   <div className="h-6"></div>
                   <div className="font-semibold text-gray-800">Authorised Signatory</div>
                 </div>

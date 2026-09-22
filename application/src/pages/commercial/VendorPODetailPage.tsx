@@ -24,9 +24,7 @@ export const VendorPODetailPage: React.FC = () => {
     );
   }
 
-  const po =
-    outsourcePOs.find((p) => p.id === id || p.vendor_po_number === id || p.voucher_no === id) ||
-    (id === 'sample' || id === 'latest' || id === 'demo' ? outsourcePOs[0] : undefined);
+  const po = outsourcePOs.find((p) => p.id === id || p.vendor_po_number === id || p.voucher_no === id);
 
   if (!po) {
     return (

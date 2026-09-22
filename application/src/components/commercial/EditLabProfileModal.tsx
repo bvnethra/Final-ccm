@@ -70,7 +70,7 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
   };
 
   const handleResetToDefault = async () => {
-    if (!window.confirm('Reset all lab header details back to standard Tespa Calibration Centre default?')) {
+    if (!window.confirm('Reset all lab header details back to standard defaults?')) {
       return;
     }
     setIsResetting(true);
@@ -155,11 +155,13 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
                   ) : (
                     <div className="text-center">
                       <div className="text-xl font-serif font-black tracking-tight italic text-black dark:text-white lowercase">
-                        {formData.logo_text || 'tespa'}
+                        {formData.logo_text || 'LAB LOGO'}
                       </div>
-                      <div className="text-[7.5px] uppercase tracking-widest text-gray-500">
-                        {formData.logo_tagline || 'PRECISION & QUALITY'}
-                      </div>
+                      {formData.logo_tagline && (
+                        <div className="text-[7.5px] uppercase tracking-widest text-gray-500">
+                          {formData.logo_tagline}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -172,7 +174,7 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
                     <Input
                       value={formData.logo_text || ''}
                       onChange={(e) => handleChange('logo_text', e.target.value)}
-                      placeholder="e.g. tespa"
+                      placeholder="e.g. Lab Brand Name"
                     />
                   </Field>
                   <Field>
@@ -180,7 +182,7 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
                     <Input
                       value={formData.logo_tagline || ''}
                       onChange={(e) => handleChange('logo_tagline', e.target.value)}
-                      placeholder="e.g. PRECISION & QUALITY"
+                      placeholder="e.g. Calibration Excellence"
                     />
                   </Field>
                 </div>
@@ -226,7 +228,7 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
                   <Input
                     value={formData.udyam || ''}
                     onChange={(e) => handleChange('udyam', e.target.value)}
-                    placeholder="e.g. UDYAM-TN-02-0048127 (Micro)"
+                    placeholder="e.g. UDYAM Registration Number"
                   />
                 </Field>
               </div>
@@ -271,7 +273,7 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
                       <Input
                         value={formData.state_code}
                         onChange={(e) => handleChange('state_code', e.target.value)}
-                        placeholder="33"
+                        placeholder="Code"
                         required
                       />
                     </div>
@@ -293,7 +295,7 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
                   <Input
                     value={formData.phones}
                     onChange={(e) => handleChange('phones', e.target.value)}
-                    placeholder="e.g. 044-2663 2191, 2663 1820"
+                    placeholder="e.g. 044-XXXXXXXX"
                     required
                   />
                 </Field>
@@ -302,7 +304,7 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
                   <Input
                     value={formData.mobile || ''}
                     onChange={(e) => handleChange('mobile', e.target.value)}
-                    placeholder="e.g. +91 9445191573"
+                    placeholder="e.g. +91 XXXXXXXXXX"
                   />
                 </Field>
               </div>
@@ -330,7 +332,7 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
                   <Input
                     value={formData.bank_name || ''}
                     onChange={(e) => handleChange('bank_name', e.target.value)}
-                    placeholder="Indian Bank"
+                    placeholder="Bank Name"
                   />
                 </Field>
                 <Field>
@@ -338,7 +340,7 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
                   <Input
                     value={formData.account_no || ''}
                     onChange={(e) => handleChange('account_no', e.target.value)}
-                    placeholder="504946658"
+                    placeholder="Account Number"
                   />
                 </Field>
                 <Field>
@@ -346,7 +348,7 @@ export const EditLabProfileModal: React.FC<EditLabProfileModalProps> = ({
                   <Input
                     value={formData.branch_ifsc || ''}
                     onChange={(e) => handleChange('branch_ifsc', e.target.value)}
-                    placeholder="Padi, Chennai & IDIB000P001"
+                    placeholder="Branch & IFSC Code"
                   />
                 </Field>
               </div>

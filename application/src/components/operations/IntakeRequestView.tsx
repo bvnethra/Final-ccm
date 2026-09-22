@@ -432,7 +432,7 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
                     <Input
                       id="client-account-input"
                       type="text"
-                      placeholder="Type Client Account Name (e.g. SPIRAX SARCO)..."
+                      placeholder="Type Client Account Name..."
                       value={clientNameQuery}
                       onChange={handleNameChange}
                       onFocus={() => setIsNameDropdownOpen(true)}

@@ -48,7 +48,7 @@ export function numberToIndianWords(num: number): string {
 }
 
 export function formatQuotationDate(dateStr?: string): string {
-  if (!dateStr) return '09.03.2026';
+  if (!dateStr) return '';
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
@@ -82,92 +82,25 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
     client?.client_name ||
     request?.clients?.client_name ||
     quotation.calibration_requests?.clients?.client_name ||
-    'M/s . SPIRAX SARCO INDIA PVT LTD';
+    '';
   const clientAddress =
     client?.address ||
     request?.clients?.address ||
     quotation.calibration_requests?.clients?.address ||
-    'MAHINDRA WORLD CITY, CHENGALPATTU';
+    '';
   const kindAttn =
-    quotation.kind_attn || client?.contact_person || request?.clients?.contact_person || 'Mr. TAMILANTHI';
-  const phoneNo = quotation.phone_no || client?.phone || request?.clients?.phone || '6379891153';
+    quotation.kind_attn || client?.contact_person || request?.clients?.contact_person || '';
+  const phoneNo = quotation.phone_no || client?.phone || request?.clients?.phone || '';
 
   // Quotation Meta
-  const refNo = quotation.reference_no || quotation.quotation_number || 'REF: TCC/CQ/26-27/1557';
-  const formattedRef = refNo.startsWith('REF:') ? refNo : `REF: ${refNo}`;
+  const refNo = quotation.reference_no || quotation.quotation_number || '';
+  const formattedRef = refNo ? (refNo.startsWith('REF:') ? refNo : `REF: ${refNo}`) : '';
   const quoteDate = quotation.quotation_date || formatQuotationDate(quotation.created_at);
   const subject = quotation.subject || 'Quotation for Calibration Charges for Instruments and Gauges - Reg.';
-  const enquiryRef = quotation.enquiry_ref || 'verbal 31.08.2026';
+  const enquiryRef = quotation.enquiry_ref || '';
 
-  // Items fallback to scanned document defaults if empty
-  const items =
-    quotation.items && quotation.items.length > 0
-      ? quotation.items
-      : [
-          {
-            id: '1',
-            quotation_id: quotation.id,
-            description: 'Pressure Gauge',
-            range: '0-16bar',
-            quantity: 45,
-            unit_price: 200.0,
-            total_price: 9000.0,
-          },
-          {
-            id: '2',
-            quotation_id: quotation.id,
-            description: 'Pressure Gauge',
-            range: '16-200bar',
-            quantity: 55,
-            unit_price: 250.0,
-            total_price: 13750.0,
-          },
-          {
-            id: '3',
-            quotation_id: quotation.id,
-            description: 'Pressure Gauge',
-            range: 'Above 200bar',
-            quantity: 30,
-            unit_price: 300.0,
-            total_price: 9000.0,
-          },
-          {
-            id: '4',
-            quotation_id: quotation.id,
-            description: 'Pressure Transducer',
-            range: 'Upto 16bar',
-            quantity: 10,
-            unit_price: 200.0,
-            total_price: 2000.0,
-          },
-          {
-            id: '5',
-            quotation_id: quotation.id,
-            description: 'Pressure Transducer',
-            range: '16-200bar',
-            quantity: 20,
-            unit_price: 250.0,
-            total_price: 5000.0,
-          },
-          {
-            id: '6',
-            quotation_id: quotation.id,
-            description: 'Pressure Transducer',
-            range: '200bar',
-            quantity: 15,
-            unit_price: 300.0,
-            total_price: 4500.0,
-          },
-          {
-            id: '7',
-            quotation_id: quotation.id,
-            description: 'Onsite calibration charges / Day for 2 persons',
-            range: '',
-            quantity: 10,
-            unit_price: 1000.0,
-            total_price: 10000.0,
-          },
-        ];
+  // Items from live quotation record
+  const items = quotation.items || [];
 
   const grandTotalExcludingGst = items.reduce(
     (sum, it) => sum + (Number(it.total_price) || Number(it.quantity) * Number(it.unit_price) || 0),
@@ -265,40 +198,53 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
                 </div>
               ) : (
                 <>
-                  <div className="text-4xl font-serif font-black tracking-tight italic text-black lowercase select-none">
-                    {issuer.logo_text || 'tespa'}
+                  <div className="text-3xl font-serif font-black tracking-tight italic text-black lowercase select-none">
+                    {issuer.logo_text || issuer.name || ''}
                   </div>
-                  <div className="text-[8px] font-sans uppercase tracking-widest text-gray-500 mt-1">
-                    {issuer.logo_tagline || 'Precision & Quality'}
-                  </div>
+                  {issuer.logo_tagline && (
+                    <div className="text-[8px] font-sans uppercase tracking-widest text-gray-500 mt-1">
+                      {issuer.logo_tagline}
+                    </div>
+                  )}
                 </>
               )}
             </div>
 
             {/* Centre Details on Right */}
             <div className="w-[72%] p-2 text-center flex flex-col justify-center leading-tight">
-              <h1 className="font-bold text-base tracking-wide text-black uppercase">
-                {issuer.name}
-              </h1>
+              {issuer.name && (
+                <h1 className="font-bold text-base tracking-wide text-black uppercase">
+                  {issuer.name}
+                </h1>
+              )}
               {issuer.division && (
                 <div className="font-semibold text-[10px] text-gray-800">
                   {issuer.division}
                 </div>
               )}
-              <div className="text-[9.5px] text-gray-700 mt-0.5">
-                {issuer.address1} {issuer.address2 ? `, ${issuer.address2}` : ''}
-                {issuer.city ? `, ${issuer.city}` : ''}
-                {issuer.pin ? ` – ${issuer.pin}` : ''}
-              </div>
-              <div className="text-[9px] text-gray-700">
-                Ph: {issuer.phones}
-              </div>
-              <div className="text-[9px] font-medium text-gray-800">
-                GSTIN/UIN : {issuer.gstin}
-              </div>
-              <div className="text-[9px] text-gray-700">
-                {issuer.mobile ? `Mobile No. ${issuer.mobile} / ` : ''}Email : {issuer.email}
-              </div>
+              {(issuer.address1 || issuer.address2 || issuer.city || issuer.pin) && (
+                <div className="text-[9.5px] text-gray-700 mt-0.5">
+                  {[issuer.address1, issuer.address2, issuer.city].filter(Boolean).join(', ')}
+                  {issuer.pin ? ` – ${issuer.pin}` : ''}
+                </div>
+              )}
+              {issuer.phones && (
+                <div className="text-[9px] text-gray-700">
+                  Ph: {issuer.phones}
+                </div>
+              )}
+              {issuer.gstin && (
+                <div className="text-[9px] font-medium text-gray-800">
+                  GSTIN/UIN : {issuer.gstin}
+                </div>
+              )}
+              {(issuer.mobile || issuer.email) && (
+                <div className="text-[9px] text-gray-700">
+                  {issuer.mobile ? `Mobile No. ${issuer.mobile} ` : ''}
+                  {issuer.mobile && issuer.email ? '/ ' : ''}
+                  {issuer.email ? `Email : ${issuer.email}` : ''}
+                </div>
+              )}
             </div>
           </div>
 
@@ -310,7 +256,7 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
               {formattedRef}
             </div>
             <div className="font-bold uppercase font-mono tracking-tight text-black">
-              DATE: {quoteDate}
+              {quoteDate ? `DATE: ${quoteDate}` : ''}
             </div>
           </div>
 
@@ -318,18 +264,26 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
           {/* Client Addressee Box                                             */}
           {/* ================================================================ */}
           <div className="mb-3 text-[10.5px] leading-relaxed">
-            <div className="font-bold uppercase text-black">
-              {clientName.startsWith('M/s') ? clientName : `M/s . ${clientName}`}
-            </div>
-            <div className="text-gray-800 uppercase font-medium">
-              {clientAddress}
-            </div>
-            <div className="mt-2 font-bold uppercase">
-              KIND ATTN: {kindAttn}
-            </div>
-            <div className="font-bold uppercase">
-              PHONE NO : {phoneNo}
-            </div>
+            {clientName && (
+              <div className="font-bold uppercase text-black">
+                {clientName.startsWith('M/s') ? clientName : `M/s . ${clientName}`}
+              </div>
+            )}
+            {clientAddress && (
+              <div className="text-gray-800 uppercase font-medium whitespace-pre-line">
+                {clientAddress}
+              </div>
+            )}
+            {kindAttn && (
+              <div className="mt-1 font-bold uppercase">
+                KIND ATTN: {kindAttn}
+              </div>
+            )}
+            {phoneNo && (
+              <div className="font-bold uppercase">
+                PHONE NO : {phoneNo}
+              </div>
+            )}
           </div>
 
           {/* ================================================================ */}
@@ -341,8 +295,7 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
               Sub: {subject}
             </div>
             <div className="text-justify text-gray-800">
-              We thank you very much for your enquiry received through{' '}
-              <span className="font-medium text-black">{enquiryRef}</span> against
+              We thank you very much for your enquiry{enquiryRef ? ` received through ${enquiryRef}` : ''} against
               which we are pleased to submit our offer for your kind consideration:
             </div>
           </div>
@@ -369,43 +322,51 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {items.map((it, idx) => {
-                const rowQty = Number(it.quantity) || 1;
-                const rowRate = Number(it.unit_price) || 0;
-                const rowTotal = Number(it.total_price) || rowQty * rowRate;
+              {items.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-4 text-center text-gray-500 italic">
+                    No quotation line items recorded.
+                  </td>
+                </tr>
+              ) : (
+                items.map((it, idx) => {
+                  const rowQty = Number(it.quantity) || 1;
+                  const rowRate = Number(it.unit_price) || 0;
+                  const rowTotal = Number(it.total_price) || rowQty * rowRate;
 
-                return (
-                  <tr key={it.id || idx} className="border-b border-black/40 align-middle">
-                    <td className="border-r border-black p-1.5 text-center font-mono">
-                      {idx + 1}
-                    </td>
-                    <td className="border-r border-black p-1.5 text-left font-medium text-black">
-                      {it.description}
-                    </td>
-                    <td className="border-r border-black p-1.5 text-center text-gray-800">
-                      {it.range || '-'}
-                    </td>
-                    <td className="border-r border-black p-1.5 text-center font-mono font-bold">
-                      {rowQty}
-                    </td>
-                    <td className="border-r border-black p-1.5 text-right font-mono">
-                      {rowRate.toLocaleString('en-IN', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td className="border-r border-black p-1.5 text-right font-mono font-bold text-black">
-                      {rowTotal.toLocaleString('en-IN', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td className="p-1.5 text-center text-gray-600 text-[9px]">
-                      {it.remarks || '-'}
-                    </td>
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr key={it.id || idx} className="border-b border-black/40 align-middle">
+                      <td className="border-r border-black p-1.5 text-center font-mono">
+                        {idx + 1}
+                      </td>
+                      <td className="border-r border-black p-1.5 text-left font-medium text-black">
+                        {it.description}
+                      </td>
+                      <td className="border-r border-black p-1.5 text-center text-gray-800">
+                        {it.range || '-'}
+                      </td>
+                      <td className="border-r border-black p-1.5 text-center font-mono font-bold">
+                        {rowQty}
+                      </td>
+                      <td className="border-r border-black p-1.5 text-right font-mono">
+                        {rowRate.toLocaleString('en-IN', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="border-r border-black p-1.5 text-right font-mono font-bold text-black">
+                        {rowTotal.toLocaleString('en-IN', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="p-1.5 text-center text-gray-600 text-[9px]">
+                        {it.remarks || '-'}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
 
               {/* Grand Total Row (Excluding GST) */}
               <tr className="border-t-2 border-black font-bold bg-[#F9FAFB]">
@@ -493,7 +454,7 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
             <div className="leading-snug">
               <div>Thanking you and assuring you of our best services at all times.</div>
               <div className="mt-3">Yours faithfully,</div>
-              <div className="font-bold text-black mt-1">For {issuer.name.toUpperCase()}</div>
+              <div className="font-bold text-black mt-1">For {(issuer.name || '').toUpperCase()}</div>
             </div>
 
             <div className="text-right">

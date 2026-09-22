@@ -3,24 +3,24 @@ import { supabase } from '../lib/supabaseClient';
 import type { LabIssuerProfile } from '../types/domain';
 
 export const DEFAULT_LAB_PROFILE: LabIssuerProfile = {
-  name: 'TESPA CALIBRATION CENTRE',
-  division: 'A Division of TESPA TOOLS PVT LTD',
-  logo_text: 'tespa',
-  logo_tagline: 'PRECISION & QUALITY',
-  address1: 'D-105, First Main Road',
-  address2: 'Anna Nagar East',
-  city: 'Chennai',
-  state: 'Tamil Nadu',
-  state_code: '33',
-  pin: '600102',
-  phones: '044-2663 2191, 2663 1820, 2663 0669',
-  mobile: '+91 9445191573',
-  email: 'calibration@tespaindia.com',
-  gstin: '33AAACT2870N1Z5',
-  udyam: 'UDYAM-TN-02-0048127 (Micro)',
-  bank_name: 'Indian Bank',
-  account_no: '504946658',
-  branch_ifsc: 'Padi, Chennai & IDIB000P001',
+  name: '',
+  division: '',
+  logo_text: '',
+  logo_tagline: '',
+  address1: '',
+  address2: '',
+  city: '',
+  state: '',
+  state_code: '',
+  pin: '',
+  phones: '',
+  mobile: '',
+  email: '',
+  gstin: '',
+  udyam: '',
+  bank_name: '',
+  account_no: '',
+  branch_ifsc: '',
 };
 
 const STORAGE_KEY_PREFIX = 'ccm_tenant_lab_profile_';
@@ -61,6 +61,30 @@ export async function getLabProfile(tenantId?: string): Promise<LabIssuerProfile
     }
   } catch (_err) {
     // Ignore error
+  }
+
+  // 3. Fallback to organization details in Supabase for dynamic tenant profile
+  if (tenantId) {
+    try {
+      const { data: org, error } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (!error && org) {
+        return {
+          ...DEFAULT_LAB_PROFILE,
+          name: org.name || '',
+          logo_text: org.code || org.name || '',
+          address1: org.address || '',
+          phones: org.phone || '',
+          email: org.email || '',
+        };
+      }
+    } catch (_err) {
+      // Ignore error
+    }
   }
 
   return DEFAULT_LAB_PROFILE;

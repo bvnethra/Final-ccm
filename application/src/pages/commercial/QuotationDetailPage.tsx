@@ -25,14 +25,13 @@ export const QuotationDetailPage: React.FC = () => {
     );
   }
 
-  const quote =
-    quotations.find(
-      (q) =>
-        q.id === id ||
-        q.quotation_number === id ||
-        q.reference_no === id ||
-        q.reference_no?.includes(id || '')
-    ) || (id === 'sample' || id === 'latest' || id === '1557' ? quotations[0] : undefined);
+  const quote = quotations.find(
+    (q) =>
+      q.id === id ||
+      q.quotation_number === id ||
+      q.reference_no === id ||
+      q.reference_no?.includes(id || '')
+  );
 
   if (!quote) {
     return (

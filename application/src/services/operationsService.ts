@@ -940,55 +940,7 @@ export async function receiveOutsourceReturn(payload: ReceiveOutsourceReturnPayl
 }
 
 export async function getOutsourcePOs(tenantId: string, requestId?: string): Promise<OutsourcePO[]> {
-  let local = getLocalItems<OutsourcePO>(OUTSOURCE_STORAGE_PREFIX, tenantId);
-  if (!local || local.length === 0) {
-    const samplePO: OutsourcePO = {
-      id: 'po-262742',
-      tenant_id: tenantId,
-      organization_id: 'default-org',
-      request_id: 'req-sample-1',
-      request_item_id: 'item-sample-1',
-      vendor_id: 'vendor-hitech',
-      vendor_name: 'Hi Tech Calibration Services - Unit I',
-      vendor_po_number: 'PO-2024-262742',
-      voucher_no: '262742',
-      sent_date: '2024-03-22',
-      expected_return_date: '2024-04-05',
-      vendor_cost: 6400,
-      payment_terms: '30 Days',
-      dispatched_through: 'By Hand',
-      destination: 'Chennai',
-      terms_of_delivery: 'Door Delivery',
-      status: 'SENT',
-      created_at: '2024-03-22T10:00:00.000Z',
-      items: [
-        {
-          id: 'item-1',
-          description: 'Calibration Charges - Hydrometer (Aviation)',
-          due_on: '17-Aug-26',
-          quantity: 4,
-          unit_rate: 1200,
-          per: 'NOS',
-          total_price: 4800,
-        },
-        {
-          id: 'item-2',
-          description: 'Calibration Charges - Spirit Level (Met Auto)',
-          due_on: '17-Aug-26',
-          quantity: 2,
-          unit_rate: 800,
-          per: 'NOS',
-          total_price: 1600,
-        },
-      ],
-      subtotal: 6400,
-      cgst_amount: 576,
-      sgst_amount: 576,
-      total_amount: 7552,
-    };
-    local = [samplePO];
-    saveLocalItems(OUTSOURCE_STORAGE_PREFIX, tenantId, local);
-  }
+  const local = getLocalItems<OutsourcePO>(OUTSOURCE_STORAGE_PREFIX, tenantId);
   return requestId ? local.filter((o) => o.request_id === requestId) : local;
 }
 
@@ -1018,97 +970,8 @@ export async function getQuotations(tenantId: string, organizationId?: string): 
     // Fallback
   }
 
-  let local = getLocalItems<Quotation>(QUOTATIONS_STORAGE_PREFIX, tenantId);
-  if (!local || local.length === 0) {
-    const sampleQuote: Quotation = {
-      id: 'quot-tcc-1557',
-      tenant_id: tenantId,
-      organization_id: organizationId || 'default-org',
-      request_id: 'req-sample-spirax',
-      quotation_number: 'QT-2026-1557',
-      reference_no: 'TCC/CQ/26-27/1557',
-      quotation_date: '09.03.2026',
-      kind_attn: 'Mr. TAMILANTHI',
-      phone_no: '6379891153',
-      subject: 'Quotation for Calibration Charges for Instruments and Gauges - Reg.',
-      enquiry_ref: 'verbal 31.08.2026',
-      subtotal: 53250,
-      discount: 0,
-      tax_amount: 9585,
-      total_amount: 62835,
-      status: 'APPROVED',
-      client_po_ref: 'PO/2026/SP-091',
-      created_at: '2026-03-09T10:30:00.000Z',
-      items: [
-        {
-          id: 'q-item-1',
-          quotation_id: 'quot-tcc-1557',
-          description: 'Pressure Gauge',
-          range: '0-16bar',
-          quantity: 45,
-          unit_price: 200,
-          total_price: 9000,
-        },
-        {
-          id: 'q-item-2',
-          quotation_id: 'quot-tcc-1557',
-          description: 'Pressure Gauge',
-          range: '16-200bar',
-          quantity: 55,
-          unit_price: 250,
-          total_price: 13750,
-        },
-        {
-          id: 'q-item-3',
-          quotation_id: 'quot-tcc-1557',
-          description: 'Pressure Gauge',
-          range: 'Above 200bar',
-          quantity: 30,
-          unit_price: 300,
-          total_price: 9000,
-        },
-        {
-          id: 'q-item-4',
-          quotation_id: 'quot-tcc-1557',
-          description: 'Pressure Transducer',
-          range: 'Upto 16bar',
-          quantity: 10,
-          unit_price: 200,
-          total_price: 2000,
-        },
-        {
-          id: 'q-item-5',
-          quotation_id: 'quot-tcc-1557',
-          description: 'Pressure Transducer',
-          range: '16-200bar',
-          quantity: 20,
-          unit_price: 250,
-          total_price: 5000,
-        },
-        {
-          id: 'q-item-6',
-          quotation_id: 'quot-tcc-1557',
-          description: 'Pressure Transducer',
-          range: '200bar',
-          quantity: 15,
-          unit_price: 300,
-          total_price: 4500,
-        },
-        {
-          id: 'q-item-7',
-          quotation_id: 'quot-tcc-1557',
-          description: 'Onsite calibration charges / Day for 2 persons',
-          range: '',
-          quantity: 10,
-          unit_price: 1000,
-          total_price: 10000,
-        },
-      ],
-    };
-    local = [sampleQuote];
-    saveLocalItems(QUOTATIONS_STORAGE_PREFIX, tenantId, local);
-  }
-  return local;
+  const local = getLocalItems<Quotation>(QUOTATIONS_STORAGE_PREFIX, tenantId);
+  return organizationId ? local.filter((q) => !q.organization_id || q.organization_id === organizationId) : local;
 }
 
 export interface CreateQuotationPayload {

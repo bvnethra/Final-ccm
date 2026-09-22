@@ -397,6 +397,7 @@ export interface Invoice {
   tax_amount: number;
   total_amount: number;
   client_po_ref?: string;
+  dispatched_through?: string;
   invoice_status: 'ISSUED' | 'PAID' | 'CANCELLED';
   created_at: string;
   items?: InvoiceItem[];

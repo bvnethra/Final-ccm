@@ -32,31 +32,30 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
   const issuer = customIssuer || labProfile;
 
   // Vendor / Supplier Details
-  const supplierName = vendor?.vendor_name || outsourcePO.vendor_name || 'Hi Tech Calibration Services - Unit I';
+  const supplierName = vendor?.vendor_name || outsourcePO.vendor_name || '';
   const addressParts = [
     vendor?.address,
     vendor?.city,
   ].filter(Boolean);
-  const supplierAddress = addressParts.length > 0
-    ? addressParts.join('\n')
-    : 'No:209, VGP Nagar,\nMugapair West\nChennai';
+  const supplierAddress = addressParts.length > 0 ? addressParts.join('\n') : '';
 
-  const supplierGstin = vendor?.gst_tax_number || '33AAGFH4929G1ZJ';
+  const supplierGstin = vendor?.gst_tax_number || '';
   const supplierStateCode =
     supplierGstin && supplierGstin.length >= 2 && !isNaN(Number(supplierGstin.slice(0, 2)))
       ? supplierGstin.slice(0, 2)
-      : '33';
-  const supplierStateName = vendor?.state || 'Tamil Nadu';
-  const supplierState = `${supplierStateName}, Code : ${supplierStateCode}`;
+      : '';
+  const supplierStateName = vendor?.state || '';
+  const supplierState = supplierStateName ? `${supplierStateName}${supplierStateCode ? `, Code : ${supplierStateCode}` : ''}` : '';
 
   // PO Metadata
   const voucherNo =
     outsourcePO.voucher_no ||
     outsourcePO.vendor_po_number.replace(/^VPO-\d{4}-/, '') ||
-    '262742';
+    outsourcePO.vendor_po_number ||
+    '';
   const poDate = formatInvoiceDate(outsourcePO.sent_date || outsourcePO.created_at);
   const paymentTerms = outsourcePO.payment_terms || '30 Days';
-  const refNo = `${voucherNo}`;
+  const refNo = voucherNo ? `${voucherNo}` : '';
   const otherRef = outsourcePO.remarks || '';
   const dispatchedThrough = outsourcePO.dispatched_through || 'By Hand';
   const destination = outsourcePO.destination || vendor?.city || '';
@@ -77,33 +76,14 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
             description: matchedRequestItem.item_masters?.item_name || 'Specialized Calibration Instrument',
             due_on: formatInvoiceDate(outsourcePO.expected_return_date || outsourcePO.sent_date),
             quantity: matchedRequestItem.received_quantity || matchedRequestItem.quantity || 1,
-            unit_rate: outsourcePO.vendor_cost || 1200,
+            unit_rate: outsourcePO.vendor_cost || 0,
             per: 'NOS',
             total_price:
               (matchedRequestItem.received_quantity || matchedRequestItem.quantity || 1) *
-              (outsourcePO.vendor_cost || 1200),
+              (outsourcePO.vendor_cost || 0),
           },
         ]
-      : [
-          {
-            id: '1',
-            description: 'Hydrometer (Aviation)',
-            due_on: '17-Aug-26',
-            quantity: 4,
-            unit_rate: 1200,
-            per: 'NOS',
-            total_price: 4800,
-          },
-          {
-            id: '2',
-            description: 'Spirit Level (Met Auto)',
-            due_on: '17-Aug-26',
-            quantity: 2,
-            unit_rate: 800,
-            per: 'NOS',
-            total_price: 1600,
-          },
-        ];
+      : [];
 
   const totalQuantity = items.reduce((sum, it) => sum + (Number(it.quantity) || 1), 0);
   const subtotal = items.reduce((sum, it) => sum + (Number(it.total_price) || 0), 0);
@@ -204,19 +184,21 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
                         <div className="flex items-center">
                           <img
                             src={issuer.logo_url}
-                            alt={issuer.name}
+                            alt={issuer.name || 'Lab Logo'}
                             className="max-h-12 max-w-[140px] object-contain select-none mr-2"
                           />
                         </div>
                       ) : (
                         <span className="text-2xl font-black tracking-tight font-serif italic text-black">
-                          {issuer.logo_text || 'tespa'}
+                          {issuer.logo_text || issuer.name || ''}
                         </span>
                       )}
                       <div>
-                        <div className="font-bold text-xs leading-none text-black">
-                          {issuer.name}
-                        </div>
+                        {issuer.name && (
+                          <div className="font-bold text-xs leading-none text-black">
+                            {issuer.name}
+                          </div>
+                        )}
                         {issuer.division && (
                           <div className="text-[10px] text-gray-700 italic">
                             {issuer.division}
@@ -225,13 +207,15 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
                       </div>
                     </div>
                     <div className="pt-1 text-[10px] text-gray-900 leading-snug">
-                      <div>{issuer.address1}</div>
+                      {issuer.address1 && <div>{issuer.address1}</div>}
                       {issuer.address2 && <div>{issuer.address2}</div>}
-                      <div>{[issuer.city, issuer.pin].filter(Boolean).join(' - ')}</div>
+                      {(issuer.city || issuer.pin) && <div>{[issuer.city, issuer.pin].filter(Boolean).join(' - ')}</div>}
                       {issuer.udyam && <div><strong>UDYAM :</strong> {issuer.udyam}</div>}
-                      <div><strong>GSTIN/UIN:</strong> {issuer.gstin}</div>
-                      <div><strong>State Name :</strong> {issuer.state}, Code : {issuer.state_code}</div>
-                      <div><strong>E-Mail :</strong> {issuer.email}</div>
+                      {issuer.gstin && <div><strong>GSTIN/UIN:</strong> {issuer.gstin}</div>}
+                      {(issuer.state || issuer.state_code) && (
+                        <div><strong>State Name :</strong> {issuer.state}{issuer.state_code ? `, Code : ${issuer.state_code}` : ''}</div>
+                      )}
+                      {issuer.email && <div><strong>E-Mail :</strong> {issuer.email}</div>}
                     </div>
                   </div>
                 </div>
@@ -291,14 +275,18 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
               <div className="text-gray-600 text-[9px] font-semibold mb-0.5">
                 Supplier (Bill from)
               </div>
-              <div className="font-bold text-xs uppercase text-black">{supplierName}</div>
-              <div className="text-gray-800 whitespace-pre-line">{supplierAddress}</div>
-              <div className="mt-1">
-                <strong>GSTIN/UIN :</strong> {supplierGstin}
-              </div>
-              <div>
-                <strong>State Name :</strong> {supplierState}
-              </div>
+              {supplierName && <div className="font-bold text-xs uppercase text-black">{supplierName}</div>}
+              {supplierAddress && <div className="text-gray-800 whitespace-pre-line">{supplierAddress}</div>}
+              {supplierGstin && (
+                <div className="mt-1">
+                  <strong>GSTIN/UIN :</strong> {supplierGstin}
+                </div>
+              )}
+              {supplierState && (
+                <div>
+                  <strong>State Name :</strong> {supplierState}
+                </div>
+              )}
             </div>
 
             {/* ================================================================ */}
@@ -317,7 +305,14 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {items.map((it, idx) => (
+                {items.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-4 text-center text-gray-500 italic">
+                      No purchase order line items recorded.
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((it, idx) => (
                   <tr key={it.id || idx} className="align-top leading-tight">
                     <td className="border-r border-black p-1.5 text-center font-mono">{idx + 1}</td>
                     <td className="border-r border-black p-1.5 text-left">
@@ -346,7 +341,8 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
                       })}
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
 
                 {/* Blank rows to give authentic paper height */}
                 {items.length < 6 && (
@@ -458,7 +454,7 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
             {/* Signatory Section */}
             <div className="flex justify-end p-2 pb-3">
               <div className="text-right text-[10px] space-y-9 pr-2">
-                <div className="font-bold text-black">for {issuer.name}</div>
+                <div className="font-bold text-black">for {issuer.name || ''}</div>
                 <div className="font-bold text-gray-800 pt-3">Authorised Signatory</div>
               </div>
             </div>
