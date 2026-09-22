@@ -452,7 +452,7 @@ export interface RecordCalibrationPayload {
   result: CalibrationResult;
   outcome?: CalibrationOutcome;
   remarks?: string;
-  measurements: {
+  measurements?: {
     parameterName: string;
     nominalValue: number;
     measuredValue: number;
@@ -487,7 +487,7 @@ export async function recordCalibration(payload: RecordCalibrationPayload): Prom
     result: payload.result,
     remarks: payload.remarks,
     created_at: now,
-    measurements: payload.measurements.map((m) => ({
+    measurements: (payload.measurements || []).map((m) => ({
       id: crypto.randomUUID(),
       tenant_id: payload.tenantId,
       organization_id: payload.organizationId,
@@ -524,7 +524,7 @@ export async function recordCalibration(payload: RecordCalibrationPayload): Prom
       .single();
 
     if (!calError && cal) {
-      if (payload.measurements.length > 0) {
+      if (payload.measurements && payload.measurements.length > 0) {
         const measurementRows = payload.measurements.map((m) => ({
           tenant_id: payload.tenantId,
           organization_id: payload.organizationId,
