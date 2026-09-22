@@ -3,12 +3,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { Button, Badge } from '../ui/UIPrimitives';
-import { LogOut, User, Building2, Bell, Clock, ArrowRight, ShieldCheck, ExternalLink } from 'lucide-react';
+import { LogOut, User, Building2, Bell, Clock, ArrowRight } from 'lucide-react';
 import { useVendorReminders } from '../../hooks/useVendorReminders';
-import { openSuperAdminApp } from '../../services/crossAppNav';
 
 export const AppHeader: React.FC = () => {
-  const { user, logout, isAdmin } = useAuthContext();
+  const { user, logout } = useAuthContext();
   const { reminders, count } = useVendorReminders();
   const [showNotifications, setShowNotifications] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -39,11 +38,11 @@ export const AppHeader: React.FC = () => {
           </div>
         </div>
 
-        {user?.tenantId && (
+        {(user?.tenantName || user?.tenantId) && (
           <div className="hidden sm:flex items-center gap-1.5 pl-4 border-l border-[#E5E7EB]">
             <Building2 className="size-3.5 text-[#6B7280]" />
             <span className="text-xs font-medium text-[#374151]">
-              Tenant: <span className="font-mono text-[11px] text-[#0274BB]">{user.tenantId.slice(0, 8)}</span>
+              Enterprise: <span className="font-semibold text-xs text-[#0274BB]">{user.tenantName || user.organizationName || user.tenantId.slice(0, 8)}</span>
             </span>
           </div>
         )}
@@ -165,21 +164,6 @@ export const AppHeader: React.FC = () => {
             {user.roles[0]}
           </Badge>
         ) : null}
-
-        {(user?.isSuperAdmin || isAdmin) && (
-          <Button
-            variant="outlineInk"
-            size="sm"
-            onClick={() => openSuperAdminApp()}
-            className="text-xs flex items-center gap-1.5 border-[#b8dcff] bg-[#E6F2FF] text-[#0274BB] hover:bg-[#d0e7ff] font-semibold shadow-xs cursor-pointer"
-            title="Switch to Super Admin Governance Portal on localhost:5173"
-          >
-            <ShieldCheck className="size-3.5 text-[#0274BB]" />
-            <span className="hidden sm:inline">Super Admin</span>
-            <span className="text-[10px] font-mono bg-white px-1.5 py-0.5 rounded border border-[#b8dcff] text-[#0274BB]">5173</span>
-            <ExternalLink className="size-3 text-[#0274BB]" />
-          </Button>
-        )}
 
         <Button
           variant="outlineInk"

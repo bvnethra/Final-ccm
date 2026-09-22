@@ -46,7 +46,10 @@ import { useAuthContext } from '../../contexts/AuthContext';
 export const RequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isLabEntryPerson, isLabApprover, isAdmin } = useAuthContext();
+  const { isSuperAdmin, canPerform, getPermissionLevel } = useAuthContext();
+  const canCreateInvoice = isSuperAdmin || canPerform('CREATE_INVOICE', 'CREATE');
+  const canCreateQuotation = isSuperAdmin || (getPermissionLevel('CREATE_QUOTATION') !== 'APPROVE' && canPerform('CREATE_QUOTATION', 'CREATE'));
+  const backToQueue = !canPerform('CREATE_REQUEST', 'VIEW') && (canPerform('LAB_VERIFICATION_RECEIPT', 'VIEW') || canPerform('RECORD_CALIBRATION_FREQUENCY', 'VIEW'));
   const { data: request, isLoading, error } = useCalibrationRequest(id);
   const { data: certificates = [] } = useCertificates(id);
   const { data: repairs = [] } = useRepairs(id);
@@ -256,9 +259,9 @@ export const RequestDetailPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link to={isLabEntryPerson ? "/lab/queue" : "/requests"}>
+          <Link to={backToQueue ? "/lab/queue" : "/requests"}>
             <Button variant="secondary" size="sm">
-              <ArrowLeft className="size-4" /> {isLabEntryPerson ? 'Back to Lab Queue' : 'Back to Requests'}
+              <ArrowLeft className="size-4" /> {backToQueue ? 'Back to Lab Queue' : 'Back to Requests'}
             </Button>
           </Link>
           <div>
@@ -319,14 +322,14 @@ export const RequestDetailPage: React.FC = () => {
             </Link>
           )}          {(request.status === 'CALIBRATED' || request.status === 'PARTIALLY_INVOICED') && (
             <div className="flex items-center gap-2">
-              {!isLabApprover && !isAdmin && (
+              {canCreateInvoice && (
                 <Button variant="primary" onClick={handleOpenDirectInvoice}>
                   <Receipt className="size-4" />
                   {request.status === 'PARTIALLY_INVOICED' ? 'Invoice Remaining Items' : 'Generate Tax Invoice Directly'}
                 </Button>
               )}
-              {!isLabApprover && !isAdmin ? (
-                <Link to="/commercial/quotations/new">
+              {canCreateQuotation ? (
+                <Link to={`/commercial/quotations/new?requestId=${request.id}`}>
                   <Button variant="outlineInk">
                     <FileText className="size-4" /> Create Quotation (Optional)
                   </Button>
@@ -342,7 +345,7 @@ export const RequestDetailPage: React.FC = () => {
           )}
           {request.status === 'QUOTATION' && (
             <div className="flex items-center gap-2">
-              {!isLabApprover && !isAdmin && (
+              {canCreateInvoice && (
                 <Button variant="primary" onClick={handleOpenDirectInvoice}>
                   <Receipt className="size-4" /> Generate Tax Invoice Directly
                 </Button>
@@ -356,7 +359,7 @@ export const RequestDetailPage: React.FC = () => {
           )}
           {request.status === 'APPROVED' && (
             <div className="flex items-center gap-2">
-              {!isLabApprover && !isAdmin && (
+              {canCreateInvoice && (
                 <Button variant="primary" onClick={handleOpenDirectInvoice}>
                   <Receipt className="size-4" /> Generate Tax Invoice
                 </Button>
@@ -506,14 +509,18 @@ export const RequestDetailPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="primary" size="sm" onClick={handleOpenDirectInvoice}>
-              <Receipt className="size-3.5" /> Generate Tax Invoice Directly
-            </Button>
-            <Link to="/commercial/quotations/new">
-              <Button variant="secondary" size="sm">
-                Create Quotation (Optional) <ArrowRight className="size-3.5" />
+            {canCreateInvoice && (
+              <Button variant="primary" size="sm" onClick={handleOpenDirectInvoice}>
+                <Receipt className="size-3.5" /> Generate Tax Invoice Directly
               </Button>
-            </Link>
+            )}
+            {canCreateQuotation && (
+              <Link to={`/commercial/quotations/new?requestId=${request.id}`}>
+                <Button variant="secondary" size="sm">
+                  Create Quotation (Optional) <ArrowRight className="size-3.5" />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       )}

@@ -30,8 +30,9 @@ interface ItemMasterDetailViewProps {
 }
 
 export const ItemMasterDetailView: React.FC<ItemMasterDetailViewProps> = ({ item }) => {
-  const { isCollectionAgent, isLabApprover } = useAuthContext();
-  const isViewOnlyMaster = isCollectionAgent || isLabApprover;
+  const { canPerform, isSuperAdmin } = useAuthContext();
+  const canEditMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE_EDIT') || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE');
+  const isViewOnlyMaster = !canEditMaster;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">

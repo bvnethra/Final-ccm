@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   generateItemCode,
+  formatTccItemCode,
   createItemMaster,
   updateItemMaster,
   getItemMasters,
@@ -24,6 +25,16 @@ describe('Item Master Data Business Logic & Metrology Validations', () => {
       expect(code1).toMatch(new RegExp(`^ITM-${currentYear}-\\d{5}$`));
       expect(code2).toMatch(new RegExp(`^ITM-${currentYear}-\\d{5}$`));
       expect(code1).not.toBe(code2);
+    });
+
+    it('formats TCC-MAS sequential item codes from TCC-MAS-001 to 999 correctly', () => {
+      expect(formatTccItemCode(1)).toBe('TCC-MAS-001');
+      expect(formatTccItemCode(25)).toBe('TCC-MAS-025');
+      expect(formatTccItemCode(75)).toBe('TCC-MAS-075');
+      expect(formatTccItemCode(100)).toBe('TCC-MAS-100');
+      expect(formatTccItemCode(999)).toBe('TCC-MAS-999');
+      expect(formatTccItemCode(1000)).toBe('TCC-MAS-1000');
+      expect(generateItemCode(75)).toBe('TCC-MAS-075');
     });
   });
 

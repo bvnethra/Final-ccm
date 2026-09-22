@@ -320,7 +320,6 @@ export const QuotationBuilderPage: React.FC = () => {
 
             {/* Calculations Box */}
             <div className="p-6 bg-[#F5F7FA] border-t border-[#E5E7EB] flex flex-col items-end gap-2 text-sm">
-              <div className="flex justify-between w-64 text-[#6B7280]">
                 <span>Subtotal (₹):</span>
                 <span className="font-mono text-[#111827]">₹{subtotal.toFixed(2)}</span>
               </div>
@@ -345,7 +344,6 @@ export const QuotationBuilderPage: React.FC = () => {
                   onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
                   className="w-24 text-right h-8"
                 />
-              </div>
               <div className="flex justify-between w-64 text-[#6B7280]">
                 <span>Tax Amount (₹):</span>
                 <span className="font-mono text-[#111827]">₹{taxAmount.toFixed(2)}</span>

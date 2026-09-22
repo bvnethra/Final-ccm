@@ -21,6 +21,8 @@ import {
   Database,
   FileText,
 } from 'lucide-react';
+import { useAuthContext } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
 
 export interface FieldMapping {
   key: string;
@@ -52,6 +54,7 @@ export const ExcelBulkImportPanel: React.FC<ExcelBulkImportPanelProps> = ({
   onImport,
   onSuccess,
 }) => {
+  const { user, organizationName, tenantName, enterpriseName } = useAuthContext();
   const [file, setFile] = useState<File | null>(null);
   const [sheetNames, setSheetNames] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>('');
@@ -88,7 +91,11 @@ export const ExcelBulkImportPanel: React.FC<ExcelBulkImportPanelProps> = ({
           cleanHeader.includes('code') && targetKey.includes('code') ||
           cleanHeader.includes('address') && targetKey.includes('address') ||
           cleanHeader.includes('phone') && targetKey.includes('phone') ||
-          cleanHeader.includes('email') && targetKey.includes('email')
+          cleanHeader.includes('email') && targetKey.includes('email') ||
+          cleanHeader.includes('instrument') && (targetKey.includes('item') || targetKey.includes('name')) ||
+          cleanHeader.includes('range') && targetKey.includes('range') ||
+          (cleanHeader.includes('rate') || cleanHeader.includes('cost') || cleanHeader.includes('price')) && targetKey.includes('cost') ||
+          cleanHeader.includes('least') && targetKey.includes('least')
         );
       });
 
@@ -181,11 +188,86 @@ export const ExcelBulkImportPanel: React.FC<ExcelBulkImportPanelProps> = ({
     }));
   };
 
-  const handleDownloadSample = () => {
+  const handleDownloadSample = async () => {
     const ws = XLSX.utils.json_to_sheet(sampleData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Sample_Data');
-    XLSX.writeFile(wb, sampleTemplateFileName);
+
+    // Rule: Downloaded template file name MUST ALWAYS include the enterprise name or org name
+    let orgOrEnterprise =
+      enterpriseName ||
+      tenantName ||
+      user?.tenantName ||
+      organizationName ||
+      user?.organizationName;
+
+    // Guard against generic default 'Nethra' or missing state
+    if (!orgOrEnterprise || orgOrEnterprise.trim().toLowerCase() === 'nethra') {
+      try {
+        const targetTenantId = user?.tenantId;
+        const targetOrgId = user?.organizationId;
+        if (targetTenantId) {
+          const { data: tenantData } = await supabase
+            .from('tenants')
+            .select('name')
+            .eq('id', targetTenantId)
+            .maybeSingle();
+          if (tenantData?.name) {
+            orgOrEnterprise = tenantData.name;
+          }
+        }
+        if ((!orgOrEnterprise || orgOrEnterprise.trim().toLowerCase() === 'nethra') && targetOrgId) {
+          const { data: orgData } = await supabase
+            .from('organizations')
+            .select('name')
+            .eq('id', targetOrgId)
+            .maybeSingle();
+          if (orgData?.name) {
+            orgOrEnterprise = orgData.name;
+          }
+        }
+        if (!orgOrEnterprise || orgOrEnterprise.trim().toLowerCase() === 'nethra') {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.user) {
+            const { data: profileData } = await supabase
+              .from('user_profiles')
+              .select('tenants(name), organizations(name)')
+              .eq('id', sessionData.session.user.id)
+              .maybeSingle();
+            const tName = Array.isArray((profileData as any)?.tenants)
+              ? (profileData as any)?.tenants[0]?.name
+              : (profileData as any)?.tenants?.name;
+            const oName = Array.isArray((profileData as any)?.organizations)
+              ? (profileData as any)?.organizations[0]?.name
+              : (profileData as any)?.organizations?.name;
+            if (tName) orgOrEnterprise = tName;
+            else if (oName) orgOrEnterprise = oName;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not query live tenant/org name for Excel template download:', err);
+      }
+    }
+
+    if (!orgOrEnterprise || orgOrEnterprise.trim().toLowerCase() === 'nethra') {
+      orgOrEnterprise = 'Nethra Metrology Services Ltd';
+    }
+
+    const safeOrgPrefix = orgOrEnterprise
+      .trim()
+      .replace(/[^a-zA-Z0-9]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '');
+
+    let baseName = sampleTemplateFileName.trim();
+    // Strip default/generic prefixes if present so we don't end up with duplicate prefixes
+    baseName = baseName.replace(/^(nethra|template)[_-]?/i, '');
+    if (!baseName.toLowerCase().endsWith('.xlsx')) {
+      baseName += '.xlsx';
+    }
+
+    const finalFileName = `${safeOrgPrefix}_${baseName}`;
+    XLSX.writeFile(wb, finalFileName);
   };
 
   const resetForm = () => {
@@ -210,6 +292,7 @@ export const ExcelBulkImportPanel: React.FC<ExcelBulkImportPanelProps> = ({
     }
 
     // Build normalized rows
+    let lastValidItemName = '';
     const preparedRows = rawRows
       .map((row) => {
         const item: Record<string, any> = {};
@@ -217,6 +300,34 @@ export const ExcelBulkImportPanel: React.FC<ExcelBulkImportPanelProps> = ({
           const mappedHeader = columnMap[f.key];
           item[f.key] = mappedHeader ? row[mappedHeader] : undefined;
         });
+
+        // If item_name is blank but previous row had instrument name, carry forward
+        if (columnMap['item_name']) {
+          const currentName = item['item_name'] ? String(item['item_name']).trim() : '';
+          if (currentName) {
+            lastValidItemName = currentName;
+          } else if (lastValidItemName && (item['measurement_range'] || item['standard_cost'] !== undefined)) {
+            item['item_name'] = lastValidItemName;
+          }
+        }
+
+        // Clean standard_cost if string (e.g. "20/-" or "35 /- per piece")
+        if (item['standard_cost'] !== undefined && item['standard_cost'] !== null) {
+          if (typeof item['standard_cost'] === 'string') {
+            const firstPart = item['standard_cost'].split('/')[0];
+            const cleanNum = firstPart.replace(/[^0-9.]/g, '');
+            item['standard_cost'] = cleanNum ? parseFloat(cleanNum) : 0;
+          }
+        }
+
+        // If item has range and item_name does not yet include range, format nicely
+        if (item['item_name'] && item['measurement_range']) {
+          const rangeStr = String(item['measurement_range']).trim();
+          if (rangeStr && !String(item['item_name']).includes(rangeStr)) {
+            item['item_name'] = `${item['item_name']} (${rangeStr})`;
+          }
+        }
+
         return item;
       })
       .filter((item) => {

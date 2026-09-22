@@ -87,8 +87,10 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
   onImportBulk,
   onImportSuccess,
 }) => {
-  const { isCollectionAgent, isLabEntryPerson, isLabApprover } = useAuthContext();
-  const isViewOnlyMaster = isCollectionAgent || isLabEntryPerson || isLabApprover;
+  const { canPerform, isSuperAdmin } = useAuthContext();
+  const canCreateMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE');
+  const canEditMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE_EDIT') || canCreateMaster;
+  const isViewOnlyMaster = !canCreateMaster;
 
   return (
     <div className="space-y-6">
@@ -133,7 +135,7 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
         title="Import Clients in Bulk"
         description="Upload your client or customer spreadsheet to automatically register multiple commercial billing profiles."
         fields={CLIENT_IMPORT_FIELDS}
-        sampleTemplateFileName="Nethra_Client_Master_Template.xlsx"
+        sampleTemplateFileName="Client_Master_Template.xlsx"
         sampleData={SAMPLE_CLIENTS}
         onImport={onImportBulk}
         onSuccess={onImportSuccess}
@@ -289,7 +291,7 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
                       </td>
 
                       <td className="px-5 py-4">
-                        {isViewOnlyMaster ? (
+                        {!canEditMaster ? (
                           <Badge variant={client.status === 'ACTIVE' ? 'success' : 'outline'}>
                             {client.status}
                           </Badge>
@@ -343,7 +345,7 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
                               <Eye className="size-4" />
                             </button>
                           </Link>
-                          {!isViewOnlyMaster && (
+                          {canEditMaster && (
                             <Link to={`/masters/clients/${client.id}/edit`}>
                               <button
                                 className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"

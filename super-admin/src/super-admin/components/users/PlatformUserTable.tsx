@@ -34,8 +34,7 @@ export const PlatformUserTable: React.FC = () => {
   const [statusChangeError, setStatusChangeError] = React.useState('');
 
   const handleOpenRoleModal = (u: PlatformUser) => {
-    const targetRole: PlatformRole = u.role === 'SUPER_ADMIN' ? 'PLATFORM_SUPPORT' : 'SUPER_ADMIN';
-    setRoleChangeTarget({ user: u, targetRole });
+    setRoleChangeTarget({ user: u, targetRole: u.role });
     setRoleChangeError('');
   };
 
@@ -122,7 +121,7 @@ export const PlatformUserTable: React.FC = () => {
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-[#374151] bg-[#F5F7FA] px-2 py-0.5 rounded-[4px] border border-[#E5E7EB]">
-                          <UserCheck className="size-3 text-[#6B7280]" /> PLATFORM_SUPPORT
+                          <UserCheck className="size-3 text-[#6B7280]" /> {u.role}
                         </span>
                       )}
                     </td>
@@ -325,7 +324,10 @@ export const PlatformUserTable: React.FC = () => {
                 className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-2 text-xs text-[#111827] font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
               >
                 <option value="SUPER_ADMIN">SUPER_ADMIN — Full platform authority, tenant mutations</option>
-                <option value="PLATFORM_SUPPORT">PLATFORM_SUPPORT — Read-only telemetry, support oversight</option>
+                <option value="ADMIN">ADMIN — Comprehensive operational administrator</option>
+                <option value="LAB_APPROVER">LAB_APPROVER — Senior laboratory technical manager &amp; test report approver</option>
+                <option value="LAB_ENTRY_PERSON">LAB_ENTRY_PERSON — Laboratory testing technician &amp; data entry</option>
+                <option value="COLLECTION_AGENT">COLLECTION_AGENT — Logistics &amp; sample collection field agent</option>
               </select>
             </div>
 

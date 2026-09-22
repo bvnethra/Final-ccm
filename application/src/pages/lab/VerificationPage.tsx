@@ -47,8 +47,9 @@ function formatBytes(bytes: number, decimals = 1) {
 export const VerificationPage: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
-  const { tenantId, organizationId, user, isLabApprover, isAdmin } = useAuthContext();
-  const isViewOnly = isLabApprover || isAdmin;
+  const { tenantId, organizationId, user, isSuperAdmin, canPerform } = useAuthContext();
+  const canEditVerification = isSuperAdmin || canPerform('LAB_VERIFICATION_RECEIPT', 'CREATE_EDIT') || canPerform('LAB_VERIFICATION_RECEIPT', 'CREATE');
+  const isViewOnly = !canEditVerification;
   const { data: request, isLoading } = useCalibrationRequest(requestId);
   const recordVerificationMutation = useRecordVerification();
 

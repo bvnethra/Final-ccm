@@ -33,7 +33,7 @@ export async function getCurrentUserProfile(authUserId: string): Promise<AuthUse
       tenantId: '',
       organizationId: '',
       roles: [pUser.role],
-      permissions: isSuperAdmin ? [WILDCARD_PERMISSION] : ['PLATFORM_SUPPORT'],
+      permissions: isSuperAdmin ? [WILDCARD_PERMISSION] : [pUser.role],
       isSuperAdmin,
     };
   }

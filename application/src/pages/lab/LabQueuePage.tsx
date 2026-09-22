@@ -1,6 +1,6 @@
 // application/src/pages/lab/LabQueuePage.tsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCalibrationRequests } from '../../hooks/useOperations';
 import {
   Card,
@@ -11,10 +11,10 @@ import {
   Button,
   Badge,
   CategoryTabs,
+  Select,
 } from '../../components/ui/UIPrimitives';
 import type { RequestAttachment } from '../../types/domain';
 import {
-  ArrowRight,
   FlaskConical,
   AlertCircle,
   Paperclip,
@@ -27,7 +27,6 @@ import {
   FileSpreadsheet,
   Download,
   Calendar,
-  Receipt,
 } from 'lucide-react';
 
 function formatBytes(bytes: number, decimals = 1) {
@@ -54,6 +53,7 @@ function getFileIcon(type: string, name: string) {
 }
 
 export const LabQueuePage: React.FC = () => {
+  const navigate = useNavigate();
   const [activeStageTab, setActiveStageTab] = useState<string>('LAB_ALL');
   const [priorityFilter, setPriorityFilter] = useState<'ALL' | 'URGENT' | 'NORMAL'>('ALL');
   const [selectedRequestAttachments, setSelectedRequestAttachments] = useState<{
@@ -327,38 +327,39 @@ export const LabQueuePage: React.FC = () => {
                         </td>
 
                         {/* Action */}
-                        <td className="px-5 py-4 text-right">
-                          {req.status === 'CREATED' ? (
-                            <Link to={`/lab/verification/${req.id}`}>
-                              <Button variant="primary" size="sm">
-                                Inspect &amp; Verify <ArrowRight className="size-3.5" />
-                              </Button>
-                            </Link>
-                          ) : req.status === 'VERIFIED' ? (
-                            <Link to={`/lab/calibration/${req.id}`}>
-                              <Button variant="primary" size="sm">
-                                Calibration Test <ArrowRight className="size-3.5" />
-                              </Button>
-                            </Link>
-                          ) : req.status === 'FAULTY' || req.status === 'REPAIR_IN_PROGRESS' ? (
-                            <Link to={`/lab/calibration/${req.id}`}>
-                              <Button variant="outlineInk" size="sm">
-                                Manage Repair <ArrowRight className="size-3.5" />
-                              </Button>
-                            </Link>
-                          ) : req.status === 'OUTSOURCED' ? (
-                            <Link to={`/lab/calibration/${req.id}`}>
-                              <Button variant="outlineInk" size="sm">
-                                Vendor Outsource PO <ArrowRight className="size-3.5" />
-                              </Button>
-                            </Link>
-                          ) : (
-                            <Link to={`/requests/${req.id}`}>
-                              <Button variant="secondary" size="sm">
-                                <Receipt className="size-3.5" /> Invoice / Quote <ArrowRight className="size-3.5" />
-                              </Button>
-                            </Link>
-                          )}
+                        <td className="px-5 py-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
+                            <Select
+                              defaultValue=""
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (!val) return;
+                                if (val === 'IN_HOUSE') {
+                                  navigate(`/lab/calibration/${req.id}?tab=IN_HOUSE`);
+                                } else if (val === 'IN_LAB_REPAIR') {
+                                  navigate(`/lab/calibration/${req.id}?tab=IN_LAB_REPAIR`);
+                                } else if (val === 'OUTSOURCE_PO') {
+                                  navigate(`/lab/calibration/${req.id}?tab=OUTSOURCE_PO`);
+                                } else if (val === 'VERIFY') {
+                                  navigate(`/lab/verification/${req.id}`);
+                                } else if (val === 'REQUEST') {
+                                  navigate(`/requests/${req.id}`);
+                                }
+                              }}
+                              className="text-xs font-semibold py-1 px-2.5 h-8.5 bg-white dark:bg-neutral-800 border-slate-300 w-52 shadow-2xs cursor-pointer"
+                            >
+                              <option value="" disabled>Choose Lab Action...</option>
+                              <option value="IN_HOUSE">🔬 In-Lab Calibration</option>
+                              <option value="IN_LAB_REPAIR">🔧 In-Lab Service &amp; Repair (Faulty)</option>
+                              <option value="OUTSOURCE_PO">🚚 Outsource</option>
+                              {req.status === 'CREATED' ? (
+                                <option value="VERIFY">📋 Inspect &amp; Inward Verify</option>
+                              ) : (
+                                <option value="VERIFY">📋 View Inward Verification</option>
+                              )}
+                              <option value="REQUEST">📄 Request &amp; Billing Details</option>
+                            </Select>
+                          </div>
                         </td>
                       </tr>
                     );

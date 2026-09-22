@@ -12,7 +12,7 @@ export default function CreatePlatformUserPage() {
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<PlatformRole>('PLATFORM_SUPPORT');
+  const [role, setRole] = useState<PlatformRole>('SUPER_ADMIN');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -120,8 +120,11 @@ export default function CreatePlatformUserPage() {
                 onChange={(e) => setRole(e.target.value as PlatformRole)}
                 className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
               >
-                <option value="PLATFORM_SUPPORT">PLATFORM_SUPPORT — Read-only telemetry, support oversight</option>
                 <option value="SUPER_ADMIN">SUPER_ADMIN — Full platform authority, tenant mutations</option>
+                <option value="ADMIN">ADMIN — Comprehensive operational administrator</option>
+                <option value="LAB_APPROVER">LAB_APPROVER — Senior laboratory technical manager &amp; test report approver</option>
+                <option value="LAB_ENTRY_PERSON">LAB_ENTRY_PERSON — Laboratory testing technician &amp; data entry</option>
+                <option value="COLLECTION_AGENT">COLLECTION_AGENT — Logistics &amp; sample collection field agent</option>
               </select>
             </Field>
 

@@ -46,10 +46,45 @@ export const COMMON_MEASUREMENT_UNITS = [
   'dB',
 ] as const;
 
-export function generateItemCode(): string {
+export function formatTccItemCode(seq: number): string {
+  if (seq >= 1000) {
+    return `TCC-MAS-${seq}`;
+  }
+  return `TCC-MAS-${String(seq).padStart(3, '0')}`;
+}
+
+export function generateItemCode(sequence?: number): string {
+  if (typeof sequence === 'number' && sequence > 0) {
+    return formatTccItemCode(sequence);
+  }
   const year = new Date().getFullYear();
   const randomSuffix = Math.floor(10000 + Math.random() * 90000);
   return `ITM-${year}-${randomSuffix}`;
+}
+
+export async function getNextTccItemCode(tenantId: string): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('item_masters')
+      .select('item_code')
+      .eq('tenant_id', tenantId)
+      .ilike('item_code', 'TCC-MAS-%');
+
+    if (!error && data && data.length > 0) {
+      let maxNum = 0;
+      for (const row of data) {
+        const match = (row.item_code || '').match(/TCC\s*-\s*MAS\s*-\s*(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+      return formatTccItemCode(maxNum + 1);
+    }
+  } catch (_err) {
+    // fallback
+  }
+  return 'TCC-MAS-001';
 }
 
 function getLocalItems(tenantId: string): ItemMaster[] {
@@ -87,7 +122,7 @@ export async function getItemMasters(
       .from('item_masters')
       .select('*')
       .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false });
+      .order('item_code', { ascending: true });
 
     if (organizationId) {
       query = query.or(`organization_id.eq.${organizationId},organization_id.is.null`);
@@ -370,24 +405,54 @@ export async function createItemMastersBulk(
   if (!tenantId) throw new Error('tenantId is required');
   if (!records.length) return { count: 0 };
 
+  // Calculate starting sequence for auto-generated codes
+  let currentSeq = 0;
+  try {
+    const { data } = await supabase
+      .from('item_masters')
+      .select('item_code')
+      .eq('tenant_id', tenantId)
+      .ilike('item_code', 'TCC-MAS-%');
+
+    if (data && data.length > 0) {
+      for (const row of data) {
+        const match = (row.item_code || '').match(/TCC\s*-\s*MAS\s*-\s*(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > currentSeq) currentSeq = num;
+        }
+      }
+    }
+  } catch (_seqErr) {
+    // Fallback starting from 0
+  }
+
   const now = new Date().toISOString();
-  const dbRows = records.map((r, idx) => ({
-    tenant_id: tenantId,
-    organization_id: organizationId || null,
-    item_code: r.item_code?.trim() || `ITM-${Date.now()}-${idx + 1}`,
-    item_name: r.item_name.trim(),
-    item_type: r.item_type?.trim() || 'EQUIPMENT',
-    manufacturer: r.manufacturer?.trim() || null,
-    model: r.model?.trim() || null,
-    serial_number: r.serial_number?.trim() || null,
-    measurement_range: r.measurement_range?.trim() || 'Standard Range',
-    least_count: r.least_count?.trim() || '0.01 mm',
-    standard_cost: typeof r.standard_cost === 'number' ? r.standard_cost : 0,
-    calibration_frequency: typeof r.calibration_frequency === 'number' ? r.calibration_frequency : 365,
-    status: r.status || 'ACTIVE',
-    created_at: now,
-    updated_at: now,
-  }));
+  const dbRows = records.map((r) => {
+    let itemCode = r.item_code?.trim();
+    if (!itemCode) {
+      currentSeq += 1;
+      itemCode = formatTccItemCode(currentSeq);
+    }
+
+    return {
+      tenant_id: tenantId,
+      organization_id: organizationId || null,
+      item_code: itemCode,
+      item_name: r.item_name.trim(),
+      item_type: r.item_type?.trim() || 'EQUIPMENT',
+      manufacturer: r.manufacturer?.trim() || null,
+      model: r.model?.trim() || null,
+      serial_number: r.serial_number?.trim() || null,
+      measurement_range: r.measurement_range?.trim() || 'Standard Range',
+      least_count: r.least_count?.trim() || '0.01 mm',
+      standard_cost: typeof r.standard_cost === 'number' ? r.standard_cost : 0,
+      calibration_frequency: typeof r.calibration_frequency === 'number' ? r.calibration_frequency : 365,
+      status: r.status || 'ACTIVE',
+      created_at: now,
+      updated_at: now,
+    };
+  });
 
   const CHUNK_SIZE = 50;
   for (let i = 0; i < dbRows.length; i += CHUNK_SIZE) {

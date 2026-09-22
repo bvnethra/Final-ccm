@@ -512,13 +512,9 @@ export async function recordCalibration(payload: RecordCalibrationPayload): Prom
         organization_id: payload.organizationId,
         request_id: payload.requestId,
         request_item_id: payload.requestItemId,
-        calibrated_by: user?.user?.id || null,
-        next_due_date: payload.nextDueDate,
-        environmental_temperature: payload.environmentalTemperature || null,
-        environmental_humidity: payload.environmentalHumidity || null,
+        calibrated_by: user?.user?.id || 'Lab Technician',
         result: payload.result,
         outcome: outcome,
-        remarks: payload.remarks || null,
       })
       .select()
       .single();
@@ -546,11 +542,10 @@ export async function recordCalibration(payload: RecordCalibrationPayload): Prom
           tenant_id: payload.tenantId,
           organization_id: payload.organizationId,
           request_id: payload.requestId,
+          request_item_id: payload.requestItemId,
           calibration_id: cal.id,
           certificate_number: certNum,
-          issued_at: now,
-          valid_until: payload.nextDueDate,
-          status: 'GENERATED',
+          certificate_status: 'GENERATED',
         });
 
         await supabase
@@ -1307,6 +1302,18 @@ export async function createInvoice(payload: CreateInvoicePayload): Promise<Invo
     }
     localReqs[rIdx].updated_at = now;
     saveLocalRequests(payload.tenantId, localReqs);
+
+    try {
+      await supabase
+        .from('calibration_requests')
+        .update({
+          status: isFullyInvoiced ? 'INVOICED' : 'PARTIALLY_INVOICED',
+          ...(payload.clientPoRef ? { client_po_ref: payload.clientPoRef } : {}),
+        })
+        .eq('id', payload.requestId);
+    } catch (sbErr) {
+      console.warn('Supabase invoice request status update skipped/fallback:', sbErr);
+    }
   }
 
   return newInvoice;
