@@ -12,6 +12,13 @@ import {
   Badge,
   CategoryTabs,
   Select,
+  DialogOverlay,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
 } from '../../components/ui/UIPrimitives';
 import type { RequestAttachment } from '../../types/domain';
 import {
@@ -373,40 +380,42 @@ export const LabQueuePage: React.FC = () => {
 
       {/* Attachment Proof Viewer Modal */}
       {selectedRequestAttachments && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-[4px] shadow-xl max-w-lg w-full overflow-hidden border border-[#E5E7EB]">
-            <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB] bg-[#F8FAFC]">
-              <div>
-                <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
-                  <Paperclip className="size-4 text-[#0274BB]" /> Attached Proof Documents
-                </h3>
-                <p className="text-xs text-[#6B7280] mt-0.5">
-                  Request: <span className="font-mono font-semibold text-[#0274BB]">{selectedRequestAttachments.requestNumber}</span>
-                  {selectedRequestAttachments.clientName && (
-                    <span> • {selectedRequestAttachments.clientName}</span>
-                  )}
-                </p>
+        <DialogOverlay onClick={() => setSelectedRequestAttachments(null)}>
+          <DialogContent size="2xl" onClick={(e) => e.stopPropagation()}>
+            <DialogHeader>
+              <div className="flex items-center justify-between w-full">
+                <div>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Paperclip className="size-4 text-[#0274BB]" /> Attached Proof Documents &amp; Photos
+                  </DialogTitle>
+                  <DialogDescription>
+                    Request: <span className="font-mono font-semibold text-[#0274BB]">{selectedRequestAttachments.requestNumber}</span>
+                    {selectedRequestAttachments.clientName && (
+                      <span> • {selectedRequestAttachments.clientName}</span>
+                    )}
+                  </DialogDescription>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRequestAttachments(null)}
+                  className="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded-[4px] hover:bg-[#E2E8F0] transition-colors cursor-pointer"
+                >
+                  <X className="size-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedRequestAttachments(null)}
-                className="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded-[4px] hover:bg-[#E2E8F0] transition-colors cursor-pointer"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
+            </DialogHeader>
 
-            <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+            <DialogBody className="space-y-3 max-h-[60vh] overflow-y-auto">
               {selectedRequestAttachments.attachments.map((att) => (
                 <div
                   key={att.id}
-                  className="flex items-center justify-between gap-3 p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px] text-sm"
+                  className="flex items-center justify-between gap-3 p-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px] text-sm hover:border-[#CBD5E1] transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {getFileIcon(att.type, att.name)}
                     <div className="min-w-0">
                       <p className="font-semibold text-[#1E293B] truncate">{att.name}</p>
-                      <p className="text-xs text-[#64748B]">
+                      <p className="text-xs text-[#6B7280]">
                         {formatBytes(att.size)} • {new Date(att.uploaded_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -418,18 +427,18 @@ export const LabQueuePage: React.FC = () => {
                       download={att.name}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0274BB] hover:text-[#01579B] bg-white border border-[#CBD5E1] px-2.5 py-1.5 rounded-[4px] hover:bg-[#F1F5F9] transition-colors shrink-0"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0274BB] hover:text-[#01579B] bg-white border border-[#CBD5E1] px-3 py-1.5 rounded-[4px] hover:bg-[#F1F5F9] transition-colors shrink-0 shadow-xs"
                     >
                       <Download className="size-3.5" /> View / Download
                     </a>
                   ) : (
-                    <span className="text-xs text-[#94A3B8]">Saved</span>
+                    <span className="text-xs text-[#94A3B8]">Saved in Vault</span>
                   )}
                 </div>
               ))}
-            </div>
+            </DialogBody>
 
-            <div className="p-3 border-t border-[#E5E7EB] bg-[#F8FAFC] flex justify-end">
+            <DialogFooter>
               <Button
                 variant="secondary"
                 size="sm"
@@ -437,9 +446,9 @@ export const LabQueuePage: React.FC = () => {
               >
                 Close Viewer
               </Button>
-            </div>
-          </div>
-        </div>
+            </DialogFooter>
+          </DialogContent>
+        </DialogOverlay>
       )}
     </div>
   );

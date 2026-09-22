@@ -715,16 +715,30 @@ export const CalibrationPage: React.FC = () => {
       {/* ==================================================================== */}
       {activeWorkflowTab === 'IN_HOUSE' && (
         <form onSubmit={handleSubmitCalibration} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Environmental Conditions */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle>Environmental Conditions</CardTitle>
-                <CardDescription>ISO/IEC 17025 standard environment</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          {/* Section 1: Environmental Test Conditions & Due Date Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FlaskConical className="size-4 text-[#0274BB]" />
+                    Environmental Test Conditions &amp; Calibration Verdict
+                  </CardTitle>
+                  <CardDescription>
+                    ISO/IEC 17025 standard test environment parameters and overall test result
+                  </CardDescription>
+                </div>
+                <Badge variant={calResult === 'PASS' ? 'success' : 'error'}>
+                  Verdict: {calResult}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Field>
-                  <FieldLabel>Ambient Temperature (°C)</FieldLabel>
+                  <FieldLabel>
+                    Ambient Temperature (°C) <span className="text-[#DC2626]">*</span>
+                  </FieldLabel>
                   <Input
                     type="number"
                     step="0.1"
@@ -732,10 +746,13 @@ export const CalibrationPage: React.FC = () => {
                     onChange={(e) => setTemp(parseFloat(e.target.value) || 20)}
                     required
                   />
+                  <p className="text-[11px] text-[#6B7280] mt-1">Standard: 20.0 ± 2°C</p>
                 </Field>
 
                 <Field>
-                  <FieldLabel>Relative Humidity (% RH)</FieldLabel>
+                  <FieldLabel>
+                    Relative Humidity (% RH) <span className="text-[#DC2626]">*</span>
+                  </FieldLabel>
                   <Input
                     type="number"
                     step="1"
@@ -743,6 +760,7 @@ export const CalibrationPage: React.FC = () => {
                     onChange={(e) => setHumidity(parseFloat(e.target.value) || 50)}
                     required
                   />
+                  <p className="text-[11px] text-[#6B7280] mt-1">Standard: 50 ± 10% RH</p>
                 </Field>
 
                 <Field>
@@ -755,9 +773,7 @@ export const CalibrationPage: React.FC = () => {
                     onChange={(e) => setNextDueDate(e.target.value)}
                     required
                   />
-                  <p className="text-[11px] text-[#6B7280] mt-1">
-                    Auto-defaults to 1-year calibration interval.
-                  </p>
+                  <p className="text-[11px] text-[#6B7280] mt-1">Auto-defaults to 1-year interval.</p>
                 </Field>
 
                 <Field>
@@ -769,194 +785,195 @@ export const CalibrationPage: React.FC = () => {
                     <option value="PASS">PASS — Complies with ISO/IEC 17025</option>
                     <option value="FAIL">FAIL — Exceeds Tolerance Limits (Needs Repair)</option>
                   </Select>
+                  <p className="text-[11px] text-[#6B7280] mt-1">Determines certificate issuance.</p>
                 </Field>
+              </div>
 
-                <Field>
-                  <FieldLabel>Metrologist Observations</FieldLabel>
-                  <Textarea
-                    placeholder="Master gauge references, method standard..."
-                    value={calRemarks}
-                    onChange={(e) => setCalRemarks(e.target.value)}
-                    rows={2}
-                  />
-                </Field>
-              </CardContent>
-            </Card>
+              <Field>
+                <FieldLabel>Metrologist Observations &amp; Master References</FieldLabel>
+                <Textarea
+                  placeholder="Master gauge references, traceability certificate numbers, standard methods applied..."
+                  value={calRemarks}
+                  onChange={(e) => setCalRemarks(e.target.value)}
+                  rows={2}
+                />
+              </Field>
+            </CardContent>
+          </Card>
 
-            {/* Measurement Grid */}
-            <Card className="lg:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <CardTitle>Measurement Test Matrix</CardTitle>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#F3F4F6] text-[#6B7280] dark:bg-neutral-800 dark:text-neutral-400 border border-[#E5E7EB] dark:border-neutral-700">
-                      Optional
-                    </span>
-                  </div>
-                  <CardDescription>
-                    Nominal standard vs observed instrument readings (optional for calibration clearance)
-                  </CardDescription>
+          {/* Section 2: Measurement Test Parameters Matrix */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <CardTitle>Measurement Test Matrix</CardTitle>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#F3F4F6] text-[#6B7280] dark:bg-neutral-800 dark:text-neutral-400 border border-[#E5E7EB] dark:border-neutral-700">
+                    Optional
+                  </span>
                 </div>
-                <Button variant="secondary" size="sm" type="button" onClick={handleAddMeasurement}>
-                  <Plus className="size-4" /> Add Parameter
-                </Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                {measurements.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-[#6B7280] dark:text-neutral-400">
-                    <p className="mb-1 font-medium text-sm text-[#374151] dark:text-neutral-300">
-                      No measurement test parameters added (Optional)
-                    </p>
-                    <p className="text-[11px] text-[#9CA3AF] mb-3">
-                      You can proceed with calibration clearance without matrix parameters, or click below to record readings.
-                    </p>
-                    <Button variant="secondary" size="sm" type="button" onClick={handleAddMeasurement}>
-                      <Plus className="size-3.5 mr-1" /> Add Test Parameter
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-[#F5F7FA] border-b border-[#E5E7EB] text-[#374151] font-semibold text-xs uppercase">
-                        <tr>
-                          <th className="px-3 py-3">Parameter</th>
-                          <th className="px-3 py-3 w-20">Nominal</th>
-                          <th className="px-3 py-3 w-20">Measured</th>
-                          <th className="px-3 py-3 w-16">Unit</th>
-                          <th className="px-3 py-3 w-20">Tol Min</th>
-                          <th className="px-3 py-3 w-20">Tol Max</th>
-                          <th className="px-3 py-3 w-20">Verdict</th>
-                          <th className="px-3 py-3 w-10"></th>
+                <CardDescription>
+                  Nominal standard vs observed instrument readings (optional for calibration clearance)
+                </CardDescription>
+              </div>
+              <Button variant="secondary" size="sm" type="button" onClick={handleAddMeasurement}>
+                <Plus className="size-4" /> Add Parameter
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {measurements.length === 0 ? (
+                <div className="p-6 text-center text-xs text-[#6B7280] dark:text-neutral-400">
+                  <p className="mb-1 font-medium text-sm text-[#374151] dark:text-neutral-300">
+                    No measurement test parameters added (Optional)
+                  </p>
+                  <p className="text-[11px] text-[#9CA3AF] mb-3">
+                    You can proceed with calibration clearance without matrix parameters, or click below to record readings.
+                  </p>
+                  <Button variant="secondary" size="sm" type="button" onClick={handleAddMeasurement}>
+                    <Plus className="size-3.5 mr-1" /> Add Test Parameter
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#F5F7FA] border-b border-[#E5E7EB] text-[#374151] font-semibold text-xs uppercase">
+                      <tr>
+                        <th className="px-3 py-3">Parameter</th>
+                        <th className="px-3 py-3 w-32">Nominal</th>
+                        <th className="px-3 py-3 w-32">Measured</th>
+                        <th className="px-3 py-3 w-24">Unit</th>
+                        <th className="px-3 py-3 w-28">Tol Min</th>
+                        <th className="px-3 py-3 w-28">Tol Max</th>
+                        <th className="px-3 py-3 w-24 text-center">Verdict</th>
+                        <th className="px-3 py-3 w-12 text-center"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E5E7EB]">
+                      {measurements.map((m, idx) => (
+                        <tr key={idx} className="hover:bg-[#FAFAFA]">
+                          <td className="p-2">
+                            <Input
+                              placeholder="Parameter (optional)"
+                              value={m.parameterName}
+                              onChange={(e) =>
+                                handleUpdateMeasurement(idx, 'parameterName', e.target.value)
+                              }
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              step="any"
+                              value={m.nominalValue}
+                              onChange={(e) =>
+                                handleUpdateMeasurement(
+                                  idx,
+                                  'nominalValue',
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              step="any"
+                              value={m.measuredValue}
+                              onChange={(e) =>
+                                handleUpdateMeasurement(
+                                  idx,
+                                  'measuredValue',
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={m.unit}
+                              onChange={(e) => handleUpdateMeasurement(idx, 'unit', e.target.value)}
+                              className="w-20"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              step="any"
+                              value={m.toleranceMin}
+                              onChange={(e) =>
+                                handleUpdateMeasurement(
+                                  idx,
+                                  'toleranceMin',
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              step="any"
+                              value={m.toleranceMax}
+                              onChange={(e) =>
+                                handleUpdateMeasurement(
+                                  idx,
+                                  'toleranceMax',
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="p-2 text-center">
+                            <Badge variant={m.result === 'PASS' ? 'success' : 'error'}>
+                              {m.result}
+                            </Badge>
+                          </td>
+                          <td className="p-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveMeasurement(idx)}
+                              className="text-[#DC2626] hover:text-[#b91c1c] p-1 cursor-pointer"
+                              title="Remove parameter"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E5E7EB]">
-                        {measurements.map((m, idx) => (
-                          <tr key={idx} className="hover:bg-[#FAFAFA]">
-                            <td className="p-2">
-                              <Input
-                                placeholder="Parameter (optional)"
-                                value={m.parameterName}
-                                onChange={(e) =>
-                                  handleUpdateMeasurement(idx, 'parameterName', e.target.value)
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="number"
-                                step="any"
-                                value={m.nominalValue}
-                                onChange={(e) =>
-                                  handleUpdateMeasurement(
-                                    idx,
-                                    'nominalValue',
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="number"
-                                step="any"
-                                value={m.measuredValue}
-                                onChange={(e) =>
-                                  handleUpdateMeasurement(
-                                    idx,
-                                    'measuredValue',
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                value={m.unit}
-                                onChange={(e) => handleUpdateMeasurement(idx, 'unit', e.target.value)}
-                                className="w-16"
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="number"
-                                step="any"
-                                value={m.toleranceMin}
-                                onChange={(e) =>
-                                  handleUpdateMeasurement(
-                                    idx,
-                                    'toleranceMin',
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="number"
-                                step="any"
-                                value={m.toleranceMax}
-                                onChange={(e) =>
-                                  handleUpdateMeasurement(
-                                    idx,
-                                    'toleranceMax',
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Badge variant={m.result === 'PASS' ? 'success' : 'error'}>
-                                {m.result}
-                              </Badge>
-                            </td>
-                            <td className="p-2">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveMeasurement(idx)}
-                                className="text-[#DC2626] hover:text-[#b91c1c] p-1 cursor-pointer"
-                                title="Remove parameter"
-                              >
-                                <Trash2 className="size-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex items-center justify-between p-4 bg-[#F5F7FA] border-t border-[#E5E7EB]">
+              <div className="flex items-center gap-2 text-xs text-[#16A34A] font-semibold">
+                <Award className="size-4" />
+                <span>Passing tests auto-issue an ISO Calibration Certificate &amp; Due Date</span>
+              </div>
+              <div className="flex gap-3">
+                <Link to="/lab/queue">
+                  <Button variant="outlineInk" type="button">
+                    Cancel
+                  </Button>
+                </Link>
+                {canRecordCalibration ? (
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    disabled={recordCalibrationMutation.isPending}
+                  >
+                    <CheckCircle2 className="size-4" />
+                    {recordCalibrationMutation.isPending
+                      ? 'Processing...'
+                      : 'Submit & Generate Certificate'}
+                  </Button>
+                ) : (
+                  <span className="text-xs text-[#6B7280] self-center">
+                    Read-Only View Mode (Calibration Records Read-Only)
+                  </span>
                 )}
-              </CardContent>
-              <CardFooter className="flex items-center justify-between p-4 bg-[#F5F7FA] border-t border-[#E5E7EB]">
-                <div className="flex items-center gap-2 text-xs text-[#16A34A] font-semibold">
-                  <Award className="size-4" />
-                  <span>Passing tests auto-issue an ISO Calibration Certificate &amp; Due Date</span>
-                </div>
-                <div className="flex gap-3">
-                  <Link to="/lab/queue">
-                    <Button variant="outlineInk" type="button">
-                      Cancel
-                    </Button>
-                  </Link>
-                  {canRecordCalibration ? (
-                    <Button
-                      variant="primary"
-                      type="submit"
-                      disabled={recordCalibrationMutation.isPending}
-                    >
-                      <CheckCircle2 className="size-4" />
-                      {recordCalibrationMutation.isPending
-                        ? 'Processing...'
-                        : 'Submit & Generate Certificate'}
-                    </Button>
-                  ) : (
-                    <span className="text-xs text-[#6B7280] self-center">
-                      Read-Only View Mode (Calibration Records Read-Only)
-                    </span>
-                  )}
-                </div>
-              </CardFooter>
-            </Card>
-          </div>
+              </div>
+            </CardFooter>
+          </Card>
         </form>
       )}
 

@@ -21,6 +21,13 @@ import {
   Select,
   Field,
   FieldLabel,
+  DialogOverlay,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
 } from '../../components/ui/UIPrimitives';
 import type { Invoice } from '../../types/domain';
 import {
@@ -644,29 +651,31 @@ export const InvoiceListPage: React.FC = () => {
         const grandTotalCalc = taxableCalc + taxCalc;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
-            <div className="bg-white rounded-[4px] shadow-2xl max-w-2xl w-full overflow-hidden border border-[#E5E7EB]">
+          <DialogOverlay onClick={() => setShowGenerateModal(false)}>
+            <DialogContent size="4xl" onClick={(e) => e.stopPropagation()}>
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB] bg-[#F8FAFC]">
-                <div className="flex items-center gap-2">
-                  <Receipt className="size-5 text-[#0274BB]" />
-                  <div>
-                    <h3 className="font-bold text-[#111827] text-base">Generate Commercial Tax Invoice</h3>
-                    <p className="text-xs text-[#6B7280]">
-                      Editable pricing with client discounts — fetched from quotation or direct from work order
-                    </p>
+              <DialogHeader>
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <Receipt className="size-5 text-[#0274BB]" />
+                    <div>
+                      <DialogTitle>Generate Commercial Tax Invoice</DialogTitle>
+                      <DialogDescription>
+                        Editable pricing with client discounts — fetched from quotation or direct from work order
+                      </DialogDescription>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowGenerateModal(false)}
+                    className="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded hover:bg-[#E2E8F0]"
+                  >
+                    <X className="size-4" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowGenerateModal(false)}
-                  className="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded hover:bg-[#E2E8F0]"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
+              </DialogHeader>
 
-              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <DialogBody className="space-y-5">
                 {modalErrorMessage && (
                   <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded">
                     {modalErrorMessage}
@@ -699,335 +708,319 @@ export const InvoiceListPage: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    {/* Work Order Selection */}
-                    <Field>
-                      <FieldLabel>Select Work Order / Calibration Request</FieldLabel>
-                      <Select
-                        value={selectedRequestId}
-                        onChange={(e) => handleSelectRequest(e.target.value)}
-                      >
-                        {eligibleRequests.map((req) => {
-                          const hasQuote = quotations.some(
-                            (q) => q.request_id === req.id && q.status !== 'REJECTED'
-                          );
-                          return (
-                            <option key={req.id} value={req.id}>
-                              {req.request_number} — {req.clients?.client_name || 'Client'} ({req.status})
-                              {hasQuote ? ' [Quotation Available]' : ' [Direct Work Order]'}
-                            </option>
-                          );
-                        })}
-                      </Select>
-                    </Field>
+                    {/* Section 1: Work Order & Commercial Context */}
+                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px] p-4 space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Field>
+                          <FieldLabel>Select Work Order / Calibration Request</FieldLabel>
+                          <Select
+                            value={selectedRequestId}
+                            onChange={(e) => handleSelectRequest(e.target.value)}
+                            className="bg-white"
+                          >
+                            {eligibleRequests.map((req) => {
+                              const hasQuote = quotations.some(
+                                (q) => q.request_id === req.id && q.status !== 'REJECTED'
+                              );
+                              return (
+                                <option key={req.id} value={req.id}>
+                                  {req.request_number} — {req.clients?.client_name || 'Client'} ({req.status})
+                                  {hasQuote ? ' [Quotation Available]' : ' [Direct Work Order]'}
+                                </option>
+                              );
+                            })}
+                          </Select>
+                        </Field>
 
-                {/* Mode Indicator: Fetched from Quotation vs Direct Invoicing */}
-                {isFetchedFromQuotation ? (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-[4px] flex items-center gap-2.5 text-xs text-blue-900">
-                    <FileText className="size-4 text-blue-600 shrink-0" />
-                    <div>
-                      <span className="font-semibold block">
-                        Fetched from Quotation: {matchingQuote?.quotation_number}
-                      </span>
-                      <span>
-                        Line items, approved rates, and Client PO reference are fetched directly from this quotation.
-                      </span>
+                        <Field>
+                          <FieldLabel>Client Purchase Order Reference (Optional)</FieldLabel>
+                          <Input
+                            placeholder="E.g. PO-CLIENT-2026-9921"
+                            value={clientPoForInvoice}
+                            onChange={(e) => setClientPoForInvoice(e.target.value)}
+                            className="bg-white"
+                          />
+                        </Field>
+                      </div>
+
+                      {/* Mode Indicator & Classification Badge */}
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-1 border-t border-[#E2E8F0]">
+                        {isFetchedFromQuotation ? (
+                          <div className="flex items-center gap-2 text-xs text-blue-900">
+                            <FileText className="size-4 text-blue-600 shrink-0" />
+                            <span>
+                              Fetched from Quotation: <strong>{matchingQuote?.quotation_number}</strong> (rates auto-applied)
+                            </span>
+                          </div>
+                        ) : selectedRequest ? (
+                          <div className="flex items-center gap-2 text-xs text-emerald-900">
+                            <Receipt className="size-4 text-emerald-600 shrink-0" />
+                            <span>
+                              Direct Invoicing: <strong>{selectedRequest.request_number}</strong> (rates from item master)
+                            </span>
+                          </div>
+                        ) : null}
+
+                        {selectedCount > 0 && (
+                          <div>
+                            {isActualInvoice ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                <CheckCircle2 className="size-3" /> Actual Invoice (Full &amp; Final Billing)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                                <Split className="size-3" /> Partial Invoice (Selected Items Only)
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : selectedRequest ? (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-[4px] flex items-center gap-2.5 text-xs text-emerald-900">
-                    <Receipt className="size-4 text-emerald-600 shrink-0" />
-                    <div>
-                      <span className="font-semibold block">
-                        Direct Invoicing (No Quotation Needed)
-                      </span>
-                      <span>
-                        Line items, serial numbers, and standard calibration fees are fetched directly from this work order.
-                      </span>
-                    </div>
-                  </div>
-                ) : null}
 
-                {/* Optional Client PO Reference Field */}
-                <Field>
-                  <FieldLabel>Client Purchase Order Reference (Optional)</FieldLabel>
-                  <Input
-                    placeholder="E.g. PO-CLIENT-2026-9921"
-                    value={clientPoForInvoice}
-                    onChange={(e) => setClientPoForInvoice(e.target.value)}
-                  />
-                </Field>
+                    {/* Section 2: Items Checklist & Editable Rates */}
+                    <div className="border border-[#E5E7EB] rounded-[4px] overflow-hidden">
+                      <div className="p-3 bg-[#F8FAFC] border-b border-[#E5E7EB] flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            toggleSelectAllUnbilled(
+                              isFetchedFromQuotation
+                                ? unbilledQuoteItems.map((it) => it.id)
+                                : unbilledReqItems.map((it: any) => it.id)
+                            )
+                          }
+                          className="text-xs font-semibold text-[#0274BB] hover:underline flex items-center gap-1.5 cursor-pointer"
+                        >
+                          {selectedItemIds.size === unbilledCount && unbilledCount > 0 ? (
+                            <CheckSquare className="size-4 text-[#0274BB]" />
+                          ) : (
+                            <Square className="size-4 text-[#6B7280]" />
+                          )}
+                          <span>
+                            {selectedItemIds.size === unbilledCount ? 'Deselect All' : 'Select All Ready Items'}
+                          </span>
+                        </button>
+                        <span className="text-xs text-[#6B7280]">
+                          {unbilledCount} unbilled item(s) available • Rates are editable
+                        </span>
+                      </div>
 
-                {/* Classification Notice (Partial vs Actual) */}
-                {selectedCount > 0 && (
-                  <div
-                    className={`p-3 rounded-[4px] border flex items-start gap-2.5 ${
-                      isActualInvoice
-                        ? 'bg-[#F0FDF4] border-[#86EFAC] text-[#166534]'
-                        : 'bg-[#FFF7ED] border-[#FDBA74] text-[#9A3412]'
-                    }`}
-                  >
-                    {isActualInvoice ? (
-                      <CheckCircle2 className="size-4 text-[#16A34A] shrink-0 mt-0.5" />
-                    ) : (
-                      <Split className="size-4 text-[#EA580C] shrink-0 mt-0.5" />
-                    )}
-                    <div>
-                      <span className="font-bold text-xs block">
-                        {isActualInvoice
-                          ? 'Actual Tax Invoice (Full & Final Billing)'
-                          : 'Partial Tax Invoice (Selected Items Only)'}
-                      </span>
-                      <p className="text-xs text-[#C2410C]">
-                        Selected items will be invoiced now. Remaining items can be billed under a subsequent invoice once received.
-                      </p>
-                    </div>
-                  </div>
-                )}
+                      <div className="divide-y divide-[#E5E7EB] max-h-60 overflow-y-auto">
+                        {isFetchedFromQuotation
+                          ? quoteItems.map((it) => {
+                              const isAlreadyInvoiced = Boolean(it.invoiced);
+                              const isChecked = selectedItemIds.has(it.id);
+                              const rate = itemRates[it.id] ?? it.unit_price ?? 100;
+                              const totalItemPrice = (it.quantity || 1) * rate;
 
-                {/* Items Checklist & Editable Rates */}
-                <div className="border border-[#E5E7EB] rounded-[4px] overflow-hidden">
-                  <div className="p-3 bg-[#F8FAFC] border-b border-[#E5E7EB] flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        toggleSelectAllUnbilled(
-                          isFetchedFromQuotation
-                            ? unbilledQuoteItems.map((it) => it.id)
-                            : unbilledReqItems.map((it: any) => it.id)
-                        )
-                      }
-                      className="text-xs font-semibold text-[#0274BB] hover:underline flex items-center gap-1.5 cursor-pointer"
-                    >
-                      {selectedItemIds.size === unbilledCount && unbilledCount > 0 ? (
-                        <CheckSquare className="size-4 text-[#0274BB]" />
-                      ) : (
-                        <Square className="size-4 text-[#6B7280]" />
-                      )}
-                      <span>
-                        {selectedItemIds.size === unbilledCount ? 'Deselect All' : 'Select All Ready Items'}
-                      </span>
-                    </button>
-                    <span className="text-xs text-[#6B7280]">
-                      {unbilledCount} unbilled item(s) available • Rates are editable
-                    </span>
-                  </div>
-
-                  <div className="divide-y divide-[#E5E7EB] max-h-56 overflow-y-auto">
-                    {isFetchedFromQuotation
-                      ? quoteItems.map((it) => {
-                          const isAlreadyInvoiced = Boolean(it.invoiced);
-                          const isChecked = selectedItemIds.has(it.id);
-                          const rate = itemRates[it.id] ?? it.unit_price ?? 100;
-                          const totalItemPrice = (it.quantity || 1) * rate;
-
-                          return (
-                            <div
-                              key={it.id}
-                              className={`p-3 flex items-center justify-between text-xs transition-colors ${
-                                isAlreadyInvoiced
-                                  ? 'bg-[#F9FAFB] opacity-75'
-                                  : isChecked
-                                  ? 'bg-[#F0FDF4]'
-                                  : 'hover:bg-[#FAFAFA]'
-                              }`}
-                            >
-                              <label className="flex items-center gap-3 cursor-pointer min-w-0 flex-1">
-                                <input
-                                  type="checkbox"
-                                  disabled={isAlreadyInvoiced}
-                                  checked={isAlreadyInvoiced || isChecked}
-                                  onChange={() => toggleItemCheck(it.id)}
-                                  className="size-4 text-[#0274BB] rounded border-[#CBD5E1] cursor-pointer"
-                                />
-                                <div className="min-w-0 flex-1">
-                                  <span
-                                    className={`font-semibold block truncate ${
-                                      isAlreadyInvoiced ? 'text-[#64748B] line-through' : 'text-[#1E293B]'
-                                    }`}
-                                  >
-                                    {it.description}
-                                  </span>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-[11px] text-[#64748B]">Qty: {it.quantity || 1}</span>
-                                    <span className="text-[11px] text-[#64748B]">• Unit Rate ($):</span>
+                              return (
+                                <div
+                                  key={it.id}
+                                  className={`p-3 flex items-center justify-between text-xs transition-colors ${
+                                    isAlreadyInvoiced
+                                      ? 'bg-[#F9FAFB] opacity-75'
+                                      : isChecked
+                                      ? 'bg-[#F0FDF4]'
+                                      : 'hover:bg-[#FAFAFA]'
+                                  }`}
+                                >
+                                  <label className="flex items-center gap-3 cursor-pointer min-w-0 flex-1">
                                     <input
-                                      type="number"
-                                      min="0"
-                                      step="1"
-                                      value={rate}
-                                      onChange={(e) => updateItemRate(it.id, parseFloat(e.target.value) || 0)}
+                                      type="checkbox"
                                       disabled={isAlreadyInvoiced}
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="w-20 px-1.5 py-0.5 border border-slate-300 rounded text-right font-mono text-xs focus:ring-1 focus:ring-[#0274BB] bg-white"
+                                      checked={isAlreadyInvoiced || isChecked}
+                                      onChange={() => toggleItemCheck(it.id)}
+                                      className="size-4 text-[#0274BB] rounded border-[#CBD5E1] cursor-pointer"
                                     />
-                                  </div>
-                                </div>
-                              </label>
-                              <div className="text-right shrink-0 ml-4">
-                                <span className="font-mono font-bold text-[#111827] block">
-                                  ₹{totalItemPrice.toFixed(2)}
-                                </span>
-                                {isAlreadyInvoiced && (
-                                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                                    Invoiced
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })
-                      : reqItems.map((it: any) => {
-                          const isAlreadyInvoiced = Boolean(it.invoiced);
-                          const isChecked = selectedItemIds.has(it.id);
-                          const rate = itemRates[it.id] ?? it.item_masters?.standard_cost ?? 100;
-                          const qty = it.received_quantity || it.quantity || 1;
-                          const totalItemPrice = qty * rate;
-
-                          return (
-                            <div
-                              key={it.id}
-                              className={`p-3 flex items-center justify-between text-xs transition-colors ${
-                                isAlreadyInvoiced
-                                  ? 'bg-[#F9FAFB] opacity-75'
-                                  : isChecked
-                                  ? 'bg-[#F0FDF4]'
-                                  : 'hover:bg-[#FAFAFA]'
-                              }`}
-                            >
-                              <label className="flex items-center gap-3 cursor-pointer min-w-0 flex-1">
-                                <input
-                                  type="checkbox"
-                                  disabled={isAlreadyInvoiced}
-                                  checked={isAlreadyInvoiced || isChecked}
-                                  onChange={() => toggleItemCheck(it.id)}
-                                  className="size-4 text-[#0274BB] rounded border-[#CBD5E1] cursor-pointer"
-                                />
-                                <div className="min-w-0 flex-1">
-                                  <span
-                                    className={`font-semibold block truncate ${
-                                      isAlreadyInvoiced ? 'text-[#64748B] line-through' : 'text-[#1E293B]'
-                                    }`}
-                                  >
-                                    {it.item_masters?.item_name || 'Equipment Unit'}
-                                  </span>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-[11px] text-[#64748B]">
-                                      SN: {it.serial_number || 'N/A'} • Qty: {qty}
+                                    <div className="min-w-0 flex-1">
+                                      <span
+                                        className={`font-semibold block truncate ${
+                                          isAlreadyInvoiced ? 'text-[#64748B] line-through' : 'text-[#1E293B]'
+                                        }`}
+                                      >
+                                        {it.description}
+                                      </span>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-[11px] text-[#64748B]">Qty: {it.quantity || 1}</span>
+                                        <span className="text-[11px] text-[#64748B]">• Unit Rate (₹):</span>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          step="1"
+                                          value={rate}
+                                          onChange={(e) => updateItemRate(it.id, parseFloat(e.target.value) || 0)}
+                                          disabled={isAlreadyInvoiced}
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="w-24 px-2 py-0.5 border border-slate-300 rounded text-right font-mono text-xs focus:ring-1 focus:ring-[#0274BB] bg-white"
+                                        />
+                                      </div>
+                                    </div>
+                                  </label>
+                                  <div className="text-right shrink-0 ml-4">
+                                    <span className="font-mono font-bold text-[#111827] block text-sm">
+                                      ₹{totalItemPrice.toFixed(2)}
                                     </span>
-                                    <span className="text-[11px] text-[#64748B]">• Unit Rate ($):</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="1"
-                                      value={rate}
-                                      onChange={(e) => updateItemRate(it.id, parseFloat(e.target.value) || 0)}
-                                      disabled={isAlreadyInvoiced}
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="w-20 px-1.5 py-0.5 border border-slate-300 rounded text-right font-mono text-xs focus:ring-1 focus:ring-[#0274BB] bg-white"
-                                    />
+                                    {isAlreadyInvoiced && (
+                                      <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                        Invoiced
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
-                              </label>
-                              <div className="text-right shrink-0 ml-4">
-                                <span className="font-mono font-bold text-[#111827] block">
-                                  ₹{totalItemPrice.toFixed(2)}
-                                </span>
-                                {isAlreadyInvoiced && (
-                                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                                    Invoiced
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                  </div>
-                </div>
+                              );
+                            })
+                          : reqItems.map((it: any) => {
+                              const isAlreadyInvoiced = Boolean(it.invoiced);
+                              const isChecked = selectedItemIds.has(it.id);
+                              const rate = itemRates[it.id] ?? it.item_masters?.standard_cost ?? 100;
+                              const qty = it.received_quantity || it.quantity || 1;
+                              const totalItemPrice = qty * rate;
 
-                {/* Client Commercial Discount Controls */}
-                <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-[4px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div>
-                    <span className="font-bold text-slate-800 block">Client Commercial Discount</span>
-                    <span className="text-[11px] text-slate-500">Apply negotiated client discount (percentage or flat amount)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="inline-flex rounded border border-slate-300 bg-white p-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setDiscountType('PERCENT')}
-                        className={`px-2 py-0.5 text-xs font-semibold rounded ${
-                          discountType === 'PERCENT' ? 'bg-[#0274BB] text-white' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        % Percent
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDiscountType('FLAT')}
-                        className={`px-2 py-0.5 text-xs font-semibold rounded ${
-                          discountType === 'FLAT' ? 'bg-[#0274BB] text-white' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        ₹ Flat
-                      </button>
+                              return (
+                                <div
+                                  key={it.id}
+                                  className={`p-3 flex items-center justify-between text-xs transition-colors ${
+                                    isAlreadyInvoiced
+                                      ? 'bg-[#F9FAFB] opacity-75'
+                                      : isChecked
+                                      ? 'bg-[#F0FDF4]'
+                                      : 'hover:bg-[#FAFAFA]'
+                                  }`}
+                                >
+                                  <label className="flex items-center gap-3 cursor-pointer min-w-0 flex-1">
+                                    <input
+                                      type="checkbox"
+                                      disabled={isAlreadyInvoiced}
+                                      checked={isAlreadyInvoiced || isChecked}
+                                      onChange={() => toggleItemCheck(it.id)}
+                                      className="size-4 text-[#0274BB] rounded border-[#CBD5E1] cursor-pointer"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <span
+                                        className={`font-semibold block truncate ${
+                                          isAlreadyInvoiced ? 'text-[#64748B] line-through' : 'text-[#1E293B]'
+                                        }`}
+                                      >
+                                        {it.item_masters?.item_name || 'Equipment Unit'}
+                                      </span>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-[11px] text-[#64748B]">
+                                          SN: {it.serial_number || 'N/A'} • Qty: {qty}
+                                        </span>
+                                        <span className="text-[11px] text-[#64748B]">• Unit Rate (₹):</span>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          step="1"
+                                          value={rate}
+                                          onChange={(e) => updateItemRate(it.id, parseFloat(e.target.value) || 0)}
+                                          disabled={isAlreadyInvoiced}
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="w-24 px-2 py-0.5 border border-slate-300 rounded text-right font-mono text-xs focus:ring-1 focus:ring-[#0274BB] bg-white"
+                                        />
+                                      </div>
+                                    </div>
+                                  </label>
+                                  <div className="text-right shrink-0 ml-4">
+                                    <span className="font-mono font-bold text-[#111827] block text-sm">
+                                      ₹{totalItemPrice.toFixed(2)}
+                                    </span>
+                                    {isAlreadyInvoiced && (
+                                      <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                        Invoiced
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <input
-                        type="number"
-                        min="0"
-                        max={discountType === 'PERCENT' ? 100 : subtotalCalc}
-                        step={discountType === 'PERCENT' ? '1' : '10'}
-                        value={discountValue}
-                        onChange={(e) => {
-                          const val = Math.max(0, parseFloat(e.target.value) || 0);
-                          setDiscountValue(discountType === 'PERCENT' ? Math.min(100, val) : val);
-                        }}
-                        placeholder="0"
-                        className="w-20 px-2 py-1 border border-slate-300 rounded text-right font-mono font-bold text-xs bg-white"
-                      />
-                      <span className="ml-1 text-xs font-bold text-slate-500">
-                        {discountType === 'PERCENT' ? '%' : '₹'}
-                      </span>
-                    </div>
-                    {discountCalc > 0 && (
-                      <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded text-xs border border-emerald-200 shrink-0">
-                        -₹{discountCalc.toFixed(2)} off
-                      </span>
-                    )}
-                  </div>
-                </div>
 
-                {/* Calculation Summary */}
-                <div className="p-4 bg-[#F8FAFC] rounded-[4px] border border-[#E5E7EB] flex flex-col items-end gap-1.5 text-xs">
-                  <div className="flex justify-between w-72 text-[#64748B]">
-                    <span>Selected Items Subtotal:</span>
-                    <span className="font-mono text-[#1E293B] font-semibold">₹{subtotalCalc.toFixed(2)}</span>
-                  </div>
-                  {discountCalc > 0 && (
-                    <div className="flex justify-between w-72 text-emerald-700 font-semibold">
-                      <span>Client Discount Applied:</span>
-                      <span className="font-mono">-₹{discountCalc.toFixed(2)}</span>
+                    {/* Section 3: Commercial Discount Controls */}
+                    <div className="p-3.5 bg-indigo-50/50 border border-indigo-100 rounded-[4px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div>
+                        <span className="font-bold text-slate-800 block">Client Commercial Discount</span>
+                        <span className="text-[11px] text-slate-500">Apply negotiated client discount (percentage or flat amount)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="inline-flex rounded border border-slate-300 bg-white p-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setDiscountType('PERCENT')}
+                            className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                              discountType === 'PERCENT' ? 'bg-[#0274BB] text-white' : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            % Percent
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDiscountType('FLAT')}
+                            className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                              discountType === 'FLAT' ? 'bg-[#0274BB] text-white' : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            ₹ Flat
+                          </button>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="number"
+                            min="0"
+                            max={discountType === 'PERCENT' ? 100 : subtotalCalc}
+                            step={discountType === 'PERCENT' ? '1' : '10'}
+                            value={discountValue}
+                            onChange={(e) => {
+                              const val = Math.max(0, parseFloat(e.target.value) || 0);
+                              setDiscountValue(discountType === 'PERCENT' ? Math.min(100, val) : val);
+                            }}
+                            placeholder="0"
+                            className="w-20 px-2 py-1 border border-slate-300 rounded text-right font-mono font-bold text-xs bg-white"
+                          />
+                          <span className="ml-1 text-xs font-bold text-slate-500">
+                            {discountType === 'PERCENT' ? '%' : '₹'}
+                          </span>
+                        </div>
+                        {discountCalc > 0 && (
+                          <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded text-xs border border-emerald-200 shrink-0">
+                            -₹{discountCalc.toFixed(2)} off
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  <div className="flex justify-between w-72 text-[#64748B]">
-                    <span>Net Taxable Subtotal:</span>
-                    <span className="font-mono text-[#1E293B] font-semibold">₹{taxableCalc.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between w-72 text-[#64748B]">
-                    <span>GST (18%):</span>
-                    <span className="font-mono text-[#1E293B] font-semibold">₹{taxCalc.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between w-72 text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5 mt-1">
-                    <span>Total Tax Invoice:</span>
-                    <span className="font-mono text-[#0274BB]">₹{grandTotalCalc.toFixed(2)}</span>
-                  </div>
-                </div>
+
+                    {/* Section 4: Calculation Breakdown Summary */}
+                    <div className="p-4 bg-[#F8FAFC] rounded-[4px] border border-[#E5E7EB] flex flex-col items-end gap-1.5 text-xs">
+                      <div className="flex justify-between w-80 text-[#64748B]">
+                        <span>Selected Items Subtotal:</span>
+                        <span className="font-mono text-[#1E293B] font-semibold">₹{subtotalCalc.toFixed(2)}</span>
+                      </div>
+                      {discountCalc > 0 && (
+                        <div className="flex justify-between w-80 text-emerald-700 font-semibold">
+                          <span>Client Discount Applied:</span>
+                          <span className="font-mono">-₹{discountCalc.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between w-80 text-[#64748B]">
+                        <span>Net Taxable Subtotal:</span>
+                        <span className="font-mono text-[#1E293B] font-semibold">₹{taxableCalc.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between w-80 text-[#64748B]">
+                        <span>GST (18%):</span>
+                        <span className="font-mono text-[#1E293B] font-semibold">₹{taxCalc.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between w-80 text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5 mt-1">
+                        <span>Total Tax Invoice:</span>
+                        <span className="font-mono text-[#0274BB]">₹{grandTotalCalc.toFixed(2)}</span>
+                      </div>
+                    </div>
                   </>
                 )}
-              </div>
+              </DialogBody>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t border-[#E5E7EB] bg-[#F8FAFC] flex justify-between items-center">
+              <DialogFooter>
                 <Button variant="secondary" size="sm" onClick={() => setShowGenerateModal(false)}>
                   Cancel
                 </Button>
@@ -1046,9 +1039,9 @@ export const InvoiceListPage: React.FC = () => {
                       : `Generate Partial Invoice (₹${grandTotalCalc.toFixed(2)})`}
                   </Button>
                 )}
-              </div>
-            </div>
-          </div>
+              </DialogFooter>
+            </DialogContent>
+          </DialogOverlay>
         );
       })()}
 

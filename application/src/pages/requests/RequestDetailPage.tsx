@@ -19,6 +19,13 @@ import {
   Button,
   Badge,
   Input,
+  DialogOverlay,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
 } from '../../components/ui/UIPrimitives';
 import {
   ArrowLeft,
@@ -593,80 +600,85 @@ export const RequestDetailPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Request Details Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Inward &amp; Collection Details</CardTitle>
-            <CardDescription>Step 4 &amp; 5: Pickup Metadata</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm divide-y divide-[#E5E7EB]">
-            <div className="pt-1">
-              <span className="text-xs text-[#6B7280] block">Priority Turnaround</span>
-              <span className="font-semibold text-[#111827]">{request.priority}</span>
+      {/* Section 1: Inward & Client Account Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Inward &amp; Client Account Details</CardTitle>
+          <CardDescription>Step 4 &amp; 5: Collection Metadata &amp; Logistics Overview</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-[#F9FAFB] rounded-[4px] border border-[#E5E7EB] text-xs">
+            <div>
+              <span className="text-[#6B7280] block font-medium">Priority Turnaround</span>
+              <span className="font-semibold text-[#111827] text-sm mt-0.5 block">{request.priority}</span>
             </div>
-            <div className="pt-3">
-              <span className="text-xs text-[#6B7280] block flex items-center gap-1">
+            <div>
+              <span className="text-[#6B7280] block font-medium flex items-center gap-1">
                 <Calendar className="size-3 text-[#6B7280]" /> Collection Date
               </span>
-              <span className="font-semibold text-[#111827]">
+              <span className="font-semibold text-[#111827] text-sm mt-0.5 block">
                 {new Date(request.collection_date).toLocaleDateString()}
               </span>
             </div>
-            <div className="pt-3">
-              <span className="text-xs text-[#6B7280] block flex items-center gap-1">
+            <div>
+              <span className="text-[#6B7280] block font-medium flex items-center gap-1">
                 <User className="size-3 text-[#6B7280]" /> Collection Agent
               </span>
-              <span className="font-semibold text-[#111827]">
+              <span className="font-semibold text-[#111827] text-sm mt-0.5 block">
                 {request.collection_agent_name || 'Designated Collection Agent'}
               </span>
             </div>
-            {request.client_po_ref && (
-              <div className="pt-3">
-                <span className="text-xs text-[#6B7280] block flex items-center gap-1">
-                  <FileText className="size-3 text-[#6B7280]" /> Client Reference / PO #
-                </span>
-                <span className="font-semibold text-[#0274BB] font-mono">
-                  {request.client_po_ref}
-                </span>
-              </div>
-            )}
-            <div className="pt-3">
-              <span className="text-xs text-[#6B7280] block">Client Account</span>
-              <span className="font-semibold text-[#111827]">
+            <div>
+              <span className="text-[#6B7280] block font-medium flex items-center gap-1">
+                <FileText className="size-3 text-[#6B7280]" /> Client Reference / PO #
+              </span>
+              <span className="font-semibold text-[#0274BB] font-mono text-sm mt-0.5 block">
+                {request.client_po_ref || 'None Specified'}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs pt-1">
+            <div className="md:col-span-1">
+              <span className="text-[#6B7280] block font-medium">Client Account</span>
+              <span className="font-semibold text-[#111827] text-sm mt-0.5 block">
                 {request.clients?.client_name || 'N/A'}
               </span>
               {request.clients?.client_code && (
-                <span className="text-xs text-[#6B7280] block font-mono">
+                <span className="text-[11px] text-[#6B7280] block font-mono mt-0.5">
                   Code: {request.clients.client_code}
                 </span>
               )}
             </div>
-            <div className="pt-3">
-              <span className="text-xs text-[#6B7280] block">Inward &amp; Handling Notes</span>
-              <span className="text-[#374151] italic">
+            <div className="md:col-span-2">
+              <span className="text-[#6B7280] block font-medium">Inward &amp; Handling Notes</span>
+              <span className="text-[#374151] italic text-sm mt-0.5 block">
                 {request.remarks || 'No special handling instructions provided.'}
               </span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        {request.attachments && request.attachments.length > 0 && (
-          <Card className="lg:col-span-1">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Paperclip className="size-4 text-[#0274BB]" /> Attached Proof ({request.attachments.length})
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2 text-xs">
+      {/* Section 2: Attached Proof Documents (if any) */}
+      {request.attachments && request.attachments.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Paperclip className="size-4 text-[#0274BB]" /> Attached Proof Documents &amp; Photos ({request.attachments.length})
+            </CardTitle>
+            <CardDescription>
+              Collection receipts, client delivery challans, and equipment photos captured at inward intake
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
               {request.attachments.map((att) => (
                 <div
                   key={att.id}
-                  className="flex items-center justify-between p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px]"
+                  className="flex items-center justify-between p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px] hover:border-[#CBD5E1] transition-colors"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     {att.type.startsWith('image/') ? (
                       <ImageIcon className="size-4 text-[#0274BB] shrink-0" />
                     ) : (
@@ -680,114 +692,115 @@ export const RequestDetailPage: React.FC = () => {
                       download={att.name}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#0274BB] hover:underline font-semibold shrink-0 ml-2"
+                      className="text-[#0274BB] hover:underline font-semibold shrink-0 ml-2 text-xs"
                     >
                       View
                     </a>
                   )}
                 </div>
               ))}
-            </CardContent>
-          </Card>
-        )}
-
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Equipment Line Items ({request.request_items?.length || 0})</CardTitle>
-              <CardDescription>Customer instruments in this calibration inward batch</CardDescription>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-[#6B7280] bg-[#F5F7FA] px-2.5 py-1 rounded-[4px] border border-[#E5E7EB]">
-              <Gauge className="size-3.5 text-[#0274BB]" />
-              <span>Total Units: </span>
-              <span className="font-mono font-bold text-[#111827]">
-                {request.request_items?.reduce((sum, it) => sum + (it.quantity || 0), 0)}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#F5F7FA] border-b border-[#E5E7EB] text-[#374151] font-semibold text-xs uppercase">
-                  <tr>
-                    <th className="px-5 py-3">Equipment / Specs</th>
-                    <th className="px-4 py-3">Serial # / Asset Tag</th>
-                    <th className="px-3 py-3 w-16 text-center">Qty</th>
-                    <th className="px-4 py-3">Condition</th>
-                    <th className="px-4 py-3">Routing (Step 2)</th>
-                    <th className="px-4 py-3">Accessories / Notes</th>
-                    <th className="px-4 py-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E5E7EB]">
-                  {request.request_items?.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#FAFAFA] align-top">
-                      <td className="px-5 py-3.5">
-                        <div className="font-semibold text-[#111827]">
-                          {item.item_masters?.item_name || 'Standard Equipment'}
-                        </div>
-                        <div className="text-[11px] text-[#6B7280] font-mono mt-0.5">
-                          {item.item_masters?.item_code || 'ITM-AUTO'}
-                          {item.item_masters?.item_category && (
-                            <span className="text-[#0274BB] font-sans"> • {item.item_masters.item_category}</span>
-                          )}
-                        </div>
-                        {item.item_masters?.measurement_range && (
-                          <div className="text-[11px] text-[#6B7280] mt-0.5">
-                            Range: {item.item_masters.measurement_range}
-                            {item.item_masters?.least_count !== undefined && (
-                              <span> (LC: {item.item_masters.least_count} {item.item_masters.least_count_unit})</span>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        {item.serial_number ? (
-                          <span className="font-mono text-xs font-semibold text-[#111827] bg-[#F5F7FA] px-2 py-0.5 rounded border border-[#E5E7EB]">
-                            {item.serial_number}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-[#9CA3AF] italic">Not Tagged</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-3.5 font-mono font-bold text-center text-[#111827]">
-                        {item.quantity}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        {getConditionBadge(item.item_condition)}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        {item.destination === 'VENDOR_OUTSOURCE' ? (
-                          <div className="space-y-0.5">
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
-                              <Truck className="size-3 text-amber-700" /> Outsource
-                            </span>
-                            {item.vendor_name && (
-                              <div className="text-[10px] text-amber-800 font-medium truncate max-w-[140px]">
-                                {item.vendor_name}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
-                            <Building className="size-3 text-blue-600" /> In-House
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3.5 text-xs text-[#4B5563]">
-                        {item.accessories || item.remarks || <span className="text-[#9CA3AF] italic">None</span>}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <Badge variant="info">{item.status}</Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      {/* Section 3: Equipment Line Items Matrix */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Equipment Line Items ({request.request_items?.length || 0})</CardTitle>
+            <CardDescription>Customer instruments in this calibration inward batch</CardDescription>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-[#6B7280] bg-[#F5F7FA] px-2.5 py-1 rounded-[4px] border border-[#E5E7EB]">
+            <Gauge className="size-3.5 text-[#0274BB]" />
+            <span>Total Units: </span>
+            <span className="font-mono font-bold text-[#111827]">
+              {request.request_items?.reduce((sum, it) => sum + (it.quantity || 0), 0)}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-[#F5F7FA] border-b border-[#E5E7EB] text-[#374151] font-semibold text-xs uppercase">
+                <tr>
+                  <th className="px-5 py-3">Equipment / Specs</th>
+                  <th className="px-4 py-3">Serial # / Asset Tag</th>
+                  <th className="px-3 py-3 w-16 text-center">Qty</th>
+                  <th className="px-4 py-3">Condition</th>
+                  <th className="px-4 py-3">Routing (Step 2)</th>
+                  <th className="px-4 py-3">Accessories / Notes</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E5E7EB]">
+                {request.request_items?.map((item) => (
+                  <tr key={item.id} className="hover:bg-[#FAFAFA] align-top">
+                    <td className="px-5 py-3.5">
+                      <div className="font-semibold text-[#111827]">
+                        {item.item_masters?.item_name || 'Standard Equipment'}
+                      </div>
+                      <div className="text-[11px] text-[#6B7280] font-mono mt-0.5">
+                        {item.item_masters?.item_code || 'ITM-AUTO'}
+                        {item.item_masters?.item_category && (
+                          <span className="text-[#0274BB] font-sans"> • {item.item_masters.item_category}</span>
+                        )}
+                      </div>
+                      {item.item_masters?.measurement_range && (
+                        <div className="text-[11px] text-[#6B7280] mt-0.5">
+                          Range: {item.item_masters.measurement_range}
+                          {item.item_masters?.least_count !== undefined && (
+                            <span> (LC: {item.item_masters.least_count} {item.item_masters.least_count_unit})</span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      {item.serial_number ? (
+                        <span className="font-mono text-xs font-semibold text-[#111827] bg-[#F5F7FA] px-2 py-0.5 rounded border border-[#E5E7EB]">
+                          {item.serial_number}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[#9CA3AF] italic">Not Tagged</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3.5 font-mono font-bold text-center text-[#111827]">
+                      {item.quantity}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      {getConditionBadge(item.item_condition)}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      {item.destination === 'VENDOR_OUTSOURCE' ? (
+                        <div className="space-y-0.5">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
+                            <Truck className="size-3 text-amber-700" /> Outsource
+                          </span>
+                          {item.vendor_name && (
+                            <div className="text-[10px] text-amber-800 font-medium truncate max-w-[140px]">
+                              {item.vendor_name}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
+                          <Building className="size-3 text-blue-600" /> In-House
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-[#4B5563]">
+                      {item.accessories || item.remarks || <span className="text-[#9CA3AF] italic">None</span>}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <Badge variant="info">{item.status}</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Activity History & Audit Trail Timeline */}
       <Card className="border border-[#E5E7EB] shadow-sm">
@@ -916,45 +929,60 @@ export const RequestDetailPage: React.FC = () => {
         const grandTotalCalc = taxableCalc + taxCalc;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
-            <div className="bg-white rounded-[4px] shadow-2xl max-w-2xl w-full overflow-hidden border border-[#E5E7EB]">
-              <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB] bg-[#F8FAFC]">
-                <div className="flex items-center gap-2">
-                  <Receipt className="size-5 text-[#0274BB]" />
-                  <div>
-                    <h3 className="font-bold text-[#111827] text-base">Generate Direct Tax Invoice</h3>
-                    <p className="text-xs text-[#6B7280]">
-                      Editable unit rates and client discounts for calibrated equipment without quotations
-                    </p>
+          <DialogOverlay onClick={() => setShowDirectInvoiceModal(false)}>
+            <DialogContent size="4xl" onClick={(e) => e.stopPropagation()}>
+              <DialogHeader>
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <Receipt className="size-5 text-[#0274BB]" />
+                    <div>
+                      <DialogTitle>Generate Direct Tax Invoice</DialogTitle>
+                      <DialogDescription>
+                        Direct invoice generation with itemized billing and client discounts for calibrated equipment
+                      </DialogDescription>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDirectInvoiceModal(false)}
+                    className="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded hover:bg-[#E2E8F0]"
+                  >
+                    <X className="size-4" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowDirectInvoiceModal(false)}
-                  className="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded hover:bg-[#E2E8F0]"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
+              </DialogHeader>
 
-              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-[4px] flex items-center gap-2.5 text-xs text-emerald-900">
-                  <Receipt className="size-4 text-emerald-600 shrink-0" />
-                  <span>
-                    Direct Tax Invoice generated for work order <strong>{request.request_number}</strong>. Select items and configure pricing/discounts.
+              <DialogBody className="space-y-5">
+                {/* Notice & Work Order Reference */}
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-[4px] flex items-center justify-between gap-3 text-xs text-emerald-900">
+                  <div className="flex items-center gap-2">
+                    <Receipt className="size-4 text-emerald-600 shrink-0" />
+                    <span>
+                      Generating tax invoice for Work Order <strong>{request.request_number}</strong> ({request.clients?.client_name || 'Client'})
+                    </span>
+                  </div>
+                  <span className="font-mono font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                    {unbilledItems.length} items ready
                   </span>
                 </div>
 
-                <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px] space-y-1.5">
-                  <label className="text-xs font-semibold text-[#1E293B] block">Client Purchase Order Reference (Optional)</label>
+                {/* Group 1: Purchase Order Reference */}
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px] p-4 space-y-1.5">
+                  <label className="text-xs font-semibold text-[#1E293B] block">
+                    Client Purchase Order Reference (Optional)
+                  </label>
                   <Input
                     placeholder="e.g. PO-CLIENT-2026-991 (Leave blank if not needed)"
                     value={clientPoRefDirect}
                     onChange={(e) => setClientPoRefDirect(e.target.value)}
+                    className="bg-white"
                   />
+                  <p className="text-[11px] text-[#6B7280]">
+                    Appears directly on the official tax invoice header and commercial PDF
+                  </p>
                 </div>
 
-                {/* Items Checklist with Editable Rates */}
+                {/* Group 2: Item Billing Checklist & Editable Unit Rates */}
                 <div className="border border-[#E5E7EB] rounded-[4px] overflow-hidden">
                   <div className="p-3 bg-[#F8FAFC] border-b border-[#E5E7EB] flex items-center justify-between">
                     <button
@@ -1022,13 +1050,13 @@ export const RequestDetailPage: React.FC = () => {
                                   onChange={(e) => updateItemRateDirect(it.id, parseFloat(e.target.value) || 0)}
                                   disabled={isAlreadyInvoiced}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="w-20 px-1.5 py-0.5 border border-slate-300 rounded text-right font-mono text-xs focus:ring-1 focus:ring-[#0274BB] bg-white"
+                                  className="w-24 px-2 py-0.5 border border-slate-300 rounded text-right font-mono text-xs focus:ring-1 focus:ring-[#0274BB] bg-white"
                                 />
                               </div>
                             </div>
                           </label>
                           <div className="text-right shrink-0 ml-4">
-                            <span className="font-mono font-bold text-[#111827] block">
+                            <span className="font-mono font-bold text-[#111827] block text-sm">
                               ₹{totalItemPrice.toFixed(2)}
                             </span>
                             {isAlreadyInvoiced && (
@@ -1043,8 +1071,8 @@ export const RequestDetailPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Client Commercial Discount Controls */}
-                <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-[4px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                {/* Group 3: Client Commercial Discount Controls */}
+                <div className="p-3.5 bg-indigo-50/50 border border-indigo-100 rounded-[4px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div>
                     <span className="font-bold text-slate-800 block">Client Commercial Discount</span>
                     <span className="text-[11px] text-slate-500">Apply negotiated client discount (percentage or flat amount)</span>
@@ -1093,34 +1121,34 @@ export const RequestDetailPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Calculation Summary */}
+                {/* Group 4: Financial Calculation Summary */}
                 <div className="p-4 bg-[#F8FAFC] rounded-[4px] border border-[#E5E7EB] flex flex-col items-end gap-1.5 text-xs">
-                  <div className="flex justify-between w-72 text-[#64748B]">
+                  <div className="flex justify-between w-80 text-[#64748B]">
                     <span>Selected Items Subtotal:</span>
                     <span className="font-mono text-[#1E293B] font-semibold">₹{subtotalCalc.toFixed(2)}</span>
                   </div>
                   {discountCalc > 0 && (
-                    <div className="flex justify-between w-72 text-emerald-700 font-semibold">
+                    <div className="flex justify-between w-80 text-emerald-700 font-semibold">
                       <span>Client Discount Applied:</span>
                       <span className="font-mono">-₹{discountCalc.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between w-72 text-[#64748B]">
+                  <div className="flex justify-between w-80 text-[#64748B]">
                     <span>Net Taxable Subtotal:</span>
                     <span className="font-mono text-[#1E293B] font-semibold">₹{taxableCalc.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between w-72 text-[#64748B]">
+                  <div className="flex justify-between w-80 text-[#64748B]">
                     <span>GST (18%):</span>
                     <span className="font-mono text-[#1E293B] font-semibold">₹{taxCalc.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between w-72 text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5 mt-1">
+                  <div className="flex justify-between w-80 text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5 mt-1">
                     <span>Total Tax Invoice:</span>
                     <span className="font-mono text-[#0274BB]">₹{grandTotalCalc.toFixed(2)}</span>
                   </div>
                 </div>
-              </div>
+              </DialogBody>
 
-              <div className="p-4 border-t border-[#E5E7EB] bg-[#F8FAFC] flex justify-between items-center">
+              <DialogFooter>
                 <Button variant="secondary" size="sm" onClick={() => setShowDirectInvoiceModal(false)}>
                   Cancel
                 </Button>
@@ -1137,9 +1165,9 @@ export const RequestDetailPage: React.FC = () => {
                     ? `Generate Actual Invoice (₹${grandTotalCalc.toFixed(2)})`
                     : `Generate Partial Invoice (₹${grandTotalCalc.toFixed(2)})`}
                 </Button>
-              </div>
-            </div>
-          </div>
+              </DialogFooter>
+            </DialogContent>
+          </DialogOverlay>
         );
       })()}
     </div>

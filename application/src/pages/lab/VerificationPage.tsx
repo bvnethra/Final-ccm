@@ -226,307 +226,347 @@ export const VerificationPage: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Client Proof & Attached Files (Step 5) */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Paperclip className="size-4 text-[#0274BB]" /> Client Proof &amp; Attachments
-              </CardTitle>
-              <CardDescription>
-                Cross-verify delivery challan &amp; client photos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {request.attachments && request.attachments.length > 0 ? (
-                <div className="space-y-2">
-                  {request.attachments.map((att) => {
-                    const isImage = att.type.startsWith('image/') || att.name.match(/\.(png|jpg|jpeg|webp)$/i);
-                    return (
-                      <div
-                        key={att.id}
-                        className="p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px] space-y-2 text-xs"
-                      >
-                        <div className="flex items-center justify-between gap-2 min-w-0">
-                          <div className="flex items-center gap-2 min-w-0">
-                            {isImage ? (
-                              <ImageIcon className="size-4 text-[#0274BB] shrink-0" />
-                            ) : (
-                              <FileText className="size-4 text-[#DC2626] shrink-0" />
-                            )}
-                            <span className="font-semibold text-[#1E293B] truncate">{att.name}</span>
-                          </div>
-                          <span className="text-[10px] text-[#64748B] shrink-0">{formatBytes(att.size)}</span>
-                        </div>
-
-                        {/* Image Thumbnail Preview */}
-                        {isImage && att.base64Data && (
-                          <div
-                            onClick={() => setActiveProofModal(att)}
-                            className="relative group cursor-pointer overflow-hidden rounded border border-[#CBD5E1] bg-black/5 aspect-video flex items-center justify-center"
-                          >
-                            <img
-                              src={att.base64Data}
-                              alt={att.name}
-                              className="object-cover w-full h-full group-hover:scale-105 transition-transform"
-                            />
-                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white font-semibold text-xs gap-1">
-                              <Eye className="size-4" /> Click to Zoom
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex justify-end pt-1">
-                          {att.base64Data ? (
-                            <a
-                              href={att.base64Data}
-                              download={att.name}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0274BB] hover:underline"
-                            >
-                              <Download className="size-3" /> View / Download Document
-                            </a>
-                          ) : (
-                            <span className="text-[10px] text-[#94A3B8]">Saved</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="p-6 text-center text-[#94A3B8] text-xs bg-[#F8FAFC] rounded-[4px] border border-dashed border-[#CBD5E1]">
-                  No proof documents attached during collection.
-                </div>
+      {/* Section 1: Work Order & Client Context Overview */}
+      <Card className="bg-[#FAFAFA] border border-[#E5E7EB]">
+        <CardContent className="p-5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 text-xs">
+            <div>
+              <span className="text-[#6B7280] block font-medium">Request Number</span>
+              <span className="font-mono font-bold text-[#0274BB] text-sm">
+                {request.request_number}
+              </span>
+            </div>
+            <div>
+              <span className="text-[#6B7280] block font-medium">Client Legal Name</span>
+              <span className="font-bold text-[#111827] text-sm truncate block" title={request.clients?.client_name}>
+                {request.clients?.client_name || 'N/A'}
+              </span>
+              {request.clients?.client_code && (
+                <span className="text-[#6B7280] font-mono text-[11px] block">{request.clients.client_code}</span>
               )}
-            </CardContent>
-          </Card>
+            </div>
+            <div>
+              <span className="text-[#6B7280] block font-medium">Collection Date</span>
+              <span className="font-semibold text-[#111827]">
+                {new Date(request.collection_date).toLocaleDateString()}
+              </span>
+            </div>
+            <div>
+              <span className="text-[#6B7280] block font-medium">Priority</span>
+              <span className="font-semibold text-[#111827]">
+                {request.priority === 'URGENT' ? '⚡ URGENT (24-48h)' : 'NORMAL (5 Days)'}
+              </span>
+            </div>
+            <div>
+              <span className="text-[#6B7280] block font-medium">Client PO / Gate Pass</span>
+              <span className="font-mono font-semibold text-[#111827]">
+                {request.client_po_ref || '—'}
+              </span>
+            </div>
+            <div>
+              <span className="text-[#6B7280] block font-medium">Verification Status</span>
+              <span className="font-bold text-[#0274BB]">
+                {items.filter((i) => i.status === 'VERIFIED').length} of {items.length} Verified
+              </span>
+            </div>
+          </div>
+          {request.remarks && (
+            <div className="mt-3 pt-3 border-t border-[#E5E7EB] text-xs text-[#4B5563]">
+              <strong className="text-[#111827]">Collection Notes:</strong> <span className="italic">{request.remarks}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-          {/* Request Header Metadata */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Inward Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-xs divide-y divide-[#E5E7EB]">
-              <div className="pt-1">
-                <span className="text-[#6B7280] block">Request Number</span>
-                <span className="font-mono font-bold text-[#0274BB] text-sm">
-                  {request.request_number}
-                </span>
-              </div>
-              <div className="pt-2">
-                <span className="text-[#6B7280] block">Client Company</span>
-                <span className="font-semibold text-[#111827] text-sm">
-                  {request.clients?.client_name || 'N/A'}
-                </span>
-                {request.clients?.client_code && (
-                  <span className="text-[#6B7280] font-mono block">{request.clients.client_code}</span>
-                )}
-              </div>
-              {request.client_po_ref && (
-                <div className="pt-2">
-                  <span className="text-[#6B7280] block">Client PO / Gate Pass Ref</span>
-                  <span className="font-mono font-semibold text-[#111827]">{request.client_po_ref}</span>
+      {/* Section 2: Physical Verification Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-[#FAFAFA] border-b border-[#E5E7EB]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="size-9 rounded-md bg-[#0274BB]/10 text-[#0274BB] flex items-center justify-center font-bold text-sm shrink-0">
+                  #{selectedItemIndex + 1}
                 </div>
-              )}
-              <div className="pt-2">
-                <span className="text-[#6B7280] block">Collection Date</span>
-                <span className="font-semibold text-[#111827]">
-                  {new Date(request.collection_date).toLocaleDateString()}
-                </span>
-              </div>
-              {request.remarks && (
-                <div className="pt-2">
-                  <span className="text-[#6B7280] block">Pickup Notes</span>
-                  <span className="italic text-[#374151]">{request.remarks}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column: Physical Inward Inspection Form */}
-        <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit}>
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-base font-bold text-[#111827]">
                       Physical Verification — Unit {selectedItemIndex + 1} of {items.length}
                     </CardTitle>
-                    <CardDescription>
-                      Compare received instrument against client inward declaration
-                    </CardDescription>
+                    <Badge
+                      variant={
+                        currentItem.status === 'VERIFIED'
+                          ? 'success'
+                          : currentItem.status === 'DISCREPANCY'
+                          ? 'error'
+                          : 'primary'
+                      }
+                    >
+                      {currentItem.status || 'PENDING'}
+                    </Badge>
                   </div>
-                  <Badge
-                    variant={
-                      currentItem.status === 'VERIFIED'
-                        ? 'success'
-                        : currentItem.status === 'DISCREPANCY'
-                        ? 'error'
-                        : 'primary'
-                    }
+                  <CardDescription className="text-xs text-[#6B7280]">
+                    Verify received physical instrument against customer declaration before moving to calibration bench
+                  </CardDescription>
+                </div>
+              </div>
+
+              {items.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={selectedItemIndex === 0}
+                    onClick={() => setSelectedItemIndex(selectedItemIndex - 1)}
                   >
-                    {currentItem.status}
-                  </Badge>
+                    Previous Unit
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={selectedItemIndex === items.length - 1}
+                    onClick={() => setSelectedItemIndex(selectedItemIndex + 1)}
+                  >
+                    Next Unit
+                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Declared Context Card */}
-                <div className="p-4 bg-[#F5F7FA] rounded-[4px] border border-[#E5E7EB] grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                  <div>
-                    <span className="text-[#6B7280] block">Instrument Declared</span>
-                    <span className="font-bold text-[#111827] text-sm block">
-                      {currentItem.item_masters?.item_name || 'Equipment'}
-                    </span>
-                    <span className="font-mono text-[#0274BB]">{currentItem.item_masters?.item_code}</span>
-                  </div>
-                  <div>
-                    <span className="text-[#6B7280] block">Inward Serial # / Tag</span>
-                    <span className="font-mono font-bold text-[#111827] text-xs">
-                      {currentItem.serial_number || <span className="text-[#9CA3AF] italic">Not Recorded</span>}
-                    </span>
-                    {currentItem.accessories && (
-                      <span className="text-[11px] text-[#4B5563] block mt-0.5 truncate">
-                        Acc: {currentItem.accessories}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-[#6B7280] block">Declared Inward Qty</span>
-                    <span className="font-mono font-bold text-[#111827] text-sm">
-                      {currentItem.quantity} unit(s)
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[#6B7280] block">Inward Condition</span>
-                    <Badge variant="secondary">{currentItem.item_condition}</Badge>
-                  </div>
-                </div>
-
-                {/* Verification Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field>
-                    <FieldLabel>
-                      Verified Physical Count Received <span className="text-[#DC2626]">*</span>
-                    </FieldLabel>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={verifiedQty}
-                      onChange={(e) => setVerifiedQty(parseInt(e.target.value, 10) || 0)}
-                      required
-                    />
-                    {verifiedQty !== currentItem.quantity && (
-                      <p className="mt-1 text-xs text-[#DC2626] font-medium flex items-center gap-1">
-                        <AlertTriangle className="size-3" /> Quantity discrepancy detected!
-                      </p>
-                    )}
-                  </Field>
-
-                  <Field>
-                    <FieldLabel>
-                      Observed Physical Condition <span className="text-[#DC2626]">*</span>
-                    </FieldLabel>
-                    <Select
-                      value={observedCondition}
-                      onChange={(e) => setObservedCondition(e.target.value)}
-                    >
-                      <option value="GOOD">GOOD — Pristine / Ready for Metrology Bench</option>
-                      <option value="SCRATCHED">SCRATCHED — Minor Cosmetic Surface Wear</option>
-                      <option value="DAMAGED">DAMAGED — Broken casing, damaged dials, or loose probe</option>
-                      <option value="FAULTY">FAULTY — Non-functional, fails zero-check</option>
-                    </Select>
-                  </Field>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field>
-                    <FieldLabel>Verified Serial # / Physical Etched Asset Tag</FieldLabel>
-                    <Input
-                      type="text"
-                      placeholder="Confirm etched serial number on instrument casing..."
-                      value={observedSerialNumber}
-                      onChange={(e) => setObservedSerialNumber(e.target.value)}
-                    />
-                  </Field>
-
-                  <Field>
-                    <FieldLabel>
-                      Inspection Verdict / Result <span className="text-[#DC2626]">*</span>
-                    </FieldLabel>
-                    <Select
-                      value={result}
-                      onChange={(e) => setResult(e.target.value as VerificationResult)}
-                    >
-                      <option value="VERIFIED">VERIFIED — Accepted for Metrology Bench (Step 8)</option>
-                      <option value="DISCREPANCY">DISCREPANCY — Quantity / Serial / Damage Mismatch</option>
-                      <option value="REJECTED">REJECTED — Item Cannot Be Calibrated (Faulty / Unsafe)</option>
-                    </Select>
-                  </Field>
-                </div>
-
-                {result !== 'VERIFIED' && (
-                  <Field>
-                    <FieldLabel>
-                      Discrepancy / Rejection Reason <span className="text-[#DC2626]">*</span>
-                    </FieldLabel>
-                    <Input
-                      placeholder="Specify discrepancy details for customer notification..."
-                      value={discrepancyReason}
-                      onChange={(e) => setDiscrepancyReason(e.target.value)}
-                      required
-                    />
-                  </Field>
-                )}
-
-                <Field>
-                  <FieldLabel>Lab Inspector Notes &amp; Observations</FieldLabel>
-                  <Textarea
-                    placeholder="Notes on probe integrity, zero offset observation, accessories verified..."
-                    value={remarks}
-                    onChange={(e) => setRemarks(e.target.value)}
-                    rows={3}
-                  />
-                </Field>
-              </CardContent>
-              <CardFooter className="flex items-center justify-between p-6 bg-[#F9FAFB] border-t border-[#E5E7EB]">
-                <span className="text-xs text-[#6B7280]">
-                  {isViewOnly
-                    ? 'Review Mode — Viewing physical verification and client proof documents (Read Only).'
-                    : selectedItemIndex < items.length - 1
-                    ? `Item ${selectedItemIndex + 1} of ${items.length}. Submitting will advance to next item.`
-                    : 'Final item in batch. Submitting completes request verification.'}
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            {/* Declared Inward Specs Banner */}
+            <div className="p-4 bg-[#F5F7FA] rounded-md border border-[#E5E7EB] grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+              <div>
+                <span className="text-[#6B7280] block font-medium">Declared Equipment</span>
+                <span className="font-bold text-[#111827] text-sm block">
+                  {currentItem.item_masters?.item_name || 'Equipment Master'}
                 </span>
-                <div className="flex gap-3">
-                  <Link to="/lab/queue">
-                    <Button variant="secondary" type="button">
-                      Back to Queue
-                    </Button>
-                  </Link>
-                  {!isViewOnly && (
-                    <Button
-                      variant="primary"
-                      type="submit"
-                      disabled={recordVerificationMutation.isPending}
-                    >
-                      <CheckCircle2 className="size-4" />
-                      {recordVerificationMutation.isPending
-                        ? 'Saving...'
-                        : selectedItemIndex < items.length - 1
-                        ? 'Verify & Next Item'
-                        : 'Confirm & Complete Verification'}
-                    </Button>
-                  )}
-                </div>
-              </CardFooter>
-            </Card>
-          </form>
-        </div>
-      </div>
+                <span className="font-mono text-[#0274BB]">{currentItem.item_masters?.item_code}</span>
+              </div>
+              <div>
+                <span className="text-[#6B7280] block font-medium">Declared Serial # / Asset ID</span>
+                <span className="font-mono font-bold text-[#111827] text-xs">
+                  {currentItem.serial_number || <span className="text-[#9CA3AF] italic">Not Recorded</span>}
+                </span>
+                {currentItem.accessories && (
+                  <span className="text-[11px] text-[#4B5563] block mt-0.5 truncate">
+                    Acc: {currentItem.accessories}
+                  </span>
+                )}
+              </div>
+              <div>
+                <span className="text-[#6B7280] block font-medium">Declared Quantity</span>
+                <span className="font-mono font-bold text-[#111827] text-sm">
+                  {currentItem.quantity} unit(s)
+                </span>
+              </div>
+              <div>
+                <span className="text-[#6B7280] block font-medium">Inward Stated Condition</span>
+                <Badge variant="secondary">{currentItem.item_condition}</Badge>
+              </div>
+            </div>
+
+            {/* Straight Verification Form Fields: Clean 2-Row Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <Field>
+                <FieldLabel>
+                  Verified Physical Count Received <span className="text-[#DC2626]">*</span>
+                </FieldLabel>
+                <Input
+                  type="number"
+                  min={0}
+                  value={verifiedQty}
+                  onChange={(e) => setVerifiedQty(parseInt(e.target.value, 10) || 0)}
+                  required
+                />
+                {verifiedQty !== currentItem.quantity && (
+                  <p className="mt-1 text-xs text-[#DC2626] font-medium flex items-center gap-1">
+                    <AlertTriangle className="size-3" /> Quantity discrepancy detected! (Declared: {currentItem.quantity}, Observed: {verifiedQty})
+                  </p>
+                )}
+              </Field>
+
+              <Field>
+                <FieldLabel>
+                  Observed Physical Condition <span className="text-[#DC2626]">*</span>
+                </FieldLabel>
+                <Select
+                  value={observedCondition}
+                  onChange={(e) => setObservedCondition(e.target.value)}
+                >
+                  <option value="GOOD">GOOD — Pristine / Ready for Metrology Bench</option>
+                  <option value="SCRATCHED">SCRATCHED — Minor Cosmetic Surface Wear</option>
+                  <option value="DAMAGED">DAMAGED — Broken casing, damaged dials, or loose probe</option>
+                  <option value="FAULTY">FAULTY — Non-functional, fails zero-check</option>
+                </Select>
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <Field>
+                <FieldLabel>Verified Serial # / Physical Etched Asset Tag</FieldLabel>
+                <Input
+                  type="text"
+                  placeholder="Confirm etched serial number on instrument casing..."
+                  value={observedSerialNumber}
+                  onChange={(e) => setObservedSerialNumber(e.target.value)}
+                />
+                <span className="text-[11px] text-[#6B7280]">Matches serial printed on calibration certificate</span>
+              </Field>
+
+              <Field>
+                <FieldLabel>
+                  Inspection Verdict / Result <span className="text-[#DC2626]">*</span>
+                </FieldLabel>
+                <Select
+                  value={result}
+                  onChange={(e) => setResult(e.target.value as VerificationResult)}
+                >
+                  <option value="VERIFIED">VERIFIED — Accepted for Metrology Bench (Step 8)</option>
+                  <option value="DISCREPANCY">DISCREPANCY — Quantity / Serial / Damage Mismatch</option>
+                  <option value="REJECTED">REJECTED — Item Cannot Be Calibrated (Faulty / Unsafe)</option>
+                </Select>
+              </Field>
+            </div>
+
+            {result !== 'VERIFIED' && (
+              <Field>
+                <FieldLabel>
+                  Discrepancy / Rejection Reason <span className="text-[#DC2626]">*</span>
+                </FieldLabel>
+                <Input
+                  placeholder="Specify discrepancy details for customer notification..."
+                  value={discrepancyReason}
+                  onChange={(e) => setDiscrepancyReason(e.target.value)}
+                  required
+                />
+              </Field>
+            )}
+
+            <Field>
+              <FieldLabel>Lab Inspector Notes &amp; Observations</FieldLabel>
+              <Textarea
+                placeholder="Notes on probe integrity, zero offset observation, accessories verified..."
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                rows={2}
+              />
+            </Field>
+          </CardContent>
+          <CardFooter className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-[#F9FAFB] border-t border-[#E5E7EB]">
+            <span className="text-xs text-[#6B7280]">
+              {isViewOnly
+                ? 'Review Mode — Viewing physical verification and client proof documents (Read Only).'
+                : selectedItemIndex < items.length - 1
+                ? `Item ${selectedItemIndex + 1} of ${items.length}. Submitting will advance to next item.`
+                : 'Final item in batch. Submitting completes request verification.'}
+            </span>
+            <div className="flex items-center gap-3">
+              <Link to="/lab/queue">
+                <Button variant="outline" type="button">
+                  Back to Queue
+                </Button>
+              </Link>
+              {!isViewOnly && (
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={recordVerificationMutation.isPending}
+                >
+                  <CheckCircle2 className="size-4" />
+                  {recordVerificationMutation.isPending
+                    ? 'Saving...'
+                    : selectedItemIndex < items.length - 1
+                    ? 'Verify & Next Item'
+                    : 'Confirm & Complete Verification'}
+                </Button>
+              )}
+            </div>
+          </CardFooter>
+        </Card>
+      </form>
+
+      {/* Section 3: Client Inward Proof Documents & Photos */}
+      <Card>
+        <CardHeader className="bg-[#FAFAFA] border-b border-[#E5E7EB]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Paperclip className="size-4 text-[#0274BB]" />
+              <CardTitle className="text-sm font-bold text-[#111827]">Client Proof &amp; Inward Attachments</CardTitle>
+            </div>
+            {request.attachments && request.attachments.length > 0 && (
+              <span className="text-xs font-mono font-semibold bg-[#E6F2FF] text-[#0274BB] px-2 py-0.5 rounded-full">
+                {request.attachments.length} Document(s)
+              </span>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="p-5">
+          {request.attachments && request.attachments.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {request.attachments.map((att) => {
+                const isImage = att.type.startsWith('image/') || att.name.match(/\.(png|jpg|jpeg|webp)$/i);
+                return (
+                  <div
+                    key={att.id}
+                    className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-md space-y-2 text-xs hover:border-[#0274BB] transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {isImage ? (
+                          <ImageIcon className="size-4 text-[#0274BB] shrink-0" />
+                        ) : (
+                          <FileText className="size-4 text-[#DC2626] shrink-0" />
+                        )}
+                        <span className="font-semibold text-[#1E293B] truncate" title={att.name}>{att.name}</span>
+                      </div>
+                      <span className="text-[10px] text-[#64748B] shrink-0">{formatBytes(att.size)}</span>
+                    </div>
+
+                    {/* Image Thumbnail Preview */}
+                    {isImage && att.base64Data && (
+                      <div
+                        onClick={() => setActiveProofModal(att)}
+                        className="relative group cursor-pointer overflow-hidden rounded border border-[#CBD5E1] bg-black/5 aspect-video flex items-center justify-center"
+                      >
+                        <img
+                          src={att.base64Data}
+                          alt={att.name}
+                          className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white font-semibold text-xs gap-1">
+                          <Eye className="size-4" /> Click to Zoom
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-1">
+                      {att.base64Data ? (
+                        <a
+                          href={att.base64Data}
+                          download={att.name}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0274BB] hover:underline"
+                        >
+                          <Download className="size-3" /> View / Download
+                        </a>
+                      ) : (
+                        <span className="text-[10px] text-[#94A3B8]">Saved</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-6 text-center text-[#94A3B8] text-xs bg-[#F8FAFC] rounded-md border border-dashed border-[#CBD5E1]">
+              No proof documents attached during collection.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Proof Zoom Modal */}
       {activeProofModal && (

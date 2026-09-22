@@ -400,3 +400,151 @@ export const CategoryTabs: React.FC<{
     </div>
   );
 };
+
+// ==========================================
+// 7. Dialog / Modal Primitives (CCM Design System)
+// ==========================================
+export const DialogOverlay: React.FC<{
+  isOpen?: boolean;
+  onClose?: () => void;
+  onClick?: (e?: any) => void;
+  children: React.ReactNode;
+  className?: string;
+}> = ({ isOpen = true, onClose, onClick, children, className }) => {
+  if (!isOpen) return null;
+  const handleClose = onClose || onClick;
+  return (
+    <div
+      className={cn(
+        'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-150',
+        className
+      )}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && handleClose) handleClose(e);
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+export const DialogContent: React.FC<
+  React.HTMLAttributes<HTMLDivElement> & {
+    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | 'full';
+  }
+> = ({ className, size = 'lg', children, ...props }) => {
+  const sizeClasses = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
+    full: 'max-w-6xl',
+  };
+
+  return (
+    <div
+      className={cn(
+        'bg-white rounded-lg shadow-2xl w-full overflow-hidden border border-[#E5E7EB] flex flex-col my-auto max-h-[90vh]',
+        sizeClasses[size],
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
+
+export const DialogHeader: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  className,
+  ...props
+}) => (
+  <div
+    className={cn(
+      'flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB] bg-[#F8FAFC]',
+      className
+    )}
+    {...props}
+  />
+);
+
+export const DialogTitle: React.FC<React.HTMLAttributes<HTMLHeadingElement>> = ({
+  className,
+  ...props
+}) => (
+  <h3 className={cn('font-bold text-[#111827] text-base leading-tight', className)} {...props} />
+);
+
+export const DialogDescription: React.FC<React.HTMLAttributes<HTMLParagraphElement>> = ({
+  className,
+  ...props
+}) => (
+  <p className={cn('text-xs text-[#6B7280] leading-normal mt-0.5', className)} {...props} />
+);
+
+export const DialogBody: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  className,
+  ...props
+}) => (
+  <div className={cn('p-6 space-y-4 overflow-y-auto flex-1', className)} {...props} />
+);
+
+export const DialogFooter: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  className,
+  ...props
+}) => (
+  <div
+    className={cn(
+      'flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E5E7EB] bg-[#F8FAFC]',
+      className
+    )}
+    {...props}
+  />
+);
+
+// ==========================================
+// 8. Form Section Container
+// ==========================================
+export interface FormSectionProps extends React.HTMLAttributes<HTMLDivElement> {
+  icon?: React.ReactNode;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  badge?: React.ReactNode;
+}
+
+export const FormSection: React.FC<FormSectionProps> = ({
+  icon,
+  title,
+  description,
+  action,
+  badge,
+  children,
+  className,
+  ...props
+}) => (
+  <Card className={cn('overflow-hidden', className)} {...props}>
+    <CardHeader className="flex flex-row items-center justify-between gap-4 p-5 bg-[#FAFAFA] border-b border-[#E5E7EB]">
+      <div className="flex items-center gap-3">
+        {icon && (
+          <div className="size-9 rounded-md bg-[#0274BB]/10 text-[#0274BB] flex items-center justify-center shrink-0">
+            {icon}
+          </div>
+        )}
+        <div>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base font-bold text-[#111827]">{title}</CardTitle>
+            {badge}
+          </div>
+          {description && <CardDescription className="text-xs text-[#6B7280]">{description}</CardDescription>}
+        </div>
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </CardHeader>
+    <CardContent className="p-6">{children}</CardContent>
+  </Card>
+);
+

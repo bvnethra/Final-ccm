@@ -21,6 +21,13 @@ import {
   Input,
   Field,
   FieldLabel,
+  DialogOverlay,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
 } from '../../components/ui/UIPrimitives';
 import {
   Plus,
@@ -481,104 +488,108 @@ export const DispatchListPage: React.FC = () => {
       {/* 1. Client Receipt & Delivery Signature Modal */}
       {/* ==================================================================== */}
       {deliveryModalDispatch && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
-          <div className="bg-white rounded-lg shadow-2xl max-w-xl w-full p-6 space-y-4 border border-slate-200">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="size-5 text-emerald-600" />
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Record Client Receipt &amp; Delivery</h2>
-                  <p className="text-xs text-slate-500">
-                    Capture client digital signature and change work order to COMPLETED state
-                  </p>
+        <DialogOverlay onClick={() => setDeliveryModalDispatch(null)}>
+          <DialogContent size="2xl" onClick={(e) => e.stopPropagation()}>
+            <DialogHeader>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="size-5 text-emerald-600" />
+                  <div>
+                    <DialogTitle>Record Client Receipt &amp; Digital POD</DialogTitle>
+                    <DialogDescription>
+                      Capture client digital signature and complete order fulfillment
+                    </DialogDescription>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setDeliveryModalDispatch(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1"
+                >
+                  <X className="size-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setDeliveryModalDispatch(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            {deliveryError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded text-xs flex items-center gap-2">
-                <AlertCircle className="size-4 shrink-0" />
-                <span>{deliveryError}</span>
-              </div>
-            )}
+            </DialogHeader>
 
             <form onSubmit={handleConfirmDelivery} className="space-y-4">
-              {/* Order Info Banner */}
-              <div className="p-3 bg-slate-50 rounded border border-slate-200 text-xs grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-slate-400 block font-semibold">GATE PASS #</span>
-                  <span className="font-mono font-bold text-[#0274BB]">
-                    {deliveryModalDispatch.gate_pass_number}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block font-semibold">PACKAGE TYPE</span>
-                  <span className="font-bold text-slate-800">
-                    {deliveryModalDispatch.package_type === 'INVOICE_ONLY'
-                      ? 'Invoice Alone'
-                      : 'Equipment Items + Tax Invoice'}
-                  </span>
-                </div>
-              </div>
+              <DialogBody className="space-y-4">
+                {deliveryError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded text-xs flex items-center gap-2">
+                    <AlertCircle className="size-4 shrink-0" />
+                    <span>{deliveryError}</span>
+                  </div>
+                )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Order Info Banner */}
+                <div className="p-3 bg-slate-50 rounded border border-slate-200 text-xs grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block font-semibold">GATE PASS #</span>
+                    <span className="font-mono font-bold text-[#0274BB] text-sm">
+                      {deliveryModalDispatch.gate_pass_number}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block font-semibold">PACKAGE TYPE</span>
+                    <span className="font-bold text-slate-800 text-sm">
+                      {deliveryModalDispatch.package_type === 'INVOICE_ONLY'
+                        ? 'Invoice Alone'
+                        : 'Equipment Items + Tax Invoice'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field>
+                    <FieldLabel>Client Receiver Name</FieldLabel>
+                    <Input
+                      placeholder="Full name of receiver"
+                      value={receiverName}
+                      onChange={(e) => setReceiverName(e.target.value)}
+                      required
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel>Receiver Contact Phone</FieldLabel>
+                    <Input
+                      placeholder="+91 98765 43210"
+                      value={receiverPhone}
+                      onChange={(e) => setReceiverPhone(e.target.value)}
+                    />
+                  </Field>
+                </div>
+
+                {/* Digital Signature Pad */}
+                <div className="border border-slate-200 rounded-md p-3 bg-slate-50/50">
+                  <SignaturePad
+                    value={deliverySignature}
+                    onChange={(dataUrl) => setDeliverySignature(dataUrl)}
+                    clientName={receiverName || deliveryModalDispatch.recipient_name}
+                  />
+                </div>
+
                 <Field>
-                  <FieldLabel>Client Receiver Name</FieldLabel>
+                  <FieldLabel>Delivery Condition / Handover Remarks</FieldLabel>
                   <Input
-                    placeholder="Full name of receiver"
-                    value={receiverName}
-                    onChange={(e) => setReceiverName(e.target.value)}
-                    required
+                    value={deliveryRemarks}
+                    onChange={(e) => setDeliveryRemarks(e.target.value)}
+                    placeholder="E.g. Package received with tamper-evident calibration seals intact."
                   />
                 </Field>
 
-                <Field>
-                  <FieldLabel>Receiver Contact Phone</FieldLabel>
-                  <Input
-                    placeholder="+91 98765 43210"
-                    value={receiverPhone}
-                    onChange={(e) => setReceiverPhone(e.target.value)}
-                  />
-                </Field>
-              </div>
+                {/* Completion Notice */}
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-900 flex items-start gap-2">
+                  <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Lifecycle Completion Trigger:</strong> Submitting this delivery receipt will mark Gate Pass as <strong>DELIVERED</strong> and permanently transition Calibration Work Order status to <strong>COMPLETED</strong>.
+                  </span>
+                </div>
+              </DialogBody>
 
-              {/* Digital Signature Pad */}
-              <div className="border border-slate-200 rounded-md p-3 bg-slate-50/50">
-                <SignaturePad
-                  value={deliverySignature}
-                  onChange={(dataUrl) => setDeliverySignature(dataUrl)}
-                  clientName={receiverName || deliveryModalDispatch.recipient_name}
-                />
-              </div>
-
-              <Field>
-                <FieldLabel>Delivery Condition / Handover Remarks</FieldLabel>
-                <Input
-                  value={deliveryRemarks}
-                  onChange={(e) => setDeliveryRemarks(e.target.value)}
-                  placeholder="E.g. Package received with tamper-evident calibration seals intact."
-                />
-              </Field>
-
-              {/* Completion Notice */}
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-900 flex items-start gap-2">
-                <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Lifecycle Completion Trigger:</strong> Submitting this delivery receipt will mark Gate Pass as <strong>DELIVERED</strong> and permanently transition Calibration Work Order status to <strong>COMPLETED</strong>.
-                </span>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+              <DialogFooter>
                 <Button
                   type="button"
-                  variant="outlineInk"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setDeliveryModalDispatch(null)}
                 >
@@ -594,124 +605,133 @@ export const DispatchListPage: React.FC = () => {
                   <Check className="size-4" />
                   {recordDeliveryMutation.isPending ? 'Completing Order...' : 'Confirm Delivery & Complete Order'}
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
-          </div>
-        </div>
+          </DialogContent>
+        </DialogOverlay>
       )}
 
       {/* ==================================================================== */}
       {/* 2. Official Proof of Delivery (POD) & Receipt Modal */}
       {/* ==================================================================== */}
       {selectedPODDelivery && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
-          <div className="bg-white rounded-lg shadow-2xl max-w-xl w-full p-6 space-y-4 border border-slate-200">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="size-5 text-emerald-600" />
-                <h2 className="text-lg font-bold text-slate-900">Proof of Delivery &amp; Client Receipt (POD)</h2>
+        <DialogOverlay onClick={() => setSelectedPODDelivery(null)}>
+          <DialogContent size="2xl" onClick={(e) => e.stopPropagation()}>
+            <DialogHeader>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="size-5 text-emerald-600" />
+                  <div>
+                    <DialogTitle>Proof of Delivery &amp; Client Receipt (POD)</DialogTitle>
+                    <DialogDescription>
+                      Official Handover &amp; Delivery Acknowledgment with Digital Signature
+                    </DialogDescription>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPODDelivery(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1"
+                >
+                  <X className="size-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedPODDelivery(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
+            </DialogHeader>
 
-            <div className="border border-slate-300 rounded-lg p-5 space-y-4 bg-slate-50/50 text-xs">
-              <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+            <DialogBody className="space-y-4">
+              <div className="border border-slate-300 rounded-lg p-5 space-y-4 bg-slate-50/50 text-xs">
+                <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+                  <div>
+                    <h3 className="font-black text-base text-[#0274BB] uppercase tracking-wider">
+                      NETHRA METROLOGY LABS
+                    </h3>
+                    <p className="text-[11px] text-slate-500">Accredited Calibration Facility • ISO/IEC 17025</p>
+                    <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">
+                      ✓ Official Handover &amp; Delivery Acknowledgment
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-mono font-bold text-slate-900 block text-sm">
+                      {selectedPODDelivery.dispatch.gate_pass_number}
+                    </span>
+                    <Badge variant="success" pill>
+                      ORDER COMPLETED
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block font-semibold text-[10px] uppercase">
+                      Delivery Timestamp
+                    </span>
+                    <span className="font-semibold text-slate-800">
+                      {new Date(
+                        selectedPODDelivery.delivery?.delivered_at || selectedPODDelivery.dispatch.dispatch_date
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block font-semibold text-[10px] uppercase">
+                      Received By (Client Authorized)
+                    </span>
+                    <span className="font-semibold text-slate-800">
+                      {selectedPODDelivery.delivery?.received_by || selectedPODDelivery.dispatch.recipient_name}
+                    </span>
+                    {selectedPODDelivery.dispatch.recipient_phone && (
+                      <span className="text-[11px] text-slate-500 block">
+                        {selectedPODDelivery.dispatch.recipient_phone}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 <div>
-                  <h3 className="font-black text-base text-[#0274BB] uppercase tracking-wider">
-                    NETHRA METROLOGY LABS
-                  </h3>
-                  <p className="text-[11px] text-slate-500">Accredited Calibration Facility • ISO/IEC 17025</p>
-                  <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">
-                    ✓ Official Handover &amp; Delivery Acknowledgment
+                  <span className="text-slate-400 block font-semibold text-[10px] uppercase">
+                    Handover Remarks
+                  </span>
+                  <p className="text-slate-700 italic bg-white p-2 rounded border border-slate-200 mt-1">
+                    "{selectedPODDelivery.delivery?.remarks || 'Received in satisfactory condition with seals intact.'}"
                   </p>
                 </div>
-                <div className="text-right">
-                  <span className="font-mono font-bold text-slate-900 block text-sm">
-                    {selectedPODDelivery.dispatch.gate_pass_number}
-                  </span>
-                  <Badge variant="success" pill>
-                    ORDER COMPLETED
-                  </Badge>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <span className="text-slate-400 block font-semibold text-[10px] uppercase">
-                    Delivery Timestamp
+                {/* Client Digital Signature Display */}
+                <div className="border-t border-slate-200 pt-3">
+                  <span className="text-slate-500 block uppercase font-semibold text-[10px] mb-2 flex items-center gap-1.5">
+                    <PenTool className="size-3 text-emerald-600" /> Client Handover Digital Signature
                   </span>
-                  <span className="font-semibold text-slate-800">
-                    {new Date(
-                      selectedPODDelivery.delivery?.delivered_at || selectedPODDelivery.dispatch.dispatch_date
-                    ).toLocaleString()}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block font-semibold text-[10px] uppercase">
-                    Received By (Client Authorized)
-                  </span>
-                  <span className="font-semibold text-slate-800">
-                    {selectedPODDelivery.delivery?.received_by || selectedPODDelivery.dispatch.recipient_name}
-                  </span>
-                  {selectedPODDelivery.dispatch.recipient_phone && (
-                    <span className="text-[11px] text-slate-500 block">
-                      {selectedPODDelivery.dispatch.recipient_phone}
-                    </span>
+
+                  {selectedPODDelivery.dispatch.client_signature || selectedPODDelivery.delivery?.signature_data_url ? (
+                    <div className="p-3 bg-white border border-slate-200 rounded-md flex items-center justify-between">
+                      <div>
+                        <img
+                          src={
+                            selectedPODDelivery.delivery?.signature_data_url ||
+                            selectedPODDelivery.dispatch.client_signature
+                          }
+                          alt="Client Handover Signature"
+                          className="h-14 max-w-[200px] object-contain"
+                        />
+                        <span className="text-[10px] text-slate-400 block mt-1">
+                          Digitally verified by{' '}
+                          {selectedPODDelivery.delivery?.received_by || selectedPODDelivery.dispatch.recipient_name}
+                        </span>
+                      </div>
+                      <div className="text-right text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 font-semibold">
+                        <CheckCircle2 className="size-4 inline mr-1 text-emerald-600" />
+                        Client Verified
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-white border border-dashed border-slate-300 rounded-md text-xs text-slate-400 text-center">
+                      Signed on physical paper delivery challan.
+                    </div>
                   )}
                 </div>
               </div>
+            </DialogBody>
 
-              <div>
-                <span className="text-slate-400 block font-semibold text-[10px] uppercase">
-                  Handover Remarks
-                </span>
-                <p className="text-slate-700 italic bg-white p-2 rounded border border-slate-200 mt-1">
-                  "{selectedPODDelivery.delivery?.remarks || 'Received in satisfactory condition with seals intact.'}"
-                </p>
-              </div>
-
-              {/* Client Digital Signature Display */}
-              <div className="border-t border-slate-200 pt-3">
-                <span className="text-slate-500 block uppercase font-semibold text-[10px] mb-2 flex items-center gap-1.5">
-                  <PenTool className="size-3 text-emerald-600" /> Client Handover Digital Signature
-                </span>
-
-                {selectedPODDelivery.dispatch.client_signature || selectedPODDelivery.delivery?.signature_data_url ? (
-                  <div className="p-3 bg-white border border-slate-200 rounded-md flex items-center justify-between">
-                    <div>
-                      <img
-                        src={
-                          selectedPODDelivery.delivery?.signature_data_url ||
-                          selectedPODDelivery.dispatch.client_signature
-                        }
-                        alt="Client Handover Signature"
-                        className="h-14 max-w-[200px] object-contain"
-                      />
-                      <span className="text-[10px] text-slate-400 block mt-1">
-                        Digitally verified by{' '}
-                        {selectedPODDelivery.delivery?.received_by || selectedPODDelivery.dispatch.recipient_name}
-                      </span>
-                    </div>
-                    <div className="text-right text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 font-semibold">
-                      <CheckCircle2 className="size-4 inline mr-1 text-emerald-600" />
-                      Client Verified
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-3 bg-white border border-dashed border-slate-300 rounded-md text-xs text-slate-400 text-center">
-                    Signed on physical paper delivery challan.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
+            <DialogFooter>
               <Button
                 variant="outlineInk"
                 size="sm"
@@ -727,176 +747,185 @@ export const DispatchListPage: React.FC = () => {
               >
                 Close
               </Button>
-            </div>
-          </div>
-        </div>
+            </DialogFooter>
+          </DialogContent>
+        </DialogOverlay>
       )}
 
       {/* ==================================================================== */}
       {/* 3. Gate Pass Print / Preview Modal */}
       {/* ==================================================================== */}
       {selectedDispatch && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-6 space-y-5 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div className="flex items-center gap-2">
-                <FileText className="size-5 text-[#0274BB]" />
-                <h2 className="text-lg font-bold text-slate-900">Official Outward Gate Pass</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedDispatch(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            {/* Printable Pass Body */}
-            <div className="border border-slate-300 rounded-lg p-5 space-y-4 bg-slate-50/50">
-              <div className="flex justify-between items-start border-b border-slate-200 pb-3">
-                <div>
-                  <h3 className="font-black text-lg text-[#0274BB] uppercase tracking-wider">
-                    NETHRA METROLOGY LABS
-                  </h3>
-                  <p className="text-xs text-slate-500">ISO/IEC 17025 Accredited Calibration Facility</p>
-                  <p className="text-[11px] text-slate-400">Outward Material Dispatch Authorization</p>
-                </div>
-                <div className="text-right">
-                  <span className="font-mono text-base font-bold text-slate-900 block">
-                    {selectedDispatch.gate_pass_number}
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    Date: {new Date(selectedDispatch.dispatch_date).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Tracking Progress Timeline */}
-              <div className="p-3 bg-white rounded border border-slate-200">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">
-                  Dispatch &amp; Delivery Tracking Stage
-                </span>
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 font-semibold text-emerald-700">
-                    <CheckCircle2 className="size-4 text-emerald-600" />
-                    <span>Dispatched</span>
-                  </div>
-                  <div className="h-0.5 w-12 bg-emerald-500" />
-                  <div
-                    className={`flex items-center gap-1.5 font-semibold ${
-                      selectedDispatch.status === 'IN_TRANSIT' || selectedDispatch.status === 'DELIVERED'
-                        ? 'text-emerald-700'
-                        : 'text-slate-400'
-                    }`}
-                  >
-                    <Send className="size-4" />
-                    <span>In Transit</span>
-                  </div>
-                  <div
-                    className={`h-0.5 w-12 ${
-                      selectedDispatch.status === 'DELIVERED' ? 'bg-emerald-500' : 'bg-slate-200'
-                    }`}
-                  />
-                  <div
-                    className={`flex items-center gap-1.5 font-semibold ${
-                      selectedDispatch.status === 'DELIVERED' ? 'text-emerald-700' : 'text-slate-400'
-                    }`}
-                  >
-                    <CheckCircle2 className="size-4" />
-                    <span>Delivered &amp; Completed</span>
+        <DialogOverlay onClick={() => setSelectedDispatch(null)}>
+          <DialogContent size="3xl" onClick={(e) => e.stopPropagation()}>
+            <DialogHeader>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <FileText className="size-5 text-[#0274BB]" />
+                  <div>
+                    <DialogTitle>Official Outward Gate Pass</DialogTitle>
+                    <DialogDescription>
+                      Authorized Dispatch Authorization &amp; Material Movement Pass
+                    </DialogDescription>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDispatch(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1"
+                >
+                  <X className="size-5" />
+                </button>
               </div>
+            </DialogHeader>
 
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div>
-                  <span className="text-slate-400 block uppercase font-semibold text-[10px]">
-                    Dispatch Mode
-                  </span>
-                  <span className="font-bold text-slate-800 text-sm">
-                    {selectedDispatch.dispatch_type === 'COLLECTION_AGENT' || !selectedDispatch.courier_partner
-                      ? 'Collection Agent Direct Delivery'
-                      : `Courier: ${selectedDispatch.courier_partner}`}
-                  </span>
-                  {selectedDispatch.tracking_number && (
-                    <span className="block font-mono text-slate-600 mt-0.5">
-                      AWB #{selectedDispatch.tracking_number}
+            <DialogBody className="space-y-4">
+              {/* Printable Pass Body */}
+              <div className="border border-slate-300 rounded-lg p-5 space-y-4 bg-slate-50/50">
+                <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+                  <div>
+                    <h3 className="font-black text-lg text-[#0274BB] uppercase tracking-wider">
+                      NETHRA METROLOGY LABS
+                    </h3>
+                    <p className="text-xs text-slate-500">ISO/IEC 17025 Accredited Calibration Facility</p>
+                    <p className="text-[11px] text-slate-400">Outward Material Dispatch Authorization</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-mono text-base font-bold text-slate-900 block">
+                      {selectedDispatch.gate_pass_number}
                     </span>
-                  )}
+                    <span className="text-xs text-slate-500">
+                      Date: {new Date(selectedDispatch.dispatch_date).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
 
-                <div>
-                  <span className="text-slate-400 block uppercase font-semibold text-[10px]">
-                    Package Classification
+                {/* Tracking Progress Timeline */}
+                <div className="p-3 bg-white rounded border border-slate-200">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">
+                    Dispatch &amp; Delivery Tracking Stage
                   </span>
-                  <span className="font-bold text-slate-800 text-sm">
-                    {selectedDispatch.package_type === 'INVOICE_ONLY'
-                      ? 'Invoice Alone (Commercial Billing Document)'
-                      : 'Item + Invoice (Equipment with Official Tax Invoice)'}
-                  </span>
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 font-semibold text-emerald-700">
+                      <CheckCircle2 className="size-4 text-emerald-600" />
+                      <span>Dispatched</span>
+                    </div>
+                    <div className="h-0.5 w-12 bg-emerald-500" />
+                    <div
+                      className={`flex items-center gap-1.5 font-semibold ${
+                        selectedDispatch.status === 'IN_TRANSIT' || selectedDispatch.status === 'DELIVERED'
+                          ? 'text-emerald-700'
+                          : 'text-slate-400'
+                      }`}
+                    >
+                      <Send className="size-4" />
+                      <span>In Transit</span>
+                    </div>
+                    <div
+                      className={`h-0.5 w-12 ${
+                        selectedDispatch.status === 'DELIVERED' ? 'bg-emerald-500' : 'bg-slate-200'
+                      }`}
+                    />
+                    <div
+                      className={`flex items-center gap-1.5 font-semibold ${
+                        selectedDispatch.status === 'DELIVERED' ? 'text-emerald-700' : 'text-slate-400'
+                      }`}
+                    >
+                      <CheckCircle2 className="size-4" />
+                      <span>Delivered &amp; Completed</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4 text-xs border-t border-slate-200 pt-3">
-                <div>
-                  <span className="text-slate-400 block uppercase font-semibold text-[10px]">
-                    Dispatched / Delivered By
-                  </span>
-                  <span className="font-semibold text-slate-800">
-                    {selectedDispatch.collection_agent_name || selectedDispatch.dispatched_by || 'Authorized Field Personnel'}
-                  </span>
-                  {selectedDispatch.collection_agent_phone && (
-                    <span className="block text-slate-500">{selectedDispatch.collection_agent_phone}</span>
-                  )}
-                </div>
-
-                <div>
-                  <span className="text-slate-400 block uppercase font-semibold text-[10px]">
-                    Receiver / Client Details
-                  </span>
-                  <span className="font-semibold text-slate-800">{selectedDispatch.recipient_name}</span>
-                  {selectedDispatch.recipient_phone && (
-                    <span className="block text-slate-500">{selectedDispatch.recipient_phone}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Client Digital Signature Display */}
-              <div className="border-t border-slate-200 pt-3">
-                <span className="text-slate-500 block uppercase font-semibold text-[10px] mb-2 flex items-center gap-1.5">
-                  <PenTool className="size-3 text-[#0274BB]" /> Client Handover Acknowledgment &amp; Digital Signature
-                </span>
-
-                {selectedDispatch.client_signature ? (
-                  <div className="p-3 bg-white border border-slate-200 rounded-md flex items-center justify-between">
-                    <div>
-                      <img
-                        src={selectedDispatch.client_signature}
-                        alt="Client Digital Signature"
-                        className="h-14 max-w-[200px] object-contain"
-                      />
-                      <span className="text-[10px] text-slate-400 block mt-1">
-                        Digitally verified by {selectedDispatch.recipient_name} on{' '}
-                        {new Date(selectedDispatch.dispatch_date).toLocaleString()}
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-slate-400 block uppercase font-semibold text-[10px]">
+                      Dispatch Mode
+                    </span>
+                    <span className="font-bold text-slate-800 text-sm">
+                      {selectedDispatch.dispatch_type === 'COLLECTION_AGENT' || !selectedDispatch.courier_partner
+                        ? 'Collection Agent Direct Delivery'
+                        : `Courier: ${selectedDispatch.courier_partner}`}
+                    </span>
+                    {selectedDispatch.tracking_number && (
+                      <span className="block font-mono text-slate-600 mt-0.5">
+                        AWB #{selectedDispatch.tracking_number}
                       </span>
-                    </div>
-                    <div className="text-right text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
-                      <CheckCircle2 className="size-4 inline mr-1 text-emerald-600" />
-                      Client Acknowledged
-                    </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="p-3 bg-white border border-dashed border-slate-300 rounded-md text-xs text-slate-400 text-center">
-                    {selectedDispatch.dispatch_type === 'COURIER'
-                      ? 'Consignment dispatched via courier service (Signed on delivery slip).'
-                      : 'No digital signature recorded on this dispatch.'}
-                  </div>
-                )}
-              </div>
-            </div>
 
-            <div className="flex justify-end gap-3 pt-2">
+                  <div>
+                    <span className="text-slate-400 block uppercase font-semibold text-[10px]">
+                      Package Classification
+                    </span>
+                    <span className="font-bold text-slate-800 text-sm">
+                      {selectedDispatch.package_type === 'INVOICE_ONLY'
+                        ? 'Invoice Alone (Commercial Billing Document)'
+                        : 'Item + Invoice (Equipment with Official Tax Invoice)'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-xs border-t border-slate-200 pt-3">
+                  <div>
+                    <span className="text-slate-400 block uppercase font-semibold text-[10px]">
+                      Dispatched / Delivered By
+                    </span>
+                    <span className="font-semibold text-slate-800">
+                      {selectedDispatch.collection_agent_name || selectedDispatch.dispatched_by || 'Authorized Field Personnel'}
+                    </span>
+                    {selectedDispatch.collection_agent_phone && (
+                      <span className="block text-slate-500">{selectedDispatch.collection_agent_phone}</span>
+                    )}
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block uppercase font-semibold text-[10px]">
+                      Receiver / Client Details
+                    </span>
+                    <span className="font-semibold text-slate-800">{selectedDispatch.recipient_name}</span>
+                    {selectedDispatch.recipient_phone && (
+                      <span className="block text-slate-500">{selectedDispatch.recipient_phone}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Client Digital Signature Display */}
+                <div className="border-t border-slate-200 pt-3">
+                  <span className="text-slate-500 block uppercase font-semibold text-[10px] mb-2 flex items-center gap-1.5">
+                    <PenTool className="size-3 text-[#0274BB]" /> Client Handover Acknowledgment &amp; Digital Signature
+                  </span>
+
+                  {selectedDispatch.client_signature ? (
+                    <div className="p-3 bg-white border border-slate-200 rounded-md flex items-center justify-between">
+                      <div>
+                        <img
+                          src={selectedDispatch.client_signature}
+                          alt="Client Digital Signature"
+                          className="h-14 max-w-[200px] object-contain"
+                        />
+                        <span className="text-[10px] text-slate-400 block mt-1">
+                          Digitally verified by {selectedDispatch.recipient_name} on{' '}
+                          {new Date(selectedDispatch.dispatch_date).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="text-right text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
+                        <CheckCircle2 className="size-4 inline mr-1 text-emerald-600" />
+                        Client Acknowledged
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-white border border-dashed border-slate-300 rounded-md text-xs text-slate-400 text-center">
+                      {selectedDispatch.dispatch_type === 'COURIER'
+                        ? 'Consignment dispatched via courier service (Signed on delivery slip).'
+                        : 'No digital signature recorded on this dispatch.'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </DialogBody>
+
+            <DialogFooter>
               <Button
                 variant="outlineInk"
                 size="sm"
@@ -912,41 +941,45 @@ export const DispatchListPage: React.FC = () => {
               >
                 Close
               </Button>
-            </div>
-          </div>
-        </div>
+            </DialogFooter>
+          </DialogContent>
+        </DialogOverlay>
       )}
 
       {/* Formal Delivery Challan (DC) Approval Modal */}
       {approvalModalDispatch && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
-          <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="size-5 text-[#0274BB]" />
-                <div>
-                  <h3 className="font-bold text-gray-900 text-sm">Review &amp; Approve Delivery Challan (Gate Pass)</h3>
-                  <p className="text-xs text-gray-500 font-mono">#{approvalModalDispatch.gate_pass_number}</p>
+        <DialogOverlay onClick={() => setApprovalModalDispatch(null)}>
+          <DialogContent size="xl" onClick={(e) => e.stopPropagation()}>
+            <DialogHeader>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="size-5 text-[#0274BB]" />
+                  <div>
+                    <DialogTitle>Review &amp; Approve Delivery Challan</DialogTitle>
+                    <DialogDescription className="font-mono">
+                      Gate Pass #{approvalModalDispatch.gate_pass_number}
+                    </DialogDescription>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setApprovalModalDispatch(null)}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                >
+                  <X className="size-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setApprovalModalDispatch(null)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
+            </DialogHeader>
 
-            <div className="p-5 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded border border-gray-200">
+            <DialogBody className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3.5 rounded border border-gray-200 text-xs">
                 <div>
                   <span className="text-gray-500 block">Dispatch Mode:</span>
-                  <span className="font-bold text-gray-900">{approvalModalDispatch.dispatch_type || 'Collection Agent'}</span>
+                  <span className="font-bold text-gray-900 text-sm">{approvalModalDispatch.dispatch_type || 'Collection Agent'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500 block">Package Type:</span>
-                  <span className="font-bold text-gray-900">{approvalModalDispatch.package_type || 'Items & Invoice'}</span>
+                  <span className="font-bold text-gray-900 text-sm">{approvalModalDispatch.package_type || 'Items & Invoice'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500 block">Recipient:</span>
@@ -959,46 +992,46 @@ export const DispatchListPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="font-semibold text-gray-700 block mb-1">DC Approver Clearance Remarks</label>
+                <label className="font-semibold text-gray-700 block mb-1 text-xs">DC Approver Clearance Remarks</label>
                 <textarea
                   rows={3}
                   value={approverNotes}
                   onChange={(e) => setApproverNotes(e.target.value)}
                   placeholder="Enter gate pass clearance remarks or outward authorization notes..."
-                  className="w-full text-xs border border-gray-300 rounded p-2 focus:ring-1 focus:ring-blue-500"
+                  className="w-full text-xs border border-gray-300 rounded p-2.5 focus:ring-1 focus:ring-blue-500 bg-white"
                 />
               </div>
+            </DialogBody>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setApprovalModalDispatch(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="outlineInk"
-                  size="sm"
-                  onClick={() => handleApproveDispatch(false)}
-                  disabled={approveDispatchMutation.isPending}
-                  className="border-red-300 text-red-700 hover:bg-red-50"
-                >
-                  Reject DC
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => handleApproveDispatch(true)}
-                  disabled={approveDispatchMutation.isPending}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <CheckCircle2 className="size-3.5" /> Approve &amp; Release Gate Pass
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+            <DialogFooter>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setApprovalModalDispatch(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="outlineInk"
+                size="sm"
+                onClick={() => handleApproveDispatch(false)}
+                disabled={approveDispatchMutation.isPending}
+                className="border-red-300 text-red-700 hover:bg-red-50"
+              >
+                Reject DC
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleApproveDispatch(true)}
+                disabled={approveDispatchMutation.isPending}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <CheckCircle2 className="size-3.5" /> Approve &amp; Release Gate Pass
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </DialogOverlay>
       )}
     </div>
   );
