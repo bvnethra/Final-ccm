@@ -1,6 +1,6 @@
 // application/src/pages/lab/CalibrationPage.tsx
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   useCalibrationRequest,
   useRecordCalibration,
@@ -65,6 +65,7 @@ interface MeasurementFormState {
 
 export const CalibrationPage: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialItemIndex = Number(searchParams.get('itemIndex')) || 0;
   const initialTab = (searchParams.get('tab') as 'IN_HOUSE' | 'IN_LAB_REPAIR' | 'OUTSOURCE_PO') || 'IN_HOUSE';
@@ -515,7 +516,7 @@ export const CalibrationPage: React.FC = () => {
                   <th className="px-4 py-3 text-center">Verified</th>
                   <th className="px-4 py-3 text-center">Condition</th>
                   <th className="px-4 py-3 text-center">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3 text-right">Lab Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB] dark:divide-neutral-700">
@@ -587,28 +588,31 @@ export const CalibrationPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-2">
-                          <Link
-                            to={`/lab/calibration/${requestId}/equipment/${it.id}`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-semibold bg-white hover:bg-[#EBF5FF] text-[#0274BB] border border-[#BFDBFE] transition-colors cursor-pointer shadow-2xs"
-                            title="Open dedicated equipment specifications page"
-                          >
-                            <Eye className="size-3.5" />
-                            <span>View Details</span>
-                            <ArrowRight className="size-3" />
-                          </Link>
-                          {isSelected ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-semibold bg-[#0274BB] text-white shadow-2xs">
-                              <Check className="size-3.5" /> Active
+                          {isSelected && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-[#0274BB] text-white shadow-2xs">
+                              <Check className="size-3" /> Active
                             </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setSelectedItemIndex(idx)}
-                              className="px-3 py-1.5 rounded text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 transition-colors cursor-pointer"
-                            >
-                              Select
-                            </button>
                           )}
+                          <Select
+                            value={isSelected ? activeWorkflowTab : ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (!val) return;
+                              setSelectedItemIndex(idx);
+                              if (val === 'DETAILS') {
+                                navigate(`/lab/calibration/${requestId}/equipment/${it.id}`);
+                              } else {
+                                setActiveWorkflowTab(val as any);
+                              }
+                            }}
+                            className="text-xs font-semibold py-1 px-2.5 h-8.5 bg-white dark:bg-neutral-800 border-slate-300 w-48 shadow-2xs cursor-pointer"
+                          >
+                            <option value="" disabled>Choose Lab Action...</option>
+                            <option value="IN_HOUSE">🔬 In-Lab Calibration</option>
+                            <option value="IN_LAB_REPAIR">🔧 In-Lab Service &amp; Repair (Faulty)</option>
+                            <option value="OUTSOURCE_PO">🚚 Outsource</option>
+                            <option value="DETAILS">📋 View Full Specs Page</option>
+                          </Select>
                         </div>
                       </td>
                     </tr>
@@ -662,52 +666,54 @@ export const CalibrationPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Workflow Path Selector: Dividing After Verification */}
-      <div className="flex border-b border-[#E5E7EB] gap-2">
-        <button
-          type="button"
-          onClick={() => setActiveWorkflowTab('IN_HOUSE')}
-          className={`px-4 py-3 text-sm font-semibold border-b-2 flex items-center gap-2 cursor-pointer transition-colors ${
-            activeWorkflowTab === 'IN_HOUSE'
-              ? 'border-[#0274BB] text-[#0274BB] bg-[#EBF5FF]'
-              : 'border-transparent text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB]'
-          }`}
-        >
-          <FlaskConical className="size-4" />
-          <span>1. In-Lab Calibration (Standard Pass)</span>
-        </button>
+      {/* Lab Action Workflow Dropdown Selector */}
+      <div className="bg-[#F8FAFC] dark:bg-neutral-800/80 p-4 rounded-lg border border-[#E2E8F0] dark:border-neutral-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="size-9 rounded-md bg-[#0274BB] text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+            {activeWorkflowTab === 'IN_HOUSE' ? (
+              <FlaskConical className="size-4" />
+            ) : activeWorkflowTab === 'IN_LAB_REPAIR' ? (
+              <Wrench className="size-4" />
+            ) : (
+              <Truck className="size-4" />
+            )}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-[#64748B] dark:text-neutral-400 uppercase tracking-wider">
+                Active Lab Action
+              </span>
+              {activeWorkflowTab === 'IN_LAB_REPAIR' && currentItemRepair && (
+                <Badge variant="warning">{currentItemRepair.status}</Badge>
+              )}
+              {activeWorkflowTab === 'OUTSOURCE_PO' && currentItemOutsource && (
+                <Badge variant="info">{currentItemOutsource.status}</Badge>
+              )}
+            </div>
+            <h4 className="text-sm font-bold text-[#111827] dark:text-white">
+              {activeWorkflowTab === 'IN_HOUSE'
+                ? 'In-Lab Calibration Test Bench'
+                : activeWorkflowTab === 'IN_LAB_REPAIR'
+                ? 'In-Lab Service & Repair (Faulty Instrument)'
+                : 'Third-Party Vendor Outsource PO'}
+            </h4>
+          </div>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setActiveWorkflowTab('IN_LAB_REPAIR')}
-          className={`px-4 py-3 text-sm font-semibold border-b-2 flex items-center gap-2 cursor-pointer transition-colors ${
-            activeWorkflowTab === 'IN_LAB_REPAIR'
-              ? 'border-[#EF7626] text-[#EF7626] bg-[#FFF7ED]'
-              : 'border-transparent text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB]'
-          }`}
-        >
-          <Wrench className="size-4" />
-          <span>2. In-Lab Service &amp; Repair (Faulty)</span>
-          {currentItemRepair && (
-            <Badge variant="warning">{currentItemRepair.status}</Badge>
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveWorkflowTab('OUTSOURCE_PO')}
-          className={`px-4 py-3 text-sm font-semibold border-b-2 flex items-center gap-2 cursor-pointer transition-colors ${
-            activeWorkflowTab === 'OUTSOURCE_PO'
-              ? 'border-[#0274BB] text-[#0274BB] bg-[#EBF5FF]'
-              : 'border-transparent text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB]'
-          }`}
-        >
-          <Truck className="size-4" />
-          <span>3. Outsource / Vendor PO (External Lab)</span>
-          {currentItemOutsource && (
-            <Badge variant="info">{currentItemOutsource.status}</Badge>
-          )}
-        </button>
+        <div className="flex items-center gap-2.5">
+          <label className="text-xs font-semibold text-[#475569] dark:text-neutral-300 whitespace-nowrap">
+            Switch Action:
+          </label>
+          <Select
+            value={activeWorkflowTab}
+            onChange={(e) => setActiveWorkflowTab(e.target.value as any)}
+            className="text-xs font-bold py-1.5 px-3 h-9 bg-white dark:bg-neutral-800 border-[#0274BB] text-[#0274BB] ring-1 ring-[#0274BB]/20 w-64 shadow-xs cursor-pointer"
+          >
+            <option value="IN_HOUSE">🔬 In-Lab Calibration</option>
+            <option value="IN_LAB_REPAIR">🔧 In-Lab Service &amp; Repair (Faulty)</option>
+            <option value="OUTSOURCE_PO">🚚 Outsource</option>
+          </Select>
+        </div>
       </div>
 
       {/* ==================================================================== */}

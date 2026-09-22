@@ -471,7 +471,7 @@ export const EquipmentDetailPage: React.FC = () => {
               </span>
               <button
                 type="button"
-                onClick={() => navigate(`/lab/calibration/${requestId}?itemIndex=${selectedIndexParam}`)}
+                onClick={() => navigate(`/lab/calibration/${requestId}?itemIndex=${selectedIndexParam}&tab=IN_HOUSE`)}
                 className="w-full text-left p-2.5 rounded bg-white dark:bg-neutral-800 hover:bg-[#EBF5FF] border border-[#E2E8F0] dark:border-neutral-700 text-[#0274BB] font-semibold transition-colors cursor-pointer flex items-center justify-between shadow-xs"
               >
                 <div className="flex items-center gap-2">
@@ -482,7 +482,7 @@ export const EquipmentDetailPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => navigate(`/lab/calibration/${requestId}?itemIndex=${selectedIndexParam}`)}
+                onClick={() => navigate(`/lab/calibration/${requestId}?itemIndex=${selectedIndexParam}&tab=IN_LAB_REPAIR`)}
                 className="w-full text-left p-2.5 rounded bg-white dark:bg-neutral-800 hover:bg-[#FFF7ED] border border-[#E2E8F0] dark:border-neutral-700 text-[#EF7626] font-semibold transition-colors cursor-pointer flex items-center justify-between shadow-xs"
               >
                 <div className="flex items-center gap-2">
@@ -493,7 +493,7 @@ export const EquipmentDetailPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => navigate(`/lab/calibration/${requestId}?itemIndex=${selectedIndexParam}`)}
+                onClick={() => navigate(`/lab/calibration/${requestId}?itemIndex=${selectedIndexParam}&tab=OUTSOURCE_PO`)}
                 className="w-full text-left p-2.5 rounded bg-white dark:bg-neutral-800 hover:bg-[#F5F3FF] border border-[#E2E8F0] dark:border-neutral-700 text-[#7C3AED] font-semibold transition-colors cursor-pointer flex items-center justify-between shadow-xs"
               >
                 <div className="flex items-center gap-2">
