@@ -21,6 +21,7 @@ const RequestDetailPage = lazy(() => import('../pages/requests/RequestDetailPage
 const LabQueuePage = lazy(() => import('../pages/lab/LabQueuePage'));
 const VerificationPage = lazy(() => import('../pages/lab/VerificationPage'));
 const CalibrationPage = lazy(() => import('../pages/lab/CalibrationPage'));
+const EquipmentDetailPage = lazy(() => import('../pages/lab/EquipmentDetailPage'));
 const CalibrationDueListPage = lazy(() => import('../pages/lab/CalibrationDueListPage'));
 const QuotationListPage = lazy(() => import('../pages/commercial/QuotationListPage'));
 const QuotationBuilderPage = lazy(() => import('../pages/commercial/QuotationBuilderPage'));
@@ -202,6 +203,14 @@ export const AppRoutes: React.FC = () => {
             element={
               <DisallowCollectionAgentRoute>
                 <CalibrationPage />
+              </DisallowCollectionAgentRoute>
+            }
+          />
+          <Route
+            path="lab/calibration/:requestId/equipment/:itemId"
+            element={
+              <DisallowCollectionAgentRoute>
+                <EquipmentDetailPage />
               </DisallowCollectionAgentRoute>
             }
           />
