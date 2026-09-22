@@ -29,6 +29,7 @@ import {
   CheckSquare,
   Square,
   Clock,
+  Eye,
 } from 'lucide-react';
 
 export const QuotationListPage: React.FC = () => {
@@ -253,10 +254,10 @@ export const QuotationListPage: React.FC = () => {
                   <tr>
                     <th className="px-5 py-3">Quotation #</th>
                     <th className="px-4 py-3">Client PO Reference</th>
-                    <th className="px-4 py-3">Subtotal</th>
-                    <th className="px-4 py-3">Discount</th>
-                    <th className="px-4 py-3">Tax (GST)</th>
-                    <th className="px-4 py-3">Total Amount</th>
+                    <th className="px-4 py-3">Subtotal (₹)</th>
+                    <th className="px-4 py-3">Discount (₹)</th>
+                    <th className="px-4 py-3">Tax GST (₹)</th>
+                    <th className="px-4 py-3">Total Amount (₹)</th>
                     <th className="px-4 py-3">Billing Status</th>
                     <th className="px-5 py-3 text-right">Commercial Action</th>
                   </tr>
@@ -274,7 +275,13 @@ export const QuotationListPage: React.FC = () => {
                     return (
                       <tr key={q.id} className="hover:bg-[#FAFAFA]">
                         <td className="px-5 py-4 font-mono font-medium text-[#0274BB]">
-                          {q.quotation_number}
+                          <Link
+                            to={`/commercial/quotations/${q.id}`}
+                            className="hover:underline flex items-center gap-1 font-semibold"
+                            title="Click to view printable official quotation"
+                          >
+                            {q.quotation_number}
+                          </Link>
                           <span className="block text-[11px] text-[#6B7280] font-sans">
                             {new Date(q.created_at).toLocaleDateString()}
                           </span>
@@ -289,16 +296,16 @@ export const QuotationListPage: React.FC = () => {
                           )}
                         </td>
                         <td className="px-4 py-4 font-mono text-[#374151]">
-                          ${q.subtotal.toFixed(2)}
+                          ₹{q.subtotal.toFixed(2)}
                         </td>
                         <td className="px-4 py-4 font-mono text-[#6B7280]">
-                          -${q.discount.toFixed(2)}
+                          -₹{q.discount.toFixed(2)}
                         </td>
                         <td className="px-4 py-4 font-mono text-[#6B7280]">
-                          ${q.tax_amount.toFixed(2)}
+                          ₹{q.tax_amount.toFixed(2)}
                         </td>
                         <td className="px-4 py-4 font-mono font-bold text-[#111827]">
-                          ${q.total_amount.toFixed(2)}
+                          ₹{q.total_amount.toFixed(2)}
                         </td>
                         <td className="px-4 py-4">
                           <div className="space-y-1">
@@ -326,6 +333,16 @@ export const QuotationListPage: React.FC = () => {
                         </td>
                         <td className="px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <Link to={`/commercial/quotations/${q.id}`}>
+                              <Button
+                                variant="outlineInk"
+                                size="sm"
+                                title="View & Print Official Quotation Template"
+                              >
+                                <Eye className="size-3.5 text-[#0274BB]" /> View / Print
+                              </Button>
+                            </Link>
+
                             {!isFullyInvoiced && q.status !== 'REJECTED' && !isAdmin && (
                               <Button
                                 variant={isApproved ? 'primary' : isPartiallyInvoiced ? 'secondary' : 'primary'}
@@ -399,7 +416,7 @@ export const QuotationListPage: React.FC = () => {
                 <div className="flex justify-between">
                   <span className="text-[#1E40AF] font-semibold">Total Payable:</span>
                   <span className="font-mono font-bold text-[#1E40AF]">
-                    ${approvalModalQuote.total_amount.toFixed(2)}
+                    ₹{approvalModalQuote.total_amount.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -613,14 +630,14 @@ export const QuotationListPage: React.FC = () => {
                                 {it.description}
                               </span>
                               <span className="text-[#64748B]">
-                                Qty: {it.quantity} • Unit: ${it.unit_price.toFixed(2)}
+                                Qty: {it.quantity} • Unit: ₹{it.unit_price.toFixed(2)}
                               </span>
                             </div>
                           </label>
 
                           <div className="text-right shrink-0 ml-3">
                             <span className="font-mono font-bold text-[#111827] block text-sm">
-                              ${it.total_price.toFixed(2)}
+                              ₹{it.total_price.toFixed(2)}
                             </span>
                             {isAlreadyInvoiced ? (
                               <Badge variant="success">
@@ -642,15 +659,15 @@ export const QuotationListPage: React.FC = () => {
                 <div className="p-4 bg-[#F8FAFC] rounded-[4px] border border-[#E5E7EB] flex flex-col items-end gap-1.5 text-xs">
                   <div className="flex justify-between w-64 text-[#64748B]">
                     <span>Selected Items Subtotal:</span>
-                    <span className="font-mono text-[#1E293B] font-semibold">${subtotalCalc.toFixed(2)}</span>
+                    <span className="font-mono text-[#1E293B] font-semibold">₹{subtotalCalc.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between w-64 text-[#64748B]">
                     <span>GST (18%):</span>
-                    <span className="font-mono text-[#1E293B] font-semibold">${taxCalc.toFixed(2)}</span>
+                    <span className="font-mono text-[#1E293B] font-semibold">₹{taxCalc.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between w-64 text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5 mt-1">
-                    <span>Invoice Amount:</span>
-                    <span className="font-mono text-[#0274BB]">${grandTotalCalc.toFixed(2)}</span>
+                    <span>Invoice Amount (₹):</span>
+                    <span className="font-mono text-[#0274BB]">₹{grandTotalCalc.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -669,8 +686,8 @@ export const QuotationListPage: React.FC = () => {
                   {createInvoiceMutation.isPending
                     ? 'Issuing Invoice...'
                     : isActualInvoice
-                    ? `Generate Actual Invoice ($${grandTotalCalc.toFixed(2)})`
-                    : `Generate Partial Invoice ($${grandTotalCalc.toFixed(2)})`}
+                    ? `Generate Actual Invoice (₹${grandTotalCalc.toFixed(2)})`
+                    : `Generate Partial Invoice (₹${grandTotalCalc.toFixed(2)})`}
                 </Button>
               </div>
             </div>

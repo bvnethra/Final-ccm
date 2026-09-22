@@ -1,5 +1,4 @@
-// application/src/components/operations/IntakeRequestView.tsx
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardHeader,
@@ -27,8 +26,11 @@ import {
   FileSpreadsheet,
   UploadCloud,
   X,
+  Building2,
+  Hash,
+  Check,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export interface IntakeItemFormState {
   itemMasterId: string;
@@ -111,9 +113,137 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
   isSubmitting,
   errorMessage,
 }) => {
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const codeContainerRef = useRef<HTMLDivElement>(null);
+  const nameContainerRef = useRef<HTMLDivElement>(null);
+
   const selectedClient = clients.find((c) => c.id === clientId);
   const totalItemCount = items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);
+
+  const [clientCodeQuery, setClientCodeQuery] = useState(selectedClient?.client_code || '');
+  const [clientNameQuery, setClientNameQuery] = useState(selectedClient?.client_name || '');
+  const [isCodeDropdownOpen, setIsCodeDropdownOpen] = useState(false);
+  const [isNameDropdownOpen, setIsNameDropdownOpen] = useState(false);
+
+  // Synchronize input fields with current selected client
+  useEffect(() => {
+    if (selectedClient) {
+      setClientCodeQuery(selectedClient.client_code || '');
+      setClientNameQuery(selectedClient.client_name || '');
+    } else if (!clientId) {
+      setClientCodeQuery('');
+      setClientNameQuery('');
+    }
+  }, [clientId, selectedClient]);
+
+  // Click outside listener for dropdowns
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (codeContainerRef.current && !codeContainerRef.current.contains(e.target as Node)) {
+        setIsCodeDropdownOpen(false);
+      }
+      if (nameContainerRef.current && !nameContainerRef.current.contains(e.target as Node)) {
+        setIsNameDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
+  }, []);
+
+  // Filter clients dynamically by client code (and name fallback)
+  const filteredClientsByCode = useMemo(() => {
+    const q = clientCodeQuery.trim().toLowerCase();
+    if (!q) return clients.slice(0, 50);
+    return clients
+      .filter((c) =>
+        (c.client_code && c.client_code.toLowerCase().includes(q)) ||
+        (c.client_name && c.client_name.toLowerCase().includes(q))
+      )
+      .sort((a, b) => {
+        const aCode = (a.client_code || '').toLowerCase();
+        const bCode = (b.client_code || '').toLowerCase();
+        const aStarts = aCode.startsWith(q);
+        const bStarts = bCode.startsWith(q);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return aCode.localeCompare(bCode);
+      })
+      .slice(0, 50);
+  }, [clients, clientCodeQuery]);
+
+  // Filter clients dynamically by client name (and code fallback)
+  const filteredClientsByName = useMemo(() => {
+    const q = clientNameQuery.trim().toLowerCase();
+    if (!q) return clients.slice(0, 50);
+    return clients
+      .filter((c) =>
+        (c.client_name && c.client_name.toLowerCase().includes(q)) ||
+        (c.client_code && c.client_code.toLowerCase().includes(q))
+      )
+      .sort((a, b) => {
+        const aName = (a.client_name || '').toLowerCase();
+        const bName = (b.client_name || '').toLowerCase();
+        const aStarts = aName.startsWith(q);
+        const bStarts = bName.startsWith(q);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return aName.localeCompare(bName);
+      })
+      .slice(0, 50);
+  }, [clients, clientNameQuery]);
+
+  const handleSelectClient = (c: Client) => {
+    setClientId(c.id);
+    setClientCodeQuery(c.client_code || '');
+    setClientNameQuery(c.client_name || '');
+    setIsCodeDropdownOpen(false);
+    setIsNameDropdownOpen(false);
+  };
+
+  const handleClearClient = () => {
+    setClientId('');
+    setClientCodeQuery('');
+    setClientNameQuery('');
+    setIsCodeDropdownOpen(false);
+    setIsNameDropdownOpen(false);
+  };
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setClientCodeQuery(val);
+    setIsCodeDropdownOpen(true);
+    if (!val.trim()) {
+      setClientId('');
+      setClientNameQuery('');
+    } else {
+      const exactMatch = clients.find(
+        (c) => c.client_code?.toLowerCase() === val.trim().toLowerCase()
+      );
+      if (exactMatch) {
+        setClientId(exactMatch.id);
+        setClientNameQuery(exactMatch.client_name);
+      }
+    }
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setClientNameQuery(val);
+    setIsNameDropdownOpen(true);
+    if (!val.trim()) {
+      setClientId('');
+      setClientCodeQuery('');
+    } else {
+      const exactMatch = clients.find(
+        (c) => c.client_name?.toLowerCase() === val.trim().toLowerCase()
+      );
+      if (exactMatch) {
+        setClientId(exactMatch.id);
+        setClientCodeQuery(exactMatch.client_code);
+      }
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -166,36 +296,255 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
           <div className="lg:col-span-1 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Pickup &amp; Account Details</CardTitle>
-                <CardDescription>Step 4: Collection Visit metadata</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Pickup &amp; Account Details</CardTitle>
+                    <CardDescription>Step 4: Collection Visit metadata</CardDescription>
+                  </div>
+                  <Link
+                    to="/masters/clients/new?returnUrl=/requests/new"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#0274BB] hover:underline bg-[#F0F7FF] px-2.5 py-1 rounded-[4px] border border-[#BFDBFE]"
+                    title="Register a new client in Client Master"
+                  >
+                    <Plus className="size-3.5" /> + New Client
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Field>
-                  <FieldLabel>
-                    Client Account <span className="text-[#DC2626]">*</span>
-                  </FieldLabel>
-                  <Select
-                    value={clientId}
-                    onChange={(e) => setClientId(e.target.value)}
-                    required
-                  >
-                    <option value="">Select a Client Account</option>
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.client_name} ({c.client_code})
-                      </option>
-                    ))}
-                  </Select>
-                  {selectedClient && (
-                    <div className="mt-1 text-xs text-[#6B7280] bg-[#F5F7FA] p-2 rounded-[4px] border border-[#E5E7EB] space-y-0.5">
-                      <div><span className="font-semibold">GSTIN:</span> {selectedClient.gst_tax_number || 'Unregistered'}</div>
-                      <div><span className="font-semibold">Contact:</span> {selectedClient.contact_person || 'N/A'}</div>
-                      {selectedClient.address && (
-                        <div className="truncate"><span className="font-semibold">Address:</span> {selectedClient.address}</div>
-                      )}
+                {/* Client Code Search/Filter Field */}
+                <div ref={codeContainerRef} className="relative">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <FieldLabel htmlFor="client-code-input" className="cursor-pointer">
+                      Client Code {selectedClient && <span className="text-[#16A34A] text-xs font-semibold ml-1">✓ Linked</span>}
+                    </FieldLabel>
+                    <span className="text-[11px] text-[#6B7280]">
+                      {clients.length} in Master
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#9CA3AF]">
+                      <Hash className="size-4" />
+                    </div>
+                    <Input
+                      id="client-code-input"
+                      type="text"
+                      placeholder="Type Client Code (e.g. CLI-2026-00165)..."
+                      value={clientCodeQuery}
+                      onChange={handleCodeChange}
+                      onFocus={() => setIsCodeDropdownOpen(true)}
+                      className="pl-9 pr-8"
+                      autoComplete="off"
+                    />
+                    {clientCodeQuery && (
+                      <button
+                        type="button"
+                        onClick={handleClearClient}
+                        className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-[#9CA3AF] hover:text-[#374151] cursor-pointer"
+                        title="Clear client selection"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown for Client Code */}
+                  {isCodeDropdownOpen && (
+                    <div className="absolute z-50 mt-1 w-full bg-white dark:bg-neutral-900 border border-[#D1D5DB] dark:border-neutral-700 rounded-md shadow-2xl overflow-hidden max-h-64 flex flex-col">
+                      <div className="px-3 py-1.5 bg-[#F9FAFB] dark:bg-neutral-800 border-b border-[#E5E7EB] dark:border-neutral-700 flex items-center justify-between text-xs text-[#6B7280]">
+                        <span>{filteredClientsByCode.length} matching code{filteredClientsByCode.length === 1 ? '' : 's'}</span>
+                        <span className="text-[10px] text-[#9CA3AF]">Click code to select</span>
+                      </div>
+                      <div className="overflow-y-auto flex-1 divide-y divide-[#F3F4F6] dark:divide-neutral-800">
+                        {filteredClientsByCode.length > 0 ? (
+                          filteredClientsByCode.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => handleSelectClient(c)}
+                              className={`w-full text-left px-3 py-2.5 flex items-start gap-2.5 hover:bg-[#F0F7FF] dark:hover:bg-neutral-800 transition-colors cursor-pointer ${
+                                c.id === clientId ? 'bg-[#EFF6FF] dark:bg-neutral-800/80 font-medium' : ''
+                              }`}
+                            >
+                              <span className="inline-block px-2 py-0.5 font-mono text-xs font-semibold bg-[#EFF6FF] text-[#0274BB] border border-[#BFDBFE] rounded shrink-0">
+                                {c.client_code}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-semibold text-[#111827] dark:text-neutral-100 truncate">
+                                  {c.client_name}
+                                </div>
+                                {(c.city || c.contact_person) && (
+                                  <div className="text-[11px] text-[#6B7280] dark:text-neutral-400 truncate">
+                                    {[c.city, c.state, c.contact_person].filter(Boolean).join(' • ')}
+                                  </div>
+                                )}
+                              </div>
+                              {c.id === clientId && (
+                                <Check className="size-4 text-[#16A34A] shrink-0 self-center" />
+                              )}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center">
+                            <p className="text-xs text-[#6B7280] mb-2">
+                              No client code found matching "<span className="font-semibold text-[#374151]">{clientCodeQuery}</span>"
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => navigate('/masters/clients/new?returnUrl=/requests/new')}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#0274BB] text-white rounded-[4px] hover:bg-[#025a92] cursor-pointer"
+                            >
+                              <Plus className="size-3.5" /> + Create New Client Master
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="px-3 py-2 bg-[#F9FAFB] dark:bg-neutral-800 border-t border-[#E5E7EB] dark:border-neutral-700 flex items-center justify-between text-xs">
+                        <span className="text-[#6B7280]">Can't find code?</span>
+                        <Link
+                          to="/masters/clients/new?returnUrl=/requests/new"
+                          className="text-xs font-semibold text-[#0274BB] hover:underline inline-flex items-center gap-1"
+                        >
+                          <Plus className="size-3.5" /> + Create New Client
+                        </Link>
+                      </div>
                     </div>
                   )}
-                </Field>
+                </div>
+
+                {/* Client Account / Name Search/Filter Field */}
+                <div ref={nameContainerRef} className="relative">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <FieldLabel htmlFor="client-account-input" className="cursor-pointer">
+                      Client Account / Name <span className="text-[#DC2626]">*</span>
+                    </FieldLabel>
+                    <Link
+                      to="/masters/clients/new?returnUrl=/requests/new"
+                      className="text-xs font-medium text-[#0274BB] hover:underline inline-flex items-center gap-1"
+                      title="Register new client in Client Master"
+                    >
+                      <Plus className="size-3" /> New Client
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#9CA3AF]">
+                      <Building2 className="size-4" />
+                    </div>
+                    <Input
+                      id="client-account-input"
+                      type="text"
+                      placeholder="Type Client Account Name (e.g. SPIRAX SARCO)..."
+                      value={clientNameQuery}
+                      onChange={handleNameChange}
+                      onFocus={() => setIsNameDropdownOpen(true)}
+                      className="pl-9 pr-8"
+                      autoComplete="off"
+                      required={!clientId}
+                    />
+                    {clientNameQuery && (
+                      <button
+                        type="button"
+                        onClick={handleClearClient}
+                        className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-[#9CA3AF] hover:text-[#374151] cursor-pointer"
+                        title="Clear client selection"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown for Client Account */}
+                  {isNameDropdownOpen && (
+                    <div className="absolute z-50 mt-1 w-full bg-white dark:bg-neutral-900 border border-[#D1D5DB] dark:border-neutral-700 rounded-md shadow-2xl overflow-hidden max-h-64 flex flex-col">
+                      <div className="px-3 py-1.5 bg-[#F9FAFB] dark:bg-neutral-800 border-b border-[#E5E7EB] dark:border-neutral-700 flex items-center justify-between text-xs text-[#6B7280]">
+                        <span>{filteredClientsByName.length} matching account{filteredClientsByName.length === 1 ? '' : 's'}</span>
+                        <span className="text-[10px] text-[#9CA3AF]">Click client to select</span>
+                      </div>
+                      <div className="overflow-y-auto flex-1 divide-y divide-[#F3F4F6] dark:divide-neutral-800">
+                        {filteredClientsByName.length > 0 ? (
+                          filteredClientsByName.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => handleSelectClient(c)}
+                              className={`w-full text-left px-3 py-2.5 flex items-start justify-between gap-2.5 hover:bg-[#F0F7FF] dark:hover:bg-neutral-800 transition-colors cursor-pointer ${
+                                c.id === clientId ? 'bg-[#EFF6FF] dark:bg-neutral-800/80 font-medium' : ''
+                              }`}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-semibold text-[#111827] dark:text-neutral-100 truncate">
+                                  {c.client_name}
+                                </div>
+                                <div className="text-[11px] text-[#6B7280] dark:text-neutral-400 truncate flex items-center gap-1.5 mt-0.5">
+                                  <span className="font-mono text-[10px] bg-[#EFF6FF] text-[#0274BB] px-1.5 py-0.2 rounded border border-[#BFDBFE]">
+                                    {c.client_code}
+                                  </span>
+                                  {[c.city, c.state, c.contact_person].filter(Boolean).join(' • ')}
+                                </div>
+                              </div>
+                              {c.id === clientId && (
+                                <Check className="size-4 text-[#16A34A] shrink-0 self-center" />
+                              )}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center">
+                            <p className="text-xs text-[#6B7280] mb-2">
+                              No client found matching "<span className="font-semibold text-[#374151]">{clientNameQuery}</span>"
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => navigate('/masters/clients/new?returnUrl=/requests/new')}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#0274BB] text-white rounded-[4px] hover:bg-[#025a92] cursor-pointer"
+                            >
+                              <Plus className="size-3.5" /> + Create New Client Master
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="px-3 py-2 bg-[#F9FAFB] dark:bg-neutral-800 border-t border-[#E5E7EB] dark:border-neutral-700 flex items-center justify-between text-xs">
+                        <span className="text-[#6B7280]">Can't find client?</span>
+                        <Link
+                          to="/masters/clients/new?returnUrl=/requests/new"
+                          className="text-xs font-semibold text-[#0274BB] hover:underline inline-flex items-center gap-1"
+                        >
+                          <Plus className="size-3.5" /> + Create New Client
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Selected Client Information Badge */}
+                {selectedClient ? (
+                  <div className="text-xs text-[#374151] bg-[#F0FDF4] p-3 rounded-[4px] border border-[#BBF7D0] space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[#166534] flex items-center gap-1 truncate">
+                        <Check className="size-3.5 text-[#16A34A] shrink-0" />
+                        <span className="truncate">{selectedClient.client_name}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleClearClient}
+                        className="text-[11px] text-[#DC2626] hover:underline cursor-pointer font-medium shrink-0 ml-2"
+                      >
+                        Change
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 text-[11px] text-[#4B5563] pt-1">
+                      <div><span className="font-semibold">Code:</span> <span className="font-mono text-[#0274BB] font-medium">{selectedClient.client_code}</span></div>
+                      <div><span className="font-semibold">GSTIN:</span> {selectedClient.gst_tax_number || 'Unregistered'}</div>
+                      <div><span className="font-semibold">Contact:</span> {selectedClient.contact_person || 'N/A'}</div>
+                      <div><span className="font-semibold">City:</span> {selectedClient.city || 'N/A'}</div>
+                    </div>
+                    {selectedClient.address && (
+                      <div className="truncate text-[11px] text-[#6B7280] pt-1 border-t border-[#DCFCE7]">
+                        <span className="font-semibold">Address:</span> {selectedClient.address}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <input type="hidden" name="clientId" value="" required />
+                )}
 
                 <Field>
                   <FieldLabel>

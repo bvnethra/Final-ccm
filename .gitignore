@@ -24,3 +24,5 @@ dist
 *.sw?
 .agents/
 skills-lock.json
+playwright-report/
+test-results/

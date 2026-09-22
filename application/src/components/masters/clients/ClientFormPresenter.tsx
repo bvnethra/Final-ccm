@@ -8,6 +8,7 @@ interface ClientFormPresenterProps {
   errors: Record<string, string>;
   isSubmitting: boolean;
   isEditMode: boolean;
+  returnUrl?: string;
   onChange: (field: keyof ClientFormData, value: any) => void;
   onAddPhone: () => void;
   onRemovePhone: (index: number) => void;

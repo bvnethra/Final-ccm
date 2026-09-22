@@ -1,6 +1,5 @@
-// application/src/components/masters/clients/ClientFormContainer.tsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Client, ClientFormData } from '../../../types/domain';
 import { useCreateClient, useUpdateClient } from '../../../hooks/useClientMaster';
 import { validateGSTIN, validateEmail, validatePhone } from '../../../services/clientMasterService';
@@ -16,6 +15,8 @@ export const ClientFormContainer: React.FC<ClientFormContainerProps> = ({
   isEditMode = false,
 }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const createMutation = useCreateClient();
   const updateMutation = useUpdateClient();
 
@@ -197,10 +198,16 @@ export const ClientFormContainer: React.FC<ClientFormContainerProps> = ({
           id: initialData.id,
           data: formData,
         });
+        navigate(returnUrl || '/masters/clients');
       } else {
-        await createMutation.mutateAsync(formData);
+        const createdClient = await createMutation.mutateAsync(formData);
+        if (returnUrl) {
+          const sep = returnUrl.includes('?') ? '&' : '?';
+          navigate(`${returnUrl}${sep}clientId=${createdClient.id}`);
+        } else {
+          navigate('/masters/clients');
+        }
       }
-      navigate('/masters/clients');
     } catch (err: any) {
       setErrors((prev) => ({
         ...prev,
@@ -217,6 +224,7 @@ export const ClientFormContainer: React.FC<ClientFormContainerProps> = ({
       errors={errors}
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
+      returnUrl={returnUrl || undefined}
       onChange={handleChange}
       onAddPhone={handleAddPhone}
       onRemovePhone={handleRemovePhone}

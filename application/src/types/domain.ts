@@ -271,6 +271,12 @@ export interface Quotation {
   organization_id: string;
   request_id: string;
   quotation_number: string;
+  reference_no?: string;
+  quotation_date?: string;
+  kind_attn?: string;
+  phone_no?: string;
+  subject?: string;
+  enquiry_ref?: string;
   subtotal: number;
   discount: number;
   tax_amount: number;
@@ -288,6 +294,9 @@ export interface QuotationItem {
   id: string;
   quotation_id: string;
   description: string;
+  range?: string;
+  remarks?: string;
+  hsn_sac_code?: string;
   quantity: number;
   unit_price: number;
   total_price: number;
@@ -317,6 +326,16 @@ export interface RepairOrder {
   created_at: string;
 }
 
+export interface OutsourcePOItem {
+  id: string;
+  description: string;
+  due_on?: string;
+  quantity: number;
+  unit_rate: number;
+  per?: string;
+  total_price: number;
+}
+
 export interface OutsourcePO {
   id: string;
   tenant_id: string;
@@ -326,6 +345,7 @@ export interface OutsourcePO {
   vendor_id: string;
   vendor_name?: string;
   vendor_po_number: string;
+  voucher_no?: string;
   sent_date: string;
   expected_return_date?: string;
   received_date?: string;
@@ -336,6 +356,16 @@ export interface OutsourcePO {
   status: 'SENT' | 'RETURNED' | 'ACCEPTED';
   created_at: string;
   updated_at?: string;
+  payment_terms?: string;
+  dispatched_through?: string;
+  destination?: string;
+  terms_of_delivery?: string;
+  items?: OutsourcePOItem[];
+  subtotal?: number;
+  cgst_amount?: number;
+  sgst_amount?: number;
+  igst_amount?: number;
+  total_amount?: number;
 }
 
 export type InvoiceType = 'PARTIAL' | 'ACTUAL';

@@ -21,6 +21,8 @@ import {
   approveQuotation,
   getInvoices,
   createInvoice,
+  updateInvoice,
+  type UpdateInvoicePayload,
   getDispatches,
   createDispatch,
   updateDispatchStatus,
@@ -328,6 +330,18 @@ export function useCreateInvoice() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['calibrationRequests', tenantId] });
+    },
+  });
+}
+
+export function useUpdateInvoice() {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthContext();
+
+  return useMutation({
+    mutationFn: (payload: UpdateInvoicePayload) => updateInvoice(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices', tenantId] });
     },
   });
 }

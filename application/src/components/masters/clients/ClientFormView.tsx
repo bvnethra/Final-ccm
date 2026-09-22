@@ -32,6 +32,7 @@ interface ClientFormViewProps {
   errors: Record<string, string>;
   isSubmitting: boolean;
   isEditMode: boolean;
+  returnUrl?: string;
   onChange: (field: keyof ClientFormData, value: any) => void;
   onAddPhone: () => void;
   onRemovePhone: (index: number) => void;
@@ -47,6 +48,7 @@ export const ClientFormView: React.FC<ClientFormViewProps> = ({
   errors,
   isSubmitting,
   isEditMode,
+  returnUrl,
   onChange,
   onAddPhone,
   onRemovePhone,
@@ -61,9 +63,9 @@ export const ClientFormView: React.FC<ClientFormViewProps> = ({
       {/* Header Bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/masters/clients">
+          <Link to={returnUrl || "/masters/clients"}>
             <Button variant="secondary" size="sm" type="button">
-              <ArrowLeft className="size-4" /> Back to Clients
+              <ArrowLeft className="size-4" /> {returnUrl ? 'Back' : 'Back to Clients'}
             </Button>
           </Link>
           <div>
@@ -420,7 +422,7 @@ export const ClientFormView: React.FC<ClientFormViewProps> = ({
           </Field>
         </CardContent>
         <CardFooter className="flex items-center justify-between border-t border-[#E5E7EB] bg-[#F9FAFB] p-6">
-          <Link to="/masters/clients">
+          <Link to={returnUrl || "/masters/clients"}>
             <Button variant="secondary" type="button" disabled={isSubmitting}>
               Cancel
             </Button>

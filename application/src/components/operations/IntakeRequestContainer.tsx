@@ -1,6 +1,5 @@
-// application/src/components/operations/IntakeRequestContainer.tsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useClients } from '../../hooks/useClientMaster';
 import { useItemMasters } from '../../hooks/useItemMaster';
@@ -11,13 +10,21 @@ import type { IntakeItemFormState } from './IntakeRequestView';
 
 export const IntakeRequestContainer: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryClientId = searchParams.get('clientId');
   const { tenantId, organizationId, user } = useAuthContext();
 
   const { data: clients = [], isLoading: isLoadingClients } = useClients();
   const { data: itemMasters = [], isLoading: isLoadingItemMasters } = useItemMasters();
   const createRequestMutation = useCreateRequest();
 
-  const [clientId, setClientId] = useState<string>('');
+  const [clientId, setClientId] = useState<string>(queryClientId || '');
+
+  useEffect(() => {
+    if (queryClientId && queryClientId !== clientId) {
+      setClientId(queryClientId);
+    }
+  }, [queryClientId]);
   const [collectionDate, setCollectionDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );

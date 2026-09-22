@@ -30,7 +30,7 @@ import {
   FieldLabel,
   Badge,
 } from '../../components/ui/UIPrimitives';
-import type { CalibrationResult } from '../../types/domain';
+import type { CalibrationResult, OutsourcePO } from '../../types/domain';
 import {
   ArrowLeft,
   ArrowRight,
@@ -45,7 +45,10 @@ import {
   FileCheck,
   Check,
   Building2,
+  Download,
+  X,
 } from 'lucide-react';
+import { OfficialVendorPOView } from '../../components/commercial/OfficialVendorPOView';
 
 interface MeasurementFormState {
   parameterName: string;
@@ -75,6 +78,7 @@ export const CalibrationPage: React.FC = () => {
 
   const [selectedItemIndex, setSelectedItemIndex] = useState<number>(0);
   const [activeWorkflowTab, setActiveWorkflowTab] = useState<'IN_HOUSE' | 'IN_LAB_REPAIR' | 'OUTSOURCE_PO'>('IN_HOUSE');
+  const [viewingOutsourcePO, setViewingOutsourcePO] = useState<OutsourcePO | null>(null);
 
   // In-House Calibration state
   const [temp, setTemp] = useState<number>(23.0);
@@ -878,7 +882,7 @@ export const CalibrationPage: React.FC = () => {
                   <div>
                     <span className="text-[#6B7280] block">Estimated Repair Charge</span>
                     <span className="font-mono font-bold text-[#0274BB] text-sm">
-                      ${currentItemRepair.estimated_cost.toFixed(2)}
+                      ₹{currentItemRepair.estimated_cost.toFixed(2)}
                     </span>
                   </div>
                   <div>
@@ -1007,7 +1011,7 @@ export const CalibrationPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field>
-                      <FieldLabel>Estimated Repair Cost ($ USD)</FieldLabel>
+                      <FieldLabel>Estimated Repair Cost (₹ INR)</FieldLabel>
                       <Input
                         type="number"
                         min={0}
@@ -1071,9 +1075,24 @@ export const CalibrationPage: React.FC = () => {
                       PO Reference: <strong className="font-mono text-[#0274BB]">{currentItemOutsource.vendor_po_number}</strong>
                     </CardDescription>
                   </div>
-                  <Badge variant={currentItemOutsource.status === 'ACCEPTED' ? 'success' : 'info'}>
-                    {currentItemOutsource.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setViewingOutsourcePO(currentItemOutsource)}
+                      className="flex items-center gap-1.5 text-xs shadow-sm"
+                    >
+                      <Download className="size-3.5" /> View / Export Vendor PO
+                    </Button>
+                    <Link to={`/commercial/vendor-pos/${currentItemOutsource.id}`}>
+                      <Button variant="outlineInk" size="sm" className="text-xs">
+                        Full Page
+                      </Button>
+                    </Link>
+                    <Badge variant={currentItemOutsource.status === 'ACCEPTED' ? 'success' : 'info'}>
+                      {currentItemOutsource.status}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1088,7 +1107,7 @@ export const CalibrationPage: React.FC = () => {
                   <div>
                     <span className="text-[#6B7280] block">Vendor Service Cost</span>
                     <span className="font-mono font-bold text-[#111827] text-sm mt-0.5 block">
-                      ${currentItemOutsource.vendor_cost?.toFixed(2) || '0.00'}
+                      ₹{currentItemOutsource.vendor_cost?.toFixed(2) || '0.00'}
                     </span>
                   </div>
                   <div>
@@ -1192,7 +1211,7 @@ export const CalibrationPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field>
-                      <FieldLabel>Agreed Outsource Calibration Fee ($ USD)</FieldLabel>
+                      <FieldLabel>Agreed Outsource Calibration Fee (₹ INR)</FieldLabel>
                       <Input
                         type="number"
                         min={0}
@@ -1239,6 +1258,44 @@ export const CalibrationPage: React.FC = () => {
               </form>
             </Card>
           )}
+        </div>
+      )}
+      {/* Outsource Vendor Purchase Order Preview & PDF Export Modal */}
+      {viewingOutsourcePO && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-6 overflow-y-auto animate-in fade-in">
+          <div className="bg-white dark:bg-neutral-900 rounded-[4px] shadow-2xl max-w-5xl w-full max-h-[94vh] overflow-y-auto border border-[#E5E7EB] flex flex-col">
+            <div className="sticky top-0 z-20 flex items-center justify-between p-3 border-b border-[#E5E7EB] bg-[#F8FAFC]">
+              <div className="flex items-center gap-2">
+                <Truck className="size-5 text-[#0274BB]" />
+                <h3 className="font-bold text-[#111827] text-base">
+                  Official Vendor Purchase Order — {viewingOutsourcePO.vendor_po_number}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link to={`/commercial/vendor-pos/${viewingOutsourcePO.id}`}>
+                  <Button variant="secondary" size="sm">
+                    Open Full Page
+                  </Button>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setViewingOutsourcePO(null)}
+                  className="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded hover:bg-[#E2E8F0] cursor-pointer"
+                  title="Close Preview"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-3 sm:p-6 bg-[#474B4E] overflow-y-auto flex-1">
+              <OfficialVendorPOView
+                outsourcePO={viewingOutsourcePO}
+                vendor={vendors.find((v) => v.id === viewingOutsourcePO.vendor_id)}
+                request={request}
+                onClose={() => setViewingOutsourcePO(null)}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

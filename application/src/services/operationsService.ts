@@ -800,12 +800,43 @@ export interface CreateOutsourcePOPayload {
   vendorCost?: number;
   expectedReturnDate?: string;
   remarks?: string;
+  paymentTerms?: string;
+  dispatchedThrough?: string;
+  destination?: string;
+  termsOfDelivery?: string;
+  items?: Array<{
+    id?: string;
+    description: string;
+    dueOn?: string;
+    quantity: number;
+    unitRate: number;
+    per?: string;
+    totalPrice: number;
+  }>;
 }
 
 export async function createOutsourcePO(payload: CreateOutsourcePOPayload): Promise<OutsourcePO> {
   const now = new Date().toISOString();
   const poId = crypto.randomUUID();
+  const randomVoucher = String(Math.floor(200000 + Math.random() * 800000));
   const poNumber = `VPO-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  const items = payload.items?.map((it) => ({
+    id: it.id || crypto.randomUUID(),
+    description: it.description,
+    due_on: it.dueOn || payload.expectedReturnDate,
+    quantity: it.quantity || 1,
+    unit_rate: it.unitRate,
+    per: it.per || 'NOS',
+    total_price: it.totalPrice,
+  }));
+
+  const subtotal = items && items.length > 0
+    ? items.reduce((sum, it) => sum + it.total_price, 0)
+    : payload.vendorCost || 0;
+  const cgstAmount = Math.round(subtotal * 0.09 * 100) / 100;
+  const sgstAmount = Math.round(subtotal * 0.09 * 100) / 100;
+  const totalAmount = Math.round(subtotal + cgstAmount + sgstAmount);
 
   const newOutsource: OutsourcePO = {
     id: poId,
@@ -816,12 +847,22 @@ export async function createOutsourcePO(payload: CreateOutsourcePOPayload): Prom
     vendor_id: payload.vendorId,
     vendor_name: payload.vendorName || 'Outsource Calibration Lab',
     vendor_po_number: poNumber,
+    voucher_no: randomVoucher,
     sent_date: now,
     expected_return_date: payload.expectedReturnDate,
-    vendor_cost: payload.vendorCost,
+    vendor_cost: payload.vendorCost || subtotal,
     remarks: payload.remarks,
     status: 'SENT',
     created_at: now,
+    payment_terms: payload.paymentTerms || '30 Days',
+    dispatched_through: payload.dispatchedThrough || 'By Hand',
+    destination: payload.destination || 'Chennai',
+    terms_of_delivery: payload.termsOfDelivery,
+    items,
+    subtotal,
+    cgst_amount: cgstAmount,
+    sgst_amount: sgstAmount,
+    total_amount: totalAmount,
   };
 
   const existing = getLocalItems<OutsourcePO>(OUTSOURCE_STORAGE_PREFIX, payload.tenantId);
@@ -899,7 +940,55 @@ export async function receiveOutsourceReturn(payload: ReceiveOutsourceReturnPayl
 }
 
 export async function getOutsourcePOs(tenantId: string, requestId?: string): Promise<OutsourcePO[]> {
-  const local = getLocalItems<OutsourcePO>(OUTSOURCE_STORAGE_PREFIX, tenantId);
+  let local = getLocalItems<OutsourcePO>(OUTSOURCE_STORAGE_PREFIX, tenantId);
+  if (!local || local.length === 0) {
+    const samplePO: OutsourcePO = {
+      id: 'po-262742',
+      tenant_id: tenantId,
+      organization_id: 'default-org',
+      request_id: 'req-sample-1',
+      request_item_id: 'item-sample-1',
+      vendor_id: 'vendor-hitech',
+      vendor_name: 'Hi Tech Calibration Services - Unit I',
+      vendor_po_number: 'PO-2024-262742',
+      voucher_no: '262742',
+      sent_date: '2024-03-22',
+      expected_return_date: '2024-04-05',
+      vendor_cost: 6400,
+      payment_terms: '30 Days',
+      dispatched_through: 'By Hand',
+      destination: 'Chennai',
+      terms_of_delivery: 'Door Delivery',
+      status: 'SENT',
+      created_at: '2024-03-22T10:00:00.000Z',
+      items: [
+        {
+          id: 'item-1',
+          description: 'Calibration Charges - Hydrometer (Aviation)',
+          due_on: '17-Aug-26',
+          quantity: 4,
+          unit_rate: 1200,
+          per: 'NOS',
+          total_price: 4800,
+        },
+        {
+          id: 'item-2',
+          description: 'Calibration Charges - Spirit Level (Met Auto)',
+          due_on: '17-Aug-26',
+          quantity: 2,
+          unit_rate: 800,
+          per: 'NOS',
+          total_price: 1600,
+        },
+      ],
+      subtotal: 6400,
+      cgst_amount: 576,
+      sgst_amount: 576,
+      total_amount: 7552,
+    };
+    local = [samplePO];
+    saveLocalItems(OUTSOURCE_STORAGE_PREFIX, tenantId, local);
+  }
   return requestId ? local.filter((o) => o.request_id === requestId) : local;
 }
 
@@ -922,14 +1011,103 @@ export async function getQuotations(tenantId: string, organizationId?: string): 
     }
 
     const { data, error } = await query;
-    if (!error && data) {
+    if (!error && data && data.length > 0) {
       return data as Quotation[];
     }
   } catch (_err) {
     // Fallback
   }
 
-  const local = getLocalItems<Quotation>(QUOTATIONS_STORAGE_PREFIX, tenantId);
+  let local = getLocalItems<Quotation>(QUOTATIONS_STORAGE_PREFIX, tenantId);
+  if (!local || local.length === 0) {
+    const sampleQuote: Quotation = {
+      id: 'quot-tcc-1557',
+      tenant_id: tenantId,
+      organization_id: organizationId || 'default-org',
+      request_id: 'req-sample-spirax',
+      quotation_number: 'QT-2026-1557',
+      reference_no: 'TCC/CQ/26-27/1557',
+      quotation_date: '09.03.2026',
+      kind_attn: 'Mr. TAMILANTHI',
+      phone_no: '6379891153',
+      subject: 'Quotation for Calibration Charges for Instruments and Gauges - Reg.',
+      enquiry_ref: 'verbal 31.08.2026',
+      subtotal: 53250,
+      discount: 0,
+      tax_amount: 9585,
+      total_amount: 62835,
+      status: 'APPROVED',
+      client_po_ref: 'PO/2026/SP-091',
+      created_at: '2026-03-09T10:30:00.000Z',
+      items: [
+        {
+          id: 'q-item-1',
+          quotation_id: 'quot-tcc-1557',
+          description: 'Pressure Gauge',
+          range: '0-16bar',
+          quantity: 45,
+          unit_price: 200,
+          total_price: 9000,
+        },
+        {
+          id: 'q-item-2',
+          quotation_id: 'quot-tcc-1557',
+          description: 'Pressure Gauge',
+          range: '16-200bar',
+          quantity: 55,
+          unit_price: 250,
+          total_price: 13750,
+        },
+        {
+          id: 'q-item-3',
+          quotation_id: 'quot-tcc-1557',
+          description: 'Pressure Gauge',
+          range: 'Above 200bar',
+          quantity: 30,
+          unit_price: 300,
+          total_price: 9000,
+        },
+        {
+          id: 'q-item-4',
+          quotation_id: 'quot-tcc-1557',
+          description: 'Pressure Transducer',
+          range: 'Upto 16bar',
+          quantity: 10,
+          unit_price: 200,
+          total_price: 2000,
+        },
+        {
+          id: 'q-item-5',
+          quotation_id: 'quot-tcc-1557',
+          description: 'Pressure Transducer',
+          range: '16-200bar',
+          quantity: 20,
+          unit_price: 250,
+          total_price: 5000,
+        },
+        {
+          id: 'q-item-6',
+          quotation_id: 'quot-tcc-1557',
+          description: 'Pressure Transducer',
+          range: '200bar',
+          quantity: 15,
+          unit_price: 300,
+          total_price: 4500,
+        },
+        {
+          id: 'q-item-7',
+          quotation_id: 'quot-tcc-1557',
+          description: 'Onsite calibration charges / Day for 2 persons',
+          range: '',
+          quantity: 10,
+          unit_price: 1000,
+          total_price: 10000,
+        },
+      ],
+    };
+    local = [sampleQuote];
+    saveLocalItems(QUOTATIONS_STORAGE_PREFIX, tenantId, local);
+  }
   return local;
 }
 
@@ -937,12 +1115,20 @@ export interface CreateQuotationPayload {
   tenantId: string;
   organizationId: string;
   requestId: string;
+  referenceNo?: string;
+  quotationDate?: string;
+  kindAttn?: string;
+  phoneNo?: string;
+  subject?: string;
+  enquiryRef?: string;
   subtotal: number;
   discount: number;
   taxAmount: number;
   totalAmount: number;
   items: {
     description: string;
+    range?: string;
+    remarks?: string;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
@@ -964,6 +1150,12 @@ export async function createQuotation(payload: CreateQuotationPayload): Promise<
     organization_id: payload.organizationId,
     request_id: payload.requestId,
     quotation_number: quoteNumber,
+    reference_no: payload.referenceNo || `TCC/CQ/${new Date().getFullYear().toString().slice(-2)}-${(new Date().getFullYear() + 1).toString().slice(-2)}/${Math.floor(1000 + Math.random() * 9000)}`,
+    quotation_date: payload.quotationDate,
+    kind_attn: payload.kindAttn,
+    phone_no: payload.phoneNo,
+    subject: payload.subject || 'Quotation for Calibration Charges for Instruments and Gauges - Reg.',
+    enquiry_ref: payload.enquiryRef,
     subtotal: payload.subtotal,
     discount: payload.discount,
     tax_amount: payload.taxAmount,
@@ -974,6 +1166,8 @@ export async function createQuotation(payload: CreateQuotationPayload): Promise<
       id: crypto.randomUUID(),
       quotation_id: quoteId,
       description: it.description,
+      range: it.range,
+      remarks: it.remarks,
       quantity: it.quantity,
       unit_price: it.unitPrice,
       total_price: it.totalPrice,
@@ -1087,6 +1281,7 @@ export interface CreateInvoicePayload {
     quotationItemId?: string;
     requestItemId?: string;
     description: string;
+    hsnSacCode?: string;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
@@ -1118,6 +1313,7 @@ export async function createInvoice(payload: CreateInvoicePayload): Promise<Invo
     invoice_id: invoiceId,
     quotation_item_id: it.quotationItemId || it.requestItemId || '',
     description: it.description,
+    hsn_sac_code: it.hsnSacCode || '998346',
     quantity: it.quantity,
     unit_price: it.unitPrice,
     unit_rate: it.unitPrice,
@@ -1257,6 +1453,61 @@ export async function getInvoices(tenantId: string, organizationId?: string): Pr
   if (!tenantId) throw new Error('tenantId is required');
   const local = getLocalItems<Invoice>(INVOICES_STORAGE_PREFIX, tenantId);
   return organizationId ? local.filter((i) => !i.organization_id || i.organization_id === organizationId) : local;
+}
+
+export interface UpdateInvoicePayload {
+  id: string;
+  tenantId: string;
+  items?: InvoiceItem[];
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+  clientPoRef?: string;
+}
+
+export async function updateInvoice(payload: UpdateInvoicePayload): Promise<Invoice> {
+  if (!payload.id || !payload.tenantId) {
+    throw new Error('Triple-Key violation: invoice id and tenantId required');
+  }
+
+  const existingInvoices = getLocalItems<Invoice>(INVOICES_STORAGE_PREFIX, payload.tenantId);
+  const idx = existingInvoices.findIndex((i) => i.id === payload.id);
+  if (idx === -1) {
+    throw new Error(`Invoice with ID "${payload.id}" not found`);
+  }
+
+  const current = existingInvoices[idx];
+  const updatedInvoice: Invoice = {
+    ...current,
+    items: payload.items ?? current.items,
+    subtotal: payload.subtotal,
+    discount_amount: payload.discountAmount,
+    tax_amount: payload.taxAmount,
+    total_amount: payload.totalAmount,
+    client_po_ref: payload.clientPoRef !== undefined ? payload.clientPoRef : current.client_po_ref,
+  };
+
+  existingInvoices[idx] = updatedInvoice;
+  saveLocalItems(INVOICES_STORAGE_PREFIX, payload.tenantId, existingInvoices);
+
+  try {
+    await supabase
+      .from('invoices')
+      .update({
+        subtotal: updatedInvoice.subtotal,
+        discount_amount: updatedInvoice.discount_amount,
+        tax_amount: updatedInvoice.tax_amount,
+        total_amount: updatedInvoice.total_amount,
+        client_po_ref: updatedInvoice.client_po_ref,
+      })
+      .eq('id', payload.id)
+      .eq('tenant_id', payload.tenantId);
+  } catch {
+    // fallback
+  }
+
+  return updatedInvoice;
 }
 
 // ============================================================================

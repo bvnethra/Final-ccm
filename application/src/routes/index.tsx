@@ -24,7 +24,10 @@ const CalibrationPage = lazy(() => import('../pages/lab/CalibrationPage'));
 const CalibrationDueListPage = lazy(() => import('../pages/lab/CalibrationDueListPage'));
 const QuotationListPage = lazy(() => import('../pages/commercial/QuotationListPage'));
 const QuotationBuilderPage = lazy(() => import('../pages/commercial/QuotationBuilderPage'));
+const QuotationDetailPage = lazy(() => import('../pages/commercial/QuotationDetailPage'));
 const InvoiceListPage = lazy(() => import('../pages/commercial/InvoiceListPage'));
+const TaxInvoiceDetailPage = lazy(() => import('../pages/commercial/TaxInvoiceDetailPage'));
+const VendorPODetailPage = lazy(() => import('../pages/commercial/VendorPODetailPage'));
 const DispatchListPage = lazy(() => import('../pages/logistics/DispatchListPage'));
 const DispatchBuilderPage = lazy(() => import('../pages/logistics/DispatchBuilderPage'));
 const ClientListPage = lazy(() => import('../pages/masters/ClientListPage'));
@@ -239,10 +242,54 @@ export const AppRoutes: React.FC = () => {
             }
           />
           <Route
+            path="commercial/quotations/:id"
+            element={
+              <DisallowCollectionAgentRoute>
+                <DisallowLabEntryRoute>
+                  <QuotationDetailPage />
+                </DisallowLabEntryRoute>
+              </DisallowCollectionAgentRoute>
+            }
+          />
+          <Route
+            path="commercial/quotations/:id/view"
+            element={
+              <DisallowCollectionAgentRoute>
+                <DisallowLabEntryRoute>
+                  <QuotationDetailPage />
+                </DisallowLabEntryRoute>
+              </DisallowCollectionAgentRoute>
+            }
+          />
+          <Route
             path="commercial/invoices"
             element={
               <DisallowCollectionAgentRoute>
                 <InvoiceListPage />
+              </DisallowCollectionAgentRoute>
+            }
+          />
+          <Route
+            path="commercial/invoices/:id"
+            element={
+              <DisallowCollectionAgentRoute>
+                <TaxInvoiceDetailPage />
+              </DisallowCollectionAgentRoute>
+            }
+          />
+          <Route
+            path="commercial/vendor-pos/:id"
+            element={
+              <DisallowCollectionAgentRoute>
+                <VendorPODetailPage />
+              </DisallowCollectionAgentRoute>
+            }
+          />
+          <Route
+            path="lab/vendor-pos/:id"
+            element={
+              <DisallowCollectionAgentRoute>
+                <VendorPODetailPage />
               </DisallowCollectionAgentRoute>
             }
           />

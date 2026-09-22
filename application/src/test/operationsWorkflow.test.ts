@@ -13,6 +13,7 @@ import {
   createQuotation,
   approveQuotation,
   createInvoice,
+  updateInvoice,
   getInvoices,
   createDispatch,
   getDispatches,
@@ -638,6 +639,47 @@ describe('Calibration Operational Lifecycle Workflow Tests', () => {
     expect(discountedInvoice.tax_amount).toBe(81);
     expect(discountedInvoice.total_amount).toBe(531);
     expect(discountedInvoice.items?.[0].unit_price).toBe(250);
+
+    // 2b. Test Price Variation Update on Issued Invoice
+    // Adjust rate to ₹300 and add a Handling Surcharge of ₹50
+    const updatedWithVariation = await updateInvoice({
+      id: discountedInvoice.id,
+      tenantId,
+      subtotal: 650, // 2 * 300 + 50
+      discountAmount: 0,
+      taxAmount: 117, // 18% of 650
+      totalAmount: 767,
+      clientPoRef: 'PO-VARIATION-REVISED-001',
+      items: [
+        {
+          id: discountedInvoice.items![0].id,
+          invoice_id: discountedInvoice.id,
+          description: 'High-Precision Micrometer Calibration (Revised Client Rate)',
+          hsn_sac_code: '998346',
+          quantity: 2,
+          unit_price: 300,
+          unit_rate: 300,
+          total_price: 600,
+        },
+        {
+          id: 'custom-fee-1',
+          invoice_id: discountedInvoice.id,
+          description: 'Special Priority Calibration Surcharge',
+          hsn_sac_code: '998346',
+          quantity: 1,
+          unit_price: 50,
+          unit_rate: 50,
+          total_price: 50,
+        },
+      ],
+    });
+
+    expect(updatedWithVariation.subtotal).toBe(650);
+    expect(updatedWithVariation.total_amount).toBe(767);
+    expect(updatedWithVariation.client_po_ref).toBe('PO-VARIATION-REVISED-001');
+    expect(updatedWithVariation.items?.length).toBe(2);
+    expect(updatedWithVariation.items?.[0].unit_price).toBe(300);
+    expect(updatedWithVariation.items?.[1].description).toBe('Special Priority Calibration Surcharge');
 
     // 3. Test 5-Day Vendor Outsource Return Alert Trigger
     // Create an outsource PO with expected_return_date within 3 days from now

@@ -75,3 +75,53 @@
     background: #9CA3AF;
   }
 }
+
+/* Print Rules for Official Tax Invoice PDF Export */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #official-tax-invoice-printable,
+  #official-tax-invoice-printable *,
+  #official-vendor-po-printable,
+  #official-vendor-po-printable *,
+  #official-quotation-printable,
+  #official-quotation-printable * {
+    visibility: visible;
+  }
+
+  #official-tax-invoice-printable,
+  #official-vendor-po-printable,
+  #official-quotation-printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 12px !important;
+    box-shadow: none !important;
+    border: 1.5px solid black !important;
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
