@@ -86,62 +86,66 @@ export const AppSidebar: React.FC = () => {
   return (
     <aside className="w-64 bg-white border-r border-[#E5E7EB] min-h-[calc(100vh-4rem)] p-4 flex flex-col justify-between shrink-0">
       <div className="space-y-6">
-        <div>
-          <span className="px-3 text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">
-            Operational Workflows
-          </span>
-          <nav className="mt-2 space-y-1">
-            {visibleOperationalItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/'}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-semibold transition-colors',
-                      isActive
-                        ? 'bg-[#E6F2FF] text-[#0274BB]'
-                        : 'text-[#4B5563] hover:bg-[#F5F7FA] hover:text-[#111827]'
-                    )
-                  }
-                >
-                  <Icon className="size-4 shrink-0" />
-                  <span>{item.label}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
+        {visibleOperationalItems.length > 0 && (
+          <div>
+            <span className="px-3 text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">
+              Operational Workflows
+            </span>
+            <nav className="mt-2 space-y-1">
+              {visibleOperationalItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === '/'}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-semibold transition-colors',
+                        isActive
+                          ? 'bg-[#E6F2FF] text-[#0274BB]'
+                          : 'text-[#4B5563] hover:bg-[#F5F7FA] hover:text-[#111827]'
+                      )
+                    }
+                  >
+                    <Icon className="size-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </div>
+        )}
 
-        <div>
-          <span className="px-3 text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">
-            Master Data
-          </span>
-          <nav className="mt-2 space-y-1">
-            {visibleMasterDataItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-semibold transition-colors',
-                      isActive
-                        ? 'bg-[#E6F2FF] text-[#0274BB]'
-                        : 'text-[#4B5563] hover:bg-[#F5F7FA] hover:text-[#111827]'
-                    )
-                  }
-                >
-                  <Icon className="size-4 shrink-0" />
-                  <span>{item.label}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
+        {visibleMasterDataItems.length > 0 && (
+          <div>
+            <span className="px-3 text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">
+              Master Data
+            </span>
+            <nav className="mt-2 space-y-1">
+              {visibleMasterDataItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-semibold transition-colors',
+                        isActive
+                          ? 'bg-[#E6F2FF] text-[#0274BB]'
+                          : 'text-[#4B5563] hover:bg-[#F5F7FA] hover:text-[#111827]'
+                      )
+                    }
+                  >
+                    <Icon className="size-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </div>
+        )}
 
         {visibleComplianceItems.length > 0 && (
           <div>

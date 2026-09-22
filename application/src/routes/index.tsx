@@ -3,11 +3,7 @@ import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import {
   ProtectedRoute,
-  DisallowCollectionAgentRoute,
-  DisallowLabEntryRoute,
-  DisallowLabApproverRoute,
-  DisallowAdminRoute,
-  RequireMasterEditRoute,
+  RequireModulePermission,
   DashboardRoute,
 } from './RouteGuards';
 import { AppLayout } from '../components/layout/AppLayout';
@@ -69,7 +65,7 @@ export const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         >
-          {/* Dashboard: Redirects Collection Agent to /requests, Lab Entry & Approver to /lab/queue */}
+          {/* Dashboard: Redirects to primary operational landing page based on user permissions */}
           <Route
             index
             element={
@@ -80,154 +76,204 @@ export const AppRoutes: React.FC = () => {
           />
 
           {/* Master Data: Client Master */}
-          <Route path="masters/clients" element={<ClientListPage />} />
+          <Route
+            path="masters/clients"
+            element={
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="VIEW">
+                <ClientListPage />
+              </RequireModulePermission>
+            }
+          />
           <Route
             path="masters/clients/new"
             element={
-              <RequireMasterEditRoute>
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="CREATE">
                 <ClientCreatePage />
-              </RequireMasterEditRoute>
+              </RequireModulePermission>
             }
           />
-          <Route path="masters/clients/:id" element={<ClientDetailPage />} />
+          <Route
+            path="masters/clients/:id"
+            element={
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="VIEW">
+                <ClientDetailPage />
+              </RequireModulePermission>
+            }
+          />
           <Route
             path="masters/clients/:id/edit"
             element={
-              <RequireMasterEditRoute>
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="CREATE">
                 <ClientEditPage />
-              </RequireMasterEditRoute>
+              </RequireModulePermission>
             }
           />
 
           {/* Master Data: Vendor Master */}
-          <Route path="masters/vendors" element={<VendorListPage />} />
+          <Route
+            path="masters/vendors"
+            element={
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="VIEW">
+                <VendorListPage />
+              </RequireModulePermission>
+            }
+          />
           <Route
             path="masters/vendors/new"
             element={
-              <RequireMasterEditRoute>
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="CREATE">
                 <VendorCreatePage />
-              </RequireMasterEditRoute>
+              </RequireModulePermission>
             }
           />
-          <Route path="masters/vendors/:id" element={<VendorDetailPage />} />
+          <Route
+            path="masters/vendors/:id"
+            element={
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="VIEW">
+                <VendorDetailPage />
+              </RequireModulePermission>
+            }
+          />
           <Route
             path="masters/vendors/:id/edit"
             element={
-              <RequireMasterEditRoute>
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="CREATE">
                 <VendorEditPage />
-              </RequireMasterEditRoute>
+              </RequireModulePermission>
             }
           />
 
-          {/* Master Data: Item Master (Hidden/Blocked for Lab Entry Person, View only for Lab Approver) */}
+          {/* Master Data: Item Master */}
           <Route
             path="masters/items"
             element={
-              <DisallowLabEntryRoute>
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="VIEW">
                 <ItemMasterListPage />
-              </DisallowLabEntryRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="masters/items/new"
             element={
-              <RequireMasterEditRoute>
-                <DisallowLabEntryRoute>
-                  <ItemMasterCreatePage />
-                </DisallowLabEntryRoute>
-              </RequireMasterEditRoute>
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="CREATE">
+                <ItemMasterCreatePage />
+              </RequireModulePermission>
             }
           />
           <Route
             path="masters/items/:id"
             element={
-              <DisallowLabEntryRoute>
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="VIEW">
                 <ItemMasterDetailPage />
-              </DisallowLabEntryRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="masters/items/:id/edit"
             element={
-              <RequireMasterEditRoute>
-                <DisallowLabEntryRoute>
-                  <ItemMasterEditPage />
-                </DisallowLabEntryRoute>
-              </RequireMasterEditRoute>
+              <RequireModulePermission moduleCode="CLIENT_VENDOR_ITEM_MASTER" level="CREATE">
+                <ItemMasterEditPage />
+              </RequireModulePermission>
             }
           />
 
-          {/* Master Data: Role & Permission Management (Admin & Super Admin) */}
-          <Route path="roles" element={<RolePermissionPage />} />
+          {/* Master Data: Role & Permission Management */}
+          <Route
+            path="roles"
+            element={
+              <RequireModulePermission moduleCode="ROLE_PERMISSION_MANAGEMENT" level="VIEW">
+                <RolePermissionPage />
+              </RequireModulePermission>
+            }
+          />
 
-          {/* Activity History & Audit Logs (Admin & Super Admin) */}
-          <Route path="logs" element={<AuditLogsPage />} />
+          {/* Activity History & Audit Logs */}
+          <Route
+            path="logs"
+            element={
+              <RequireModulePermission moduleCode="ROLE_PERMISSION_MANAGEMENT" level="VIEW">
+                <AuditLogsPage />
+              </RequireModulePermission>
+            }
+          />
 
-          {/* Process 1: Equipment Inward (Blocked for Lab Entry Person, Creation blocked for Lab Approver & Admin) */}
+          {/* Process 1: Equipment Inward */}
           <Route
             path="requests"
             element={
-              <DisallowLabEntryRoute>
+              <RequireModulePermission moduleCode="CREATE_REQUEST" level="VIEW">
                 <RequestListPage />
-              </DisallowLabEntryRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="requests/new"
             element={
-              <DisallowLabEntryRoute>
-                <DisallowLabApproverRoute>
-                  <DisallowAdminRoute>
-                    <NewRequestPage />
-                  </DisallowAdminRoute>
-                </DisallowLabApproverRoute>
-              </DisallowLabEntryRoute>
+              <RequireModulePermission moduleCode="CREATE_REQUEST" level="CREATE">
+                <NewRequestPage />
+              </RequireModulePermission>
             }
           />
-          <Route path="requests/:id" element={<RequestDetailPage />} />
-          <Route path="requests/:id/routing" element={<ItemRoutingPage />} />
+          <Route
+            path="requests/:id"
+            element={
+              <RequireModulePermission moduleCode="CREATE_REQUEST" level="VIEW">
+                <RequestDetailPage />
+              </RequireModulePermission>
+            }
+          />
+          <Route
+            path="requests/:id/routing"
+            element={
+              <RequireModulePermission moduleCode="CREATE_REQUEST" level="VIEW">
+                <ItemRoutingPage />
+              </RequireModulePermission>
+            }
+          />
 
           {/* Process 2 & 3: Lab Inspection & Calibration */}
           <Route
             path="lab/queue"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireModulePermission
+                moduleCode="LAB_VERIFICATION_RECEIPT"
+                level="VIEW"
+                allowAlternativeModule="RECORD_CALIBRATION_FREQUENCY"
+              >
                 <LabQueuePage />
-              </DisallowCollectionAgentRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="lab/verification/:requestId"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireModulePermission moduleCode="LAB_VERIFICATION_RECEIPT" level="VIEW">
                 <VerificationPage />
-              </DisallowCollectionAgentRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="lab/calibration/:requestId"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireModulePermission moduleCode="RECORD_CALIBRATION_FREQUENCY" level="VIEW">
                 <CalibrationPage />
-              </DisallowCollectionAgentRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="lab/calibration/:requestId/equipment/:itemId"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireModulePermission moduleCode="RECORD_CALIBRATION_FREQUENCY" level="VIEW">
                 <EquipmentDetailPage />
-              </DisallowCollectionAgentRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="lab/due-list"
             element={
-              <DisallowCollectionAgentRoute>
-                <DisallowLabApproverRoute>
-                  <CalibrationDueListPage />
-                </DisallowLabApproverRoute>
-              </DisallowCollectionAgentRoute>
+              <RequireModulePermission moduleCode="CALIBRATION_DUE_LIST" level="VIEW">
+                <CalibrationDueListPage />
+              </RequireModulePermission>
             }
           />
 
@@ -235,117 +281,99 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="commercial/quotations"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireModulePermission moduleCode="CREATE_QUOTATION" level="VIEW">
                 <QuotationListPage />
-              </DisallowCollectionAgentRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="commercial/quotations/new"
             element={
-              <DisallowCollectionAgentRoute>
-                <DisallowLabApproverRoute>
-                  <DisallowAdminRoute>
-                    <QuotationBuilderPage />
-                  </DisallowAdminRoute>
-                </DisallowLabApproverRoute>
-              </DisallowCollectionAgentRoute>
+              <RequireModulePermission moduleCode="CREATE_QUOTATION" level="CREATE">
+                <QuotationBuilderPage />
+              </RequireModulePermission>
             }
           />
           <Route
             path="commercial/quotations/:id"
             element={
-              <DisallowCollectionAgentRoute>
-                <DisallowLabEntryRoute>
-                  <QuotationDetailPage />
-                </DisallowLabEntryRoute>
-              </DisallowCollectionAgentRoute>
+              <RequireModulePermission moduleCode="CREATE_QUOTATION" level="VIEW">
+                <QuotationDetailPage />
+              </RequireModulePermission>
             }
           />
           <Route
             path="commercial/quotations/:id/view"
             element={
-              <DisallowCollectionAgentRoute>
-                <DisallowLabEntryRoute>
-                  <QuotationDetailPage />
-                </DisallowLabEntryRoute>
-              </DisallowCollectionAgentRoute>
+              <RequireModulePermission moduleCode="CREATE_QUOTATION" level="VIEW">
+                <QuotationDetailPage />
+              </RequireModulePermission>
             }
           />
           <Route
             path="commercial/invoices"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireModulePermission moduleCode="CREATE_INVOICE" level="VIEW">
                 <InvoiceListPage />
-              </DisallowCollectionAgentRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="commercial/invoices/:id"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireModulePermission moduleCode="CREATE_INVOICE" level="VIEW">
                 <TaxInvoiceDetailPage />
-              </DisallowCollectionAgentRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="commercial/vendor-pos/:id"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireModulePermission
+                moduleCode="RAISE_PO_VENDOR_OUTSOURCING"
+                level="VIEW"
+                allowAlternativeModule="RECORD_CALIBRATION_FREQUENCY"
+              >
                 <VendorPODetailPage />
-              </DisallowCollectionAgentRoute>
+              </RequireModulePermission>
             }
           />
           <Route
             path="lab/vendor-pos/:id"
             element={
-              <DisallowCollectionAgentRoute>
+              <RequireModulePermission
+                moduleCode="RAISE_PO_VENDOR_OUTSOURCING"
+                level="VIEW"
+                allowAlternativeModule="RECORD_CALIBRATION_FREQUENCY"
+              >
                 <VendorPODetailPage />
-              </DisallowCollectionAgentRoute>
+              </RequireModulePermission>
             }
           />
 
-          {/* Process 5: Logistics & Gate Pass Dispatch (Blocked for Admin, Collection Agent, Lab Entry, Lab Approver) */}
+          {/* Process 5: Logistics & Gate Pass Dispatch */}
           <Route
             path="logistics/dispatches"
             element={
-              <DisallowAdminRoute>
-                <DisallowCollectionAgentRoute>
-                  <DisallowLabEntryRoute>
-                    <DisallowLabApproverRoute>
-                      <DispatchListPage />
-                    </DisallowLabApproverRoute>
-                  </DisallowLabEntryRoute>
-                </DisallowCollectionAgentRoute>
-              </DisallowAdminRoute>
+              <RequireModulePermission moduleCode="CREATE_REQUEST" level="VIEW">
+                <DispatchListPage />
+              </RequireModulePermission>
             }
           />
           <Route
             path="logistics/dispatch"
             element={
-              <DisallowAdminRoute>
-                <DisallowCollectionAgentRoute>
-                  <DisallowLabEntryRoute>
-                    <DisallowLabApproverRoute>
-                      <DispatchListPage />
-                    </DisallowLabApproverRoute>
-                  </DisallowLabEntryRoute>
-                </DisallowCollectionAgentRoute>
-              </DisallowAdminRoute>
+              <RequireModulePermission moduleCode="CREATE_REQUEST" level="VIEW">
+                <DispatchListPage />
+              </RequireModulePermission>
             }
           />
           <Route
             path="logistics/dispatch/new"
             element={
-              <DisallowAdminRoute>
-                <DisallowCollectionAgentRoute>
-                  <DisallowLabEntryRoute>
-                    <DisallowLabApproverRoute>
-                      <DispatchBuilderPage />
-                    </DisallowLabApproverRoute>
-                  </DisallowLabEntryRoute>
-                </DisallowCollectionAgentRoute>
-              </DisallowAdminRoute>
+              <RequireModulePermission moduleCode="CREATE_REQUEST" level="CREATE">
+                <DispatchBuilderPage />
+              </RequireModulePermission>
             }
           />
 
