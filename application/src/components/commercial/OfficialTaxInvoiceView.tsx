@@ -1,14 +1,16 @@
-// application/src/components/commercial/OfficialTaxInvoiceView.tsx
-import React, { useRef } from 'react';
-import type { Invoice, Client, CalibrationRequest } from '../../types/domain';
+import React, { useRef, useState } from 'react';
+import type { Invoice, Client, CalibrationRequest, LabIssuerProfile } from '../../types/domain';
 import { Button } from '../ui/UIPrimitives';
-import { Download, ArrowLeft, ArrowRight, CheckCircle2, Split, Edit } from 'lucide-react';
+import { Download, ArrowLeft, ArrowRight, CheckCircle2, Split, Edit, Settings2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLabProfile } from '../../hooks/useLabProfile';
+import { EditLabProfileModal } from './EditLabProfileModal';
 
 export interface OfficialTaxInvoiceViewProps {
   invoice: Invoice;
   client?: Client;
   request?: CalibrationRequest;
+  issuerProfile?: LabIssuerProfile;
   onClose?: () => void;
   onEdit?: () => void;
   isFullPage?: boolean;
@@ -64,28 +66,17 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
   invoice,
   client,
   request,
+  issuerProfile: customIssuer,
   onClose,
   onEdit,
   isFullPage = false,
 }) => {
   const printableRef = useRef<HTMLDivElement>(null);
+  const { labProfile, updateLabProfile, resetToDefault } = useLabProfile();
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
-  // Supplier Details matching physical calibration centre format
-  const supplier = {
-    name: 'Tespa Calibration Centre',
-    division: '(Division of Tespa Tools Pvt Ltd)',
-    address1: 'D-105, 1st Main Road',
-    address2: 'Anna Nagar East',
-    cityPin: 'Chennai - 600102',
-    udyam: 'UDYAM-TN-02-0048127 (Micro)',
-    gstin: '33AAACT2870N1Z5',
-    state: 'Tamil Nadu, Code : 33',
-    stateCode: '33',
-    email: 'calibration@tespaindia.com',
-    bankName: 'Indian Bank',
-    accountNo: '504946658',
-    branchAndIfsc: 'Padi, Chennai & IDIB000P001',
-  };
+  // Dynamic Supplier Details
+  const supplier = customIssuer || labProfile;
 
   // Buyer Details - dynamically mapped from fetched client and invoice
   const buyerName = client?.client_name || invoice.clients?.client_name || 'SREE PAVITHRA INDUSTRIES';
@@ -150,7 +141,7 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
   const taxableSubtotal = items.reduce((sum, it) => sum + (Number(it.total_price) || 0), 0);
 
   // Tax calculation (Intrastate: 9% CGST + 9% SGST; Interstate: 18% IGST)
-  const isIntraState = buyerStateCode === supplier.stateCode;
+  const isIntraState = buyerStateCode === supplier.state_code;
   const cgstAmount = isIntraState ? Math.round(taxableSubtotal * 0.09 * 100) / 100 : 0;
   const sgstAmount = isIntraState ? Math.round(taxableSubtotal * 0.09 * 100) / 100 : 0;
   const igstAmount = !isIntraState ? Math.round(taxableSubtotal * 0.18 * 100) / 100 : 0;
@@ -194,9 +185,19 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsEditProfileOpen(true)}
+            className="flex items-center gap-1.5 text-xs text-neutral-700 hover:text-black dark:text-neutral-300 dark:hover:text-white"
+            title="Customize Lab Logo, Name, Address &amp; GSTIN"
+          >
+            <Settings2 className="size-3.5 text-[#0274BB]" /> Lab Header &amp; Logo
+          </Button>
+
           {onEdit && (
             <Button
-              variant="outlineInk"
+              variant="secondary"
               size="sm"
               onClick={onEdit}
               className="flex items-center gap-1.5 text-[#0274BB]"
@@ -247,25 +248,37 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
               <div className="p-2 border-r border-black flex flex-col justify-between">
                 <div className="space-y-0.5">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black tracking-tight font-serif italic text-black">
-                      tespa
-                    </span>
+                    {supplier.logo_url ? (
+                      <div className="flex items-center">
+                        <img
+                          src={supplier.logo_url}
+                          alt={supplier.name}
+                          className="max-h-12 max-w-[140px] object-contain select-none mr-2"
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-2xl font-black tracking-tight font-serif italic text-black">
+                        {supplier.logo_text || 'tespa'}
+                      </span>
+                    )}
                     <div>
                       <div className="font-bold text-xs leading-none text-black">
                         {supplier.name}
                       </div>
-                      <div className="text-[10px] text-gray-700 italic">
-                        {supplier.division}
-                      </div>
+                      {supplier.division && (
+                        <div className="text-[10px] text-gray-700 italic">
+                          {supplier.division}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="pt-1 text-[10px] text-gray-900 leading-snug">
                     <div>{supplier.address1}</div>
-                    <div>{supplier.address2}</div>
-                    <div>{supplier.cityPin}</div>
-                    <div><strong>UDYAM :</strong> {supplier.udyam}</div>
+                    {supplier.address2 && <div>{supplier.address2}</div>}
+                    <div>{[supplier.city, supplier.pin].filter(Boolean).join(' - ')}</div>
+                    {supplier.udyam && <div><strong>UDYAM :</strong> {supplier.udyam}</div>}
                     <div><strong>GSTIN/UIN:</strong> {supplier.gstin}</div>
-                    <div><strong>State Name :</strong> {supplier.state}</div>
+                    <div><strong>State Name :</strong> {supplier.state}, Code : {supplier.state_code}</div>
                     <div><strong>E-Mail :</strong> {supplier.email}</div>
                   </div>
                 </div>
@@ -587,9 +600,9 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
               <div className="p-2 flex flex-col justify-between">
                 <div className="space-y-0.5">
                   <div className="font-bold underline text-[9px] mb-1">Company's Bank Details</div>
-                  <div><strong>Bank Name :</strong> {supplier.bankName}</div>
-                  <div><strong>A/c No. :</strong> {supplier.accountNo}</div>
-                  <div><strong>Branch &amp; IFS Code :</strong> {supplier.branchAndIfsc}</div>
+                  <div><strong>Bank Name :</strong> {supplier.bank_name || 'Indian Bank'}</div>
+                  <div><strong>A/c No. :</strong> {supplier.account_no || '504946658'}</div>
+                  <div><strong>Branch &amp; IFS Code :</strong> {supplier.branch_ifsc || 'Padi, Chennai & IDIB000P001'}</div>
                 </div>
 
                 <div className="pt-8 text-right">
@@ -607,6 +620,18 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
           </div>
         </div>
       </div>
+
+      <EditLabProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+        profile={supplier}
+        onSave={async (updated) => {
+          await updateLabProfile(updated);
+        }}
+        onReset={async () => {
+          await resetToDefault();
+        }}
+      />
     </div>
   );
 };

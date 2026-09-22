@@ -1,14 +1,16 @@
-// application/src/components/commercial/OfficialQuotationView.tsx
-import React, { useRef } from 'react';
-import type { Quotation, Client, CalibrationRequest } from '../../types/domain';
+import React, { useRef, useState } from 'react';
+import type { Quotation, Client, CalibrationRequest, LabIssuerProfile } from '../../types/domain';
 import { Button } from '../ui/UIPrimitives';
-import { Download, ArrowLeft, Receipt, CheckCircle2 } from 'lucide-react';
+import { Download, ArrowLeft, Receipt, CheckCircle2, Settings2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLabProfile } from '../../hooks/useLabProfile';
+import { EditLabProfileModal } from './EditLabProfileModal';
 
 export interface OfficialQuotationViewProps {
   quotation: Quotation;
   client?: Client;
   request?: CalibrationRequest;
+  issuerProfile?: LabIssuerProfile;
   onClose?: () => void;
   onGenerateInvoice?: () => void;
   isFullPage?: boolean;
@@ -63,22 +65,17 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
   quotation,
   client,
   request,
+  issuerProfile: customIssuer,
   onClose,
   onGenerateInvoice,
   isFullPage = false,
 }) => {
   const printableRef = useRef<HTMLDivElement>(null);
+  const { labProfile, updateLabProfile, resetToDefault } = useLabProfile();
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
-  // Issuer Details matching physical calibration centre format
-  const issuer = {
-    name: 'TESPA CALIBRATION CENTRE',
-    division: 'A Division of TESPA TOOLS PVT LTD',
-    address1: 'D-105, First Main Road, Anna Nagar East, Chennai – 600 102',
-    phones: '044-2663 2191, 2663 1820, 2663 0669',
-    gstin: '33AAACT2870N1Z5',
-    mobile: '+91 9445191573',
-    email: 'calibration@tespaindia.com',
-  };
+  // Dynamic Issuer / Lab Details
+  const issuer = customIssuer || labProfile;
 
   // Client Details resolution
   const clientName =
@@ -206,6 +203,16 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsEditProfileOpen(true)}
+            className="flex items-center gap-1.5 text-xs text-neutral-700 hover:text-black dark:text-neutral-300 dark:hover:text-white"
+            title="Customize Lab Logo, Name, Address &amp; GSTIN"
+          >
+            <Settings2 className="size-3.5 text-[#0274BB]" /> Lab Header &amp; Logo
+          </Button>
+
           {onGenerateInvoice && (
             <Button
               variant="secondary"
@@ -248,12 +255,24 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
           <div className="border border-black flex mb-3">
             {/* Logo on Left */}
             <div className="w-[28%] border-r border-black flex flex-col items-center justify-center p-3 text-center bg-white">
-              <div className="text-4xl font-serif font-black tracking-tight italic text-black lowercase select-none">
-                tespa
-              </div>
-              <div className="text-[8px] font-sans uppercase tracking-widest text-gray-500 mt-1">
-                Precision &amp; Quality
-              </div>
+              {issuer.logo_url ? (
+                <div className="flex flex-col items-center justify-center max-h-16">
+                  <img
+                    src={issuer.logo_url}
+                    alt={issuer.name}
+                    className="max-h-14 max-w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="text-4xl font-serif font-black tracking-tight italic text-black lowercase select-none">
+                    {issuer.logo_text || 'tespa'}
+                  </div>
+                  <div className="text-[8px] font-sans uppercase tracking-widest text-gray-500 mt-1">
+                    {issuer.logo_tagline || 'Precision & Quality'}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Centre Details on Right */}
@@ -261,11 +280,15 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
               <h1 className="font-bold text-base tracking-wide text-black uppercase">
                 {issuer.name}
               </h1>
-              <div className="font-semibold text-[10px] text-gray-800">
-                {issuer.division}
-              </div>
+              {issuer.division && (
+                <div className="font-semibold text-[10px] text-gray-800">
+                  {issuer.division}
+                </div>
+              )}
               <div className="text-[9.5px] text-gray-700 mt-0.5">
-                {issuer.address1}
+                {issuer.address1} {issuer.address2 ? `, ${issuer.address2}` : ''}
+                {issuer.city ? `, ${issuer.city}` : ''}
+                {issuer.pin ? ` – ${issuer.pin}` : ''}
               </div>
               <div className="text-[9px] text-gray-700">
                 Ph: {issuer.phones}
@@ -274,7 +297,7 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
                 GSTIN/UIN : {issuer.gstin}
               </div>
               <div className="text-[9px] text-gray-700">
-                Mobile No. {issuer.mobile} / Email : {issuer.email}
+                {issuer.mobile ? `Mobile No. ${issuer.mobile} / ` : ''}Email : {issuer.email}
               </div>
             </div>
           </div>
@@ -470,7 +493,7 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
             <div className="leading-snug">
               <div>Thanking you and assuring you of our best services at all times.</div>
               <div className="mt-3">Yours faithfully,</div>
-              <div className="font-bold text-black mt-1">For TESPA CALIBRATION CENTRE</div>
+              <div className="font-bold text-black mt-1">For {issuer.name.toUpperCase()}</div>
             </div>
 
             <div className="text-right">
@@ -482,6 +505,18 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
           </div>
         </div>
       </div>
+
+      <EditLabProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+        profile={issuer}
+        onSave={async (updated) => {
+          await updateLabProfile(updated);
+        }}
+        onReset={async () => {
+          await resetToDefault();
+        }}
+      />
     </div>
   );
 };

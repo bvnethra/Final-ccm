@@ -1,15 +1,17 @@
-// application/src/components/commercial/OfficialVendorPOView.tsx
-import React, { useRef } from 'react';
-import type { OutsourcePO, Vendor, CalibrationRequest } from '../../types/domain';
+import React, { useRef, useState } from 'react';
+import type { OutsourcePO, Vendor, CalibrationRequest, LabIssuerProfile } from '../../types/domain';
 import { Button } from '../ui/UIPrimitives';
-import { Download, ArrowLeft, Truck } from 'lucide-react';
+import { Download, ArrowLeft, Truck, Settings2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { numberToIndianWords, formatInvoiceDate } from './OfficialTaxInvoiceView';
+import { useLabProfile } from '../../hooks/useLabProfile';
+import { EditLabProfileModal } from './EditLabProfileModal';
 
 export interface OfficialVendorPOViewProps {
   outsourcePO: OutsourcePO;
   vendor?: Vendor;
   request?: CalibrationRequest;
+  issuerProfile?: LabIssuerProfile;
   onClose?: () => void;
   isFullPage?: boolean;
 }
@@ -18,24 +20,16 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
   outsourcePO,
   vendor,
   request,
+  issuerProfile: customIssuer,
   onClose,
   isFullPage = false,
 }) => {
   const printableRef = useRef<HTMLDivElement>(null);
+  const { labProfile, updateLabProfile, resetToDefault } = useLabProfile();
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
-  // Issuer / Invoice To Details matching Tespa physical PO
-  const issuer = {
-    name: 'Tespa Calibration Centre',
-    division: '(Division of Tespa Tools Pvt Ltd)',
-    address1: 'D-105, 1st Main Road',
-    address2: 'Anna Nagar East',
-    cityPin: 'Chennai - 600102',
-    udyam: 'UDYAM-TN-02-0048127 (Micro)',
-    gstin: '33AAACT2870N1Z5',
-    state: 'Tamil Nadu, Code : 33',
-    stateCode: '33',
-    email: 'calib9301@tespatools.com',
-  };
+  // Dynamic Issuer / Invoice To Details
+  const issuer = customIssuer || labProfile;
 
   // Vendor / Supplier Details
   const supplierName = vendor?.vendor_name || outsourcePO.vendor_name || 'Hi Tech Calibration Services - Unit I';
@@ -115,7 +109,7 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
   const subtotal = items.reduce((sum, it) => sum + (Number(it.total_price) || 0), 0);
 
   // Tax calculation (Intrastate TN: 9% SGST + 9% CGST; Interstate: 18% IGST)
-  const isIntraState = supplierStateCode === issuer.stateCode;
+  const isIntraState = supplierStateCode === issuer.state_code;
   const sgstAmount = isIntraState ? Math.round(subtotal * 0.09 * 100) / 100 : 0;
   const cgstAmount = isIntraState ? Math.round(subtotal * 0.09 * 100) / 100 : 0;
   const igstAmount = !isIntraState ? Math.round(subtotal * 0.18 * 100) / 100 : 0;
@@ -149,6 +143,16 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsEditProfileOpen(true)}
+            className="flex items-center gap-1.5 text-xs text-neutral-700 hover:text-black dark:text-neutral-300 dark:hover:text-white"
+            title="Customize Lab Logo, Name, Address &amp; GSTIN"
+          >
+            <Settings2 className="size-3.5 text-[#0274BB]" /> Lab Header &amp; Logo
+          </Button>
+
           <Button
             variant="primary"
             size="sm"
@@ -196,24 +200,37 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
                   <div className="text-[10px] text-gray-600 font-semibold mb-1">Invoice To</div>
                   <div className="space-y-0.5">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-black tracking-tight font-serif italic text-black">
-                        tespa
-                      </span>
+                      {issuer.logo_url ? (
+                        <div className="flex items-center">
+                          <img
+                            src={issuer.logo_url}
+                            alt={issuer.name}
+                            className="max-h-12 max-w-[140px] object-contain select-none mr-2"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-2xl font-black tracking-tight font-serif italic text-black">
+                          {issuer.logo_text || 'tespa'}
+                        </span>
+                      )}
                       <div>
                         <div className="font-bold text-xs leading-none text-black">
                           {issuer.name}
                         </div>
-                        <div className="text-[10px] text-gray-700 italic">
-                          {issuer.division}
-                        </div>
+                        {issuer.division && (
+                          <div className="text-[10px] text-gray-700 italic">
+                            {issuer.division}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="pt-1 text-[10px] text-gray-900 leading-snug">
                       <div>{issuer.address1}</div>
-                      <div>{issuer.address2}</div>
-                      <div>{issuer.cityPin}</div>
+                      {issuer.address2 && <div>{issuer.address2}</div>}
+                      <div>{[issuer.city, issuer.pin].filter(Boolean).join(' - ')}</div>
+                      {issuer.udyam && <div><strong>UDYAM :</strong> {issuer.udyam}</div>}
                       <div><strong>GSTIN/UIN:</strong> {issuer.gstin}</div>
-                      <div><strong>State Name :</strong> {issuer.state}</div>
+                      <div><strong>State Name :</strong> {issuer.state}, Code : {issuer.state_code}</div>
                       <div><strong>E-Mail :</strong> {issuer.email}</div>
                     </div>
                   </div>
@@ -453,6 +470,18 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
           </div>
         </div>
       </div>
+
+      <EditLabProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+        profile={issuer}
+        onSave={async (updated) => {
+          await updateLabProfile(updated);
+        }}
+        onReset={async () => {
+          await resetToDefault();
+        }}
+      />
     </div>
   );
 };

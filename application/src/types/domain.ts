@@ -467,3 +467,28 @@ export interface CalibrationDueItem {
   vendorCertificateNumber?: string;
 }
 
+export interface LabIssuerProfile {
+  id?: string;
+  tenant_id?: string;
+  organization_id?: string;
+  name: string;
+  division?: string;
+  logo_url?: string;
+  logo_text?: string;
+  logo_tagline?: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  state: string;
+  state_code: string;
+  pin: string;
+  phones: string;
+  mobile?: string;
+  email: string;
+  gstin: string;
+  udyam?: string;
+  bank_name?: string;
+  account_no?: string;
+  branch_ifsc?: string;
+}
+
