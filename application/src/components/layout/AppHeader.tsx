@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
-import { Button, Badge } from '../ui/UIPrimitives';
+import { Badge } from '../ui/UIPrimitives';
 import { LogOut, User, Building2, Bell, Clock, ArrowRight, ChevronDown, FileText } from 'lucide-react';
 import { useVendorReminders } from '../../hooks/useVendorReminders';
 import { useCalibrationRequests } from '../../hooks/useOperations';
