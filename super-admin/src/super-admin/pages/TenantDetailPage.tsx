@@ -8,12 +8,13 @@ import {
   useUpdateTenantStatus,
   useUpdateTenantDetails,
   useDeleteTenant,
+  useDeleteOrganization,
 } from '../hooks/useTenants';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { usePlatformAuth } from '../hooks/usePlatformAuth';
 import { usePlatformAudit } from '../hooks/usePlatformAudit';
 import { Card, Button, Badge, Input } from '../../components/ui/UIPrimitives';
-import type { TenantStatus } from '../types/superAdmin';
+import type { TenantStatus, TenantOrganization } from '../types/superAdmin';
 import { 
   Building2, 
   ArrowLeft, 
@@ -48,6 +49,7 @@ export default function TenantDetailPage() {
   const updateStatusMutation = useUpdateTenantStatus();
   const updateTenantMutation = useUpdateTenantDetails();
   const deleteTenantMutation = useDeleteTenant();
+  const deleteOrgMutation = useDeleteOrganization();
 
   // Dynamic configuration lists for editing selects
   const { data: tenantTypes = [] } = usePlatformConfig('tenant_types');
@@ -60,6 +62,11 @@ export default function TenantDetailPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState('Deleted by Super Admin');
   const [deleteError, setDeleteError] = useState('');
+
+  // Delete organization modal state
+  const [orgToDelete, setOrgToDelete] = useState<TenantOrganization | null>(null);
+  const [orgDeleteReason, setOrgDeleteReason] = useState('Deleted by Super Admin');
+  const [orgDeleteError, setOrgDeleteError] = useState('');
 
   // In-Page Status Governance Panel State (Zero Modal Architecture)
   const [isStatusPanelOpen, setIsStatusPanelOpen] = useState(false);
@@ -943,6 +950,20 @@ export default function TenantDetailPage() {
                   <span className="text-slate-400 font-mono text-[11px]">
                     {new Date(org.createdAt).toLocaleDateString()}
                   </span>
+                  {!isSupport && (
+                    <button
+                      type="button"
+                      title="Delete organization"
+                      onClick={() => {
+                        setOrgToDelete(org);
+                        setOrgDeleteReason('Deleted by Super Admin');
+                        setOrgDeleteError('');
+                      }}
+                      className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -1062,6 +1083,96 @@ export default function TenantDetailPage() {
                 }}
               >
                 {deleteTenantMutation.isPending ? 'Deleting...' : 'Permanently Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Organization Confirmation Modal */}
+      {orgToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-50 rounded-[6px] text-[#DC2626]">
+                  <AlertTriangle className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#111827]">Delete Organization / Branch</h3>
+                  <p className="text-xs text-[#6B7280]">Permanent removal from enterprise tenant</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setOrgToDelete(null)}
+                className="text-[#9CA3AF] hover:text-[#374151] p-1 rounded transition"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#4B5563] leading-relaxed">
+              Are you sure you want to permanently delete organization <strong className="text-[#111827]">{orgToDelete.name}</strong> (<span className="font-mono">{orgToDelete.code}</span>)?
+              This will remove this branch and all its associated data. This action <strong className="text-[#DC2626]">cannot be undone</strong>.
+            </p>
+
+            {orgDeleteError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-[4px] text-xs text-rose-700">
+                {orgDeleteError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[11px] font-semibold text-[#374151] uppercase tracking-wider mb-1">
+                Audit Reason
+              </label>
+              <input
+                type="text"
+                value={orgDeleteReason}
+                onChange={(e) => setOrgDeleteReason(e.target.value)}
+                placeholder="Reason for deletion..."
+                className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-1.5 text-xs text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#DC2626] focus-visible:border-[#DC2626]"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs border-[#E5E7EB] text-[#374151] hover:bg-[#F5F7FA]"
+                disabled={deleteOrgMutation.isPending}
+                onClick={() => setOrgToDelete(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="text-xs bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-[4px]"
+                disabled={deleteOrgMutation.isPending}
+                onClick={() => {
+                  if (!orgDeleteReason.trim()) {
+                    setOrgDeleteError('A reason is required for audit compliance.');
+                    return;
+                  }
+                  if (!tenant?.id) return;
+                  deleteOrgMutation.mutate(
+                    {
+                      organizationId: orgToDelete.id,
+                      tenantId: tenant.id,
+                      reason: orgDeleteReason.trim(),
+                    },
+                    {
+                      onSuccess: () => {
+                        setOrgToDelete(null);
+                      },
+                      onError: (err: any) => {
+                        setOrgDeleteError(err.message || 'Failed to delete organization');
+                      },
+                    }
+                  );
+                }}
+              >
+                {deleteOrgMutation.isPending ? 'Deleting...' : 'Permanently Delete'}
               </Button>
             </div>
           </div>

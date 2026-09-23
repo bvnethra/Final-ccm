@@ -456,3 +456,50 @@ export async function deleteTenant(tenantId: string, reason?: string): Promise<v
   });
 }
 
+export async function deleteOrganization(organizationId: string, tenantId: string, reason?: string): Promise<void> {
+  const { data: org, error: fetchErr } = await supabase
+    .from('organizations')
+    .select('*')
+    .eq('id', organizationId)
+    .single();
+
+  if (fetchErr || !org) {
+    throw new Error(`Organization not found: ${fetchErr?.message || organizationId}`);
+  }
+
+  const { error: deleteErr } = await supabase
+    .from('organizations')
+    .delete()
+    .eq('id', organizationId);
+
+  if (deleteErr) {
+    throw new Error(`Failed to delete organization: ${deleteErr.message}`);
+  }
+
+  // Recalculate branches_count on tenant
+  const { count } = await supabase
+    .from('organizations')
+    .select('*', { count: 'exact', head: true })
+    .eq('tenant_id', tenantId);
+
+  if (count !== null) {
+    await supabase
+      .from('tenants')
+      .update({ branches_count: count })
+      .eq('id', tenantId);
+  }
+
+  // Log Immutable Platform Audit Event
+  await logPlatformEvent({
+    action: 'ORGANIZATION_DELETED',
+    referenceId: organizationId,
+    previousState: org,
+    reason: reason?.trim() || `Deleted organization/branch '${org.name}' (${org.code})`,
+    metadata: {
+      tenantId,
+      orgCode: org.code,
+      orgName: org.name,
+    },
+  });
+}
+

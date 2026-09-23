@@ -1,8 +1,25 @@
-// src/super-admin/components/tenants/AddOrganizationDialog.tsx
 import React, { useState } from 'react';
 import { Button, Input, FieldGroup, Field, FieldLabel, FieldDescription } from '../../../components/ui/UIPrimitives';
 import { useCreateOrganization } from '../../hooks/useTenants';
-import { Building2, X, Mail, Phone, MapPin, Shield } from 'lucide-react';
+import { Building2, X, Mail, Phone, MapPin, Shield, Sparkles } from 'lucide-react';
+
+/** Derives a short uppercase facility code from an org name. */
+function generateFacilityCode(orgName: string): string {
+  const stopwords = new Set(['and', 'or', 'of', 'the', 'a', 'an', 'for', 'in', 'at', 'to', 'by', '&']);
+  const words = orgName
+    .trim()
+    .replace(/[^a-zA-Z0-9\s&]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
+  const significant = words.filter((w) => !stopwords.has(w.toLowerCase()));
+  if (significant.length === 0) return '';
+  const initials = significant.slice(0, 5).map((w) => w[0].toUpperCase());
+  if (initials.length === 1) return `${initials[0]}-01`;
+  const mid = Math.ceil(initials.length / 2);
+  const prefix = initials.slice(0, mid).join('');
+  const suffix = initials.slice(mid).join('');
+  return suffix ? `${prefix}-${suffix}-01` : `${prefix}-01`;
+}
 
 interface AddOrganizationDialogProps {
   isOpen: boolean;
@@ -25,6 +42,7 @@ export const AddOrganizationDialog: React.FC<AddOrganizationDialogProps> = ({
 
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [isCodeCustomized, setIsCodeCustomized] = useState(false);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -35,6 +53,7 @@ export const AddOrganizationDialog: React.FC<AddOrganizationDialogProps> = ({
   const resetForm = () => {
     setName('');
     setCode('');
+    setIsCodeCustomized(false);
     setEmail('');
     setPhone('');
     setAddress('');
@@ -132,23 +151,43 @@ export const AddOrganizationDialog: React.FC<AddOrganizationDialogProps> = ({
                   id="dialog-org-name"
                   required
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setName(val);
+                    if (!isCodeCustomized) {
+                      setCode(generateFacilityCode(val));
+                    }
+                  }}
                   placeholder="e.g. Central Metrology Facility"
                 />
                 <FieldDescription>Operating title of this branch or sub-lab.</FieldDescription>
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="dialog-org-code">Branch Code *</FieldLabel>
+                <FieldLabel htmlFor="dialog-org-code" className="flex items-center justify-between">
+                  <span>Branch Code *</span>
+                  {!isCodeCustomized && code && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+                      <Sparkles className="size-3" /> Auto-generated
+                    </span>
+                  )}
+                </FieldLabel>
                 <Input
                   id="dialog-org-code"
                   required
                   value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. ORG-HQ, BLR-01"
+                  onChange={(e) => {
+                    setCode(e.target.value.toUpperCase());
+                    setIsCodeCustomized(true);
+                  }}
+                  placeholder="e.g. CMS-FAC-01"
                   className="font-mono uppercase"
                 />
-                <FieldDescription>Unique uppercase identifier code.</FieldDescription>
+                {!isCodeCustomized && code ? (
+                  <FieldDescription>Auto-derived from name — edit to override.</FieldDescription>
+                ) : (
+                  <FieldDescription>Unique uppercase identifier code.</FieldDescription>
+                )}
               </Field>
             </div>
 

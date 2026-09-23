@@ -10,6 +10,7 @@ import {
   fetchTenantOrganizations,
   createTenantOrganization,
   deleteTenant,
+  deleteOrganization,
 } from '../services/tenantManagementService';
 import type { 
   TenantFilters, 
@@ -110,6 +111,21 @@ export function useDeleteTenant() {
     mutationFn: ({ tenantId, reason }: { tenantId: string; reason?: string }) =>
       deleteTenant(tenantId, reason),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['platformTenants'] });
+      queryClient.invalidateQueries({ queryKey: ['superAdminDashboardMetrics'] });
+      queryClient.invalidateQueries({ queryKey: ['platformAuditLogs'] });
+    },
+  });
+}
+
+export function useDeleteOrganization() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ organizationId, tenantId, reason }: { organizationId: string; tenantId: string; reason?: string }) =>
+      deleteOrganization(organizationId, tenantId, reason),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['platformTenantOrganizations', variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['platformTenant', variables.tenantId] });
       queryClient.invalidateQueries({ queryKey: ['platformTenants'] });
       queryClient.invalidateQueries({ queryKey: ['superAdminDashboardMetrics'] });
       queryClient.invalidateQueries({ queryKey: ['platformAuditLogs'] });

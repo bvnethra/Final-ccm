@@ -3,7 +3,34 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button, Input, FieldGroup, Field, FieldLabel } from '../../components/ui/UIPrimitives';
 import { useTenantDetail, useCreateOrganization } from '../hooks/useTenants';
-import { ArrowLeft, Building, Shield } from 'lucide-react';
+import { ArrowLeft, Building, Shield, Sparkles } from 'lucide-react';
+
+/** Derives a short uppercase facility code from an org name.
+ *  e.g. "Central Metrology & Standards Lab" → "CMS-LAB-01"
+ */
+function generateFacilityCode(orgName: string): string {
+  const stopwords = new Set(['and', 'or', 'of', 'the', 'a', 'an', 'for', 'in', 'at', 'to', 'by', '&']);
+  const words = orgName
+    .trim()
+    .replace(/[^a-zA-Z0-9\s&]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
+
+  const significant = words.filter((w) => !stopwords.has(w.toLowerCase()));
+  if (significant.length === 0) return '';
+
+  // Take first letter of each significant word (max 5)
+  const initials = significant.slice(0, 5).map((w) => w[0].toUpperCase());
+
+  // Group: first half as prefix, rest as suffix (if > 1 word)
+  if (initials.length === 1) {
+    return `${initials[0]}-01`;
+  }
+  const mid = Math.ceil(initials.length / 2);
+  const prefix = initials.slice(0, mid).join('');
+  const suffix = initials.slice(mid).join('');
+  return suffix ? `${prefix}-${suffix}-01` : `${prefix}-01`;
+}
 
 export default function AddOrganizationPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +40,7 @@ export default function AddOrganizationPage() {
 
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [isCodeCustomized, setIsCodeCustomized] = useState(false);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -122,20 +150,40 @@ export default function AddOrganizationPage() {
                   id="org-name"
                   required
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setName(val);
+                    if (!isCodeCustomized) {
+                      setCode(generateFacilityCode(val));
+                    }
+                  }}
                   placeholder="e.g. Central Metrology & Standards Lab"
                 />
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="org-code">Facility Code *</FieldLabel>
+                <FieldLabel htmlFor="org-code" className="flex items-center justify-between">
+                  <span>Facility Code *</span>
+                  {!isCodeCustomized && code && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+                      <Sparkles className="size-3" /> Auto-generated
+                    </span>
+                  )}
+                </FieldLabel>
                 <Input
                   id="org-code"
                   required
                   value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. LAB-HQ"
+                  onChange={(e) => {
+                    setCode(e.target.value.toUpperCase());
+                    setIsCodeCustomized(true);
+                  }}
+                  placeholder="e.g. CMS-LAB-01"
+                  className="font-mono uppercase"
                 />
+                {!isCodeCustomized && code && (
+                  <p className="text-[11px] text-slate-400 mt-1">Auto-derived from name — you can edit to override.</p>
+                )}
               </Field>
             </div>
 
