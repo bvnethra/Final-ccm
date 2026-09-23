@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { Button, Badge } from '../ui/UIPrimitives';
-import { LogOut, User, Building2, Bell, Clock, ArrowRight, FileText, ChevronDown } from 'lucide-react';
+import { LogOut, User, Building2, Bell, Clock, ArrowRight, ChevronDown, FileText } from 'lucide-react';
 import { useVendorReminders } from '../../hooks/useVendorReminders';
 import { useCalibrationRequests } from '../../hooks/useOperations';
 
@@ -87,12 +87,10 @@ export const AppHeader: React.FC = () => {
             title="Operational & Quotation Alerts"
           >
             <Bell className="size-5" />
-            {totalNotifications > 0 ? (
+            {totalNotifications > 0 && (
               <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white shadow-xs animate-pulse">
                 {totalNotifications}
               </span>
-            ) : (
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-rose-500" />
             )}
           </button>
 

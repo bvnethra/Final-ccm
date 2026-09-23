@@ -44,14 +44,17 @@ import {
   AlertCircle,
   ShieldCheck,
   Clock,
+<<<<<<< Updated upstream
   Search,
   MoreVertical,
   ChevronLeft,
   ChevronRight,
   Building2,
   Truck,
+=======
   RefreshCw,
   Sparkles,
+>>>>>>> Stashed changes
 } from 'lucide-react';
 
 export interface EditableInvoiceItem {
