@@ -51,6 +51,10 @@ import {
   type ApproveDispatchPayload,
   getVendorItemsLog,
   type VendorItemLogEntry,
+  updateRequestItemStatus,
+  type UpdateItemStatusPayload,
+  updateRequestItemInvoicePending,
+  type UpdateItemInvoicePendingPayload,
 } from '../services/operationsService';
 
 export type { VendorItemLogEntry };
@@ -425,4 +429,39 @@ export function useApproveDispatch() {
   });
 }
 
+// ============================================================
+// Item-level: Mark as NOT_SERVICEABLE or any manual status
+// ============================================================
+export function useUpdateItemStatus() {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthContext();
 
+  return useMutation({
+    mutationFn: (payload: UpdateItemStatusPayload) => updateRequestItemStatus(payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['calibration-requests', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['calibration-request', variables.requestId] });
+    },
+  });
+}
+
+export type { UpdateItemStatusPayload };
+
+// ============================================================
+// Item-level: Toggle invoice_pending before CV is closed
+// ============================================================
+export function useUpdateItemInvoicePending() {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthContext();
+
+  return useMutation({
+    mutationFn: (payload: UpdateItemInvoicePendingPayload) =>
+      updateRequestItemInvoicePending(payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['calibration-requests', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['calibration-request', variables.requestId] });
+    },
+  });
+}
+
+export type { UpdateItemInvoicePendingPayload };

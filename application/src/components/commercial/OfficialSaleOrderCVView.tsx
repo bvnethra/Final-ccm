@@ -1,11 +1,13 @@
 import React, { useRef, useState } from 'react';
 import type { CalibrationRequest, Client, LabIssuerProfile } from '../../types/domain';
 import { Button } from '../ui/UIPrimitives';
-import { ArrowLeft, Settings2, Printer } from 'lucide-react';
+import { ArrowLeft, Settings2, Printer, CheckSquare, Square, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { numberToIndianWords, formatInvoiceDate } from './OfficialTaxInvoiceView';
 import { useLabProfile } from '../../hooks/useLabProfile';
 import { EditLabProfileModal } from './EditLabProfileModal';
+import { useUpdateItemInvoicePending } from '../../hooks/useOperations';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 export interface OfficialSaleOrderCVViewProps {
   request: CalibrationRequest;
@@ -25,6 +27,18 @@ export const OfficialSaleOrderCVView: React.FC<OfficialSaleOrderCVViewProps> = (
   const printableRef = useRef<HTMLDivElement>(null);
   const { labProfile, updateLabProfile, resetToDefault } = useLabProfile();
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const { tenantId, organizationId } = useAuthContext();
+
+  // Local invoice-pending toggle state (keyed by item ID)
+  const [pendingInvoiceItems, setPendingInvoiceItems] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    (request.request_items || []).forEach((it) => {
+      init[it.id] = it.invoice_pending ?? false;
+    });
+    return init;
+  });
+
+  const updateInvoicePendingMutation = useUpdateItemInvoicePending();
 
   // Dynamic Issuer / Lab Profile Details (zero hardcoding)
   const issuer = customIssuer || labProfile;
@@ -233,7 +247,8 @@ export const OfficialSaleOrderCVView: React.FC<OfficialSaleOrderCVViewProps> = (
                 <th className="py-2 px-2 border-r border-black w-20">Quantity</th>
                 <th className="py-2 px-2 border-r border-black w-20 text-right">Rate</th>
                 <th className="py-2 px-2 border-r border-black w-14">per</th>
-                <th className="py-2 px-3 w-28 text-right">Amount</th>
+                <th className="py-2 px-3 border-r border-black w-28 text-right">Amount</th>
+                <th className="py-2 px-2 w-28 text-center print:hidden">Invoice Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -285,8 +300,43 @@ export const OfficialSaleOrderCVView: React.FC<OfficialSaleOrderCVViewProps> = (
                     <td className="py-2.5 px-2 text-center border-r border-black">
                       NOS
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono font-bold">
+                    <td className="py-2.5 px-3 text-right font-mono font-bold border-r border-black">
                       {lineTotal.toFixed(2)}
+                    </td>
+                    {/* Invoice Status — screen only, hidden on print */}
+                    <td className="py-2.5 px-2 text-center print:hidden">
+                      {item.invoice_id ? (
+                        // Already fully invoiced — locked
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckSquare className="size-3" /> Invoiced
+                        </span>
+                      ) : (
+                        // Pending / partial — toggleable
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = !pendingInvoiceItems[item.id];
+                            setPendingInvoiceItems((prev) => ({ ...prev, [item.id]: next }));
+                            updateInvoicePendingMutation.mutate({
+                              tenantId: tenantId!,
+                              requestId: request.id,
+                              itemId: item.id,
+                              invoicePending: next,
+                            });
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold border cursor-pointer transition-colors"
+                          style={{
+                            background: pendingInvoiceItems[item.id] ? '#FEF3C7' : '#F9FAFB',
+                            color: pendingInvoiceItems[item.id] ? '#92400E' : '#6B7280',
+                            borderColor: pendingInvoiceItems[item.id] ? '#FCD34D' : '#D1D5DB',
+                          }}
+                          title={pendingInvoiceItems[item.id] ? 'Mark as Not Pending' : 'Mark as Pending Invoice'}
+                        >
+                          {pendingInvoiceItems[item.id]
+                            ? <><Clock className="size-3" /> Pending Invoice</>
+                            : <><Square className="size-3" /> Not Invoiced</>}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -337,9 +387,10 @@ export const OfficialSaleOrderCVView: React.FC<OfficialSaleOrderCVViewProps> = (
                   {totalQuantity} NOS
                 </td>
                 <td colSpan={2} className="border-r border-black"></td>
-                <td className="py-2 px-3 text-right font-mono text-xs font-black">
+                <td className="py-2 px-3 text-right font-mono text-xs font-black border-r border-black">
                   ₹ {totalAmount.toFixed(2)}
                 </td>
+                <td className="print:hidden"></td>
               </tr>
             </tfoot>
           </table>

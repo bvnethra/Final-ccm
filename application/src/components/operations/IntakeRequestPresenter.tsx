@@ -38,6 +38,8 @@ export interface IntakeRequestPresenterProps {
   isSubmitting: boolean;
   isLoadingData: boolean;
   errorMessage?: string;
+  /** Full Client object resolved from Client Master — drives auto-fill card */
+  selectedClient?: Client;
 }
 
 export const IntakeRequestPresenter: React.FC<IntakeRequestPresenterProps> = (props) => {

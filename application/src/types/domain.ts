@@ -202,7 +202,12 @@ export interface RequestItem {
   quantity: number;
   received_quantity: number;
   item_condition: ItemCondition;
+  /** Item-level lifecycle status. Includes 'NOT_SERVICEABLE' for items that cannot be calibrated. */
   status: string;
+  /** True when item is pending invoice (partial invoice before CV is fully closed) */
+  invoice_pending?: boolean;
+  /** Invoice ID if this item has been invoiced */
+  invoice_id?: string;
   remarks?: string;
   created_at: string;
   item_masters?: ItemMaster;

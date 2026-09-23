@@ -2352,3 +2352,90 @@ export async function getVendorItemsLog(
   return log;
 }
 
+// ============================================================================
+// Request Item Status Override (NOT_SERVICEABLE / manual status change)
+// ============================================================================
+
+export interface UpdateItemStatusPayload {
+  tenantId: string;
+  organizationId: string;
+  requestId: string;
+  itemId: string;
+  status: string;
+  reason?: string;
+}
+
+export async function updateRequestItemStatus(payload: UpdateItemStatusPayload): Promise<void> {
+  const { tenantId, requestId, itemId, status, reason } = payload;
+
+  // 1. Try Supabase
+  try {
+    const updateData: Record<string, unknown> = { status };
+    if (reason) updateData.remarks = reason;
+    const { error } = await supabase
+      .from('request_items')
+      .update(updateData)
+      .eq('id', itemId);
+    if (error) throw error;
+  } catch (_err) {
+    // fall through to localStorage
+  }
+
+  // 2. Always patch localStorage
+  const existing = getLocalRequests(tenantId);
+  const updated = existing.map((r) => {
+    if (r.id !== requestId) return r;
+    return {
+      ...r,
+      request_items: (r.request_items || []).map((it) => {
+        if (it.id !== itemId) return it;
+        return { ...it, status, ...(reason ? { remarks: reason } : {}) };
+      }),
+    };
+  });
+  saveLocalRequests(tenantId, updated);
+}
+
+// ============================================================================
+// Per-item Invoice Pending toggle (before CV fully closed)
+// ============================================================================
+
+export interface UpdateItemInvoicePendingPayload {
+  tenantId: string;
+  requestId: string;
+  itemId: string;
+  invoicePending: boolean;
+}
+
+export async function updateRequestItemInvoicePending(
+  payload: UpdateItemInvoicePendingPayload
+): Promise<void> {
+  const { tenantId, requestId, itemId, invoicePending } = payload;
+
+  // 1. Try Supabase
+  try {
+    const { error } = await supabase
+      .from('request_items')
+      .update({ invoice_pending: invoicePending })
+      .eq('id', itemId);
+    if (error) throw error;
+  } catch (_err) {
+    // fall through to localStorage
+  }
+
+  // 2. Always patch localStorage
+  const existing = getLocalRequests(tenantId);
+  const updated = existing.map((r) => {
+    if (r.id !== requestId) return r;
+    return {
+      ...r,
+      request_items: (r.request_items || []).map((it) => {
+        if (it.id !== itemId) return it;
+        return { ...it, invoice_pending: invoicePending };
+      }),
+    };
+  });
+  saveLocalRequests(tenantId, updated);
+}
+
+

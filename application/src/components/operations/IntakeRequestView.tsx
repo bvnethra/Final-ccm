@@ -579,45 +579,70 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
               </div>
             </div>
 
-            {/* Selected Client Information Banner */}
+            {/* Client Master Auto-fill Summary Card */}
             {selectedClient ? (
-              <div className="bg-[#F0FDF4] p-4 rounded-md border border-[#BBF7D0] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-                <div className="space-y-1">
+              <div className="bg-[#F0FDF4] rounded-lg border border-[#BBF7D0] overflow-hidden">
+                {/* Card Header */}
+                <div className="flex items-center justify-between px-4 py-2.5 bg-[#DCFCE7] border-b border-[#BBF7D0]">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-[#166534] text-sm flex items-center gap-1.5">
-                      <Check className="size-4 text-[#16A34A]" /> {selectedClient.client_name}
-                    </span>
-                    <span className="font-mono text-xs font-semibold bg-[#DCFCE7] text-[#15803D] px-2 py-0.5 rounded border border-[#86EFAC]">
+                    <Check className="size-4 text-[#16A34A]" />
+                    <span className="font-bold text-[#166534] text-sm">{selectedClient.client_name}</span>
+                    <span className="font-mono text-xs font-semibold bg-white text-[#15803D] px-2 py-0.5 rounded border border-[#86EFAC]">
                       {selectedClient.client_code}
                     </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-[#15803D] bg-[#BBFCD0] px-2 py-0.5 rounded-full border border-[#86EFAC]">
+                      Auto-filled from Client Master
+                    </span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[#4B5563] text-[11px]">
-                    <span><strong>GSTIN:</strong> {selectedClient.gst_tax_number || 'Unregistered'}</span>
-                    <span>•</span>
-                    <span><strong>Contact:</strong> {selectedClient.contact_person || 'N/A'}</span>
-                    <span>•</span>
-                    <span><strong>City:</strong> {selectedClient.city || 'N/A'}</span>
-                    {selectedClient.address && (
-                      <>
-                        <span>•</span>
-                        <span className="truncate max-w-md"><strong>Facility:</strong> {selectedClient.address}</span>
-                      </>
-                    )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearClient}
+                    className="self-start md:self-auto text-xs text-[#DC2626] border-[#FCA5A5] hover:bg-[#FEF2F2]"
+                  >
+                    Change Client
+                  </Button>
+                </div>
+                {/* Card Body: Grid of auto-filled fields */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[#BBF7D0] text-[11px]">
+                  <div className="p-3 space-y-0.5">
+                    <div className="text-[10px] font-semibold text-[#15803D] uppercase tracking-wide">Billing Address</div>
+                    <div className="text-[#1F2937] font-medium leading-snug">
+                      {[selectedClient.billing_address || selectedClient.address, selectedClient.city, selectedClient.state, selectedClient.pin]
+                        .filter(Boolean).join(', ') || '—'}
+                    </div>
+                  </div>
+                  <div className="p-3 space-y-0.5">
+                    <div className="text-[10px] font-semibold text-[#15803D] uppercase tracking-wide">GSTIN / UIN</div>
+                    <div className="text-[#1F2937] font-mono font-bold">
+                      {selectedClient.gst_tax_number || 'Unregistered'}
+                    </div>
+                    <div className="text-[10px] text-[#6B7280]">
+                      State: {selectedClient.state || '—'} {selectedClient.gst_tax_number?.slice(0, 2) ? `(Code: ${selectedClient.gst_tax_number.slice(0, 2)})` : ''}
+                    </div>
+                  </div>
+                  <div className="p-3 space-y-0.5">
+                    <div className="text-[10px] font-semibold text-[#15803D] uppercase tracking-wide">Payment Terms</div>
+                    <div className="text-[#1F2937] font-bold">
+                      {selectedClient.payment_term === '30_DAYS' ? '30 Days'
+                        : selectedClient.payment_term === '60_DAYS' ? '60 Days'
+                        : selectedClient.payment_term === 'IMMEDIATE' ? 'Immediate'
+                        : selectedClient.payment_term || '—'}
+                    </div>
+                    <div className="text-[10px] text-[#6B7280]">Contact: {selectedClient.contact_person || '—'}</div>
+                  </div>
+                  <div className="p-3 space-y-0.5">
+                    <div className="text-[10px] font-semibold text-[#15803D] uppercase tracking-wide">Contact Info</div>
+                    <div className="text-[#1F2937] font-medium">{selectedClient.phone || selectedClient.phone_numbers?.[0] || '—'}</div>
+                    <div className="text-[10px] text-[#6B7280] truncate">{selectedClient.email || selectedClient.email_addresses?.[0] || '—'}</div>
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClearClient}
-                  className="self-start md:self-auto text-xs text-[#DC2626] border-[#FCA5A5] hover:bg-[#FEF2F2]"
-                >
-                  Change Client
-                </Button>
               </div>
             ) : (
               <input type="hidden" name="clientId" value="" required />
             )}
+
 
             {/* CV Voucher & Challan Details Row: 4 Columns */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-[#F8FAFC] rounded-md border border-[#E2E8F0]">

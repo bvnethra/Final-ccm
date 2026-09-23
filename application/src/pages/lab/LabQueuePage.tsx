@@ -1,7 +1,8 @@
 // application/src/pages/lab/LabQueuePage.tsx
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useCalibrationRequests } from '../../hooks/useOperations';
+import { useCalibrationRequests, useUpdateItemStatus } from '../../hooks/useOperations';
+import { useAuthContext } from '../../contexts/AuthContext';
 import { Button } from '../../components/ui/UIPrimitives';
 import type { RequestAttachment } from '../../types/domain';
 import {
@@ -23,6 +24,8 @@ import {
   Layers,
   ArrowRight,
   CheckCircle2,
+  AlertTriangle,
+  Ban,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -57,6 +60,7 @@ const AVATAR_PALETTES = [
 ];
 
 export const LabQueuePage: React.FC = () => {
+  const { tenantId, organizationId } = useAuthContext();
   const [activeStageTab, setActiveStageTab] = useState<string>('LAB_ALL');
   const [priorityFilter, setPriorityFilter] = useState<'ALL' | 'URGENT' | 'NORMAL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,6 +69,15 @@ export const LabQueuePage: React.FC = () => {
     clientName?: string;
     attachments: RequestAttachment[];
   } | null>(null);
+
+  // Not Serviceable state
+  const [notServiceableTarget, setNotServiceableTarget] = useState<{
+    requestId: string;
+    itemId: string;
+    itemName: string;
+  } | null>(null);
+  const [notServiceableReason, setNotServiceableReason] = useState('');
+  const updateItemStatusMutation = useUpdateItemStatus();
 
   const { data: allRequests = [], isLoading } = useCalibrationRequests();
 
@@ -371,7 +384,7 @@ export const LabQueuePage: React.FC = () => {
 
         {/* Card 2: Calibrated & Passed */}
         <div
-          onClick={() => setActiveStageTab('CALIBRATED')}
+          onClick={() => { setActiveStageTab('CALIBRATED'); setPriorityFilter('ALL'); }}
           className={cn(
             'bg-[#F0FDF4] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
             activeStageTab === 'CALIBRATED'
@@ -393,7 +406,7 @@ export const LabQueuePage: React.FC = () => {
 
         {/* Card 3: Pending Verification */}
         <div
-          onClick={() => setActiveStageTab('PENDING_VERIFY')}
+          onClick={() => { setActiveStageTab('PENDING_VERIFY'); setPriorityFilter('ALL'); }}
           className={cn(
             'bg-[#F8FAFC] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
             activeStageTab === 'PENDING_VERIFY'
@@ -415,7 +428,7 @@ export const LabQueuePage: React.FC = () => {
 
         {/* Card 4: Urgent Lab Priorities */}
         <div
-          onClick={() => setPriorityFilter('URGENT')}
+          onClick={() => { setActiveStageTab('LAB_ALL'); setPriorityFilter('URGENT'); }}
           className={cn(
             'bg-[#F0F7FF] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
             priorityFilter === 'URGENT'
@@ -706,6 +719,25 @@ export const LabQueuePage: React.FC = () => {
                                 >
                                   <ArrowRight className="size-3.5 text-emerald-600" /> Calibration Sheet
                                 </Link>
+
+                                {/* Mark as Not Serviceable — for any item that can't be calibrated */}
+                                <div className="border-t border-slate-100 my-0.5" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const firstItem = req.request_items?.[0];
+                                    setNotServiceableTarget({
+                                      requestId: req.id,
+                                      itemId: firstItem?.id || req.id,
+                                      itemName: firstItem?.item_masters?.item_name || req.request_number,
+                                    });
+                                    setNotServiceableReason('');
+                                    setOpenActionId(null);
+                                  }}
+                                  className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors w-full text-left"
+                                >
+                                  <Ban className="size-3.5 text-rose-500" /> Mark as Not Serviceable
+                                </button>
                               </div>
                             )}
                           </div>
@@ -849,6 +881,72 @@ export const LabQueuePage: React.FC = () => {
               >
                 Close
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Not Serviceable Confirmation Overlay */}
+      {notServiceableTarget && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-rose-200 overflow-hidden">
+            <div className="p-4 bg-rose-50 border-b border-rose-200 flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="size-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-rose-900 text-sm">Mark as Not Serviceable</h3>
+                <p className="text-xs text-rose-600 mt-0.5">
+                  {notServiceableTarget.itemName}
+                </p>
+              </div>
+            </div>
+            <div className="p-4 space-y-3">
+              <p className="text-xs text-slate-600">
+                This will change the item status to <strong>NOT_SERVICEABLE</strong> and record a reason. This action can be undone by a supervisor.
+              </p>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Reason / Technician Notes <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={notServiceableReason}
+                  onChange={(e) => setNotServiceableReason(e.target.value)}
+                  placeholder="e.g. Instrument is beyond repair, damaged beyond calibration range..."
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 resize-none"
+                />
+              </div>
+            </div>
+            <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
+              <Button
+                variant="outlineInk"
+                size="sm"
+                onClick={() => setNotServiceableTarget(null)}
+              >
+                Cancel
+              </Button>
+              <button
+                type="button"
+                disabled={!notServiceableReason.trim() || updateItemStatusMutation.isPending}
+                onClick={async () => {
+                  if (!notServiceableReason.trim() || !tenantId || !organizationId) return;
+                  await updateItemStatusMutation.mutateAsync({
+                    tenantId,
+                    organizationId,
+                    requestId: notServiceableTarget.requestId,
+                    itemId: notServiceableTarget.itemId,
+                    status: 'NOT_SERVICEABLE',
+                    reason: notServiceableReason.trim(),
+                  });
+                  setNotServiceableTarget(null);
+                  setNotServiceableReason('');
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                <Ban className="size-3.5" />
+                {updateItemStatusMutation.isPending ? 'Saving...' : 'Confirm Not Serviceable'}
+              </button>
             </div>
           </div>
         </div>

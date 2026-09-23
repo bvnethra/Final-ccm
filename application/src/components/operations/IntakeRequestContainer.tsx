@@ -218,6 +218,8 @@ export const IntakeRequestContainer: React.FC = () => {
     }
   };
 
+  const selectedClient = clients.find((c) => c.id === clientId) ?? undefined;
+
   return (
     <IntakeRequestPresenter
       clients={clients}
@@ -254,6 +256,7 @@ export const IntakeRequestContainer: React.FC = () => {
       isSubmitting={createRequestMutation.isPending}
       isLoadingData={isLoadingClients || isLoadingItemMasters || isLoadingVendors}
       errorMessage={errorMessage}
+      selectedClient={selectedClient}
     />
   );
 };

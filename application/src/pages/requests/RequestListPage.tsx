@@ -3,6 +3,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useCalibrationRequests } from '../../hooks/useOperations';
 import { Button } from '../../components/ui/UIPrimitives';
+import type { CalibrationRequest } from '../../types/domain';
+import { OfficialSaleOrderCVView } from '../../components/commercial/OfficialSaleOrderCVView';
 import {
   Plus,
   ArrowRight,
@@ -17,6 +19,7 @@ import {
   Layers,
   Eye,
   CheckCircle2,
+  FileCheck,
 } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
@@ -32,6 +35,7 @@ export const RequestListPage: React.FC = () => {
   const { canPerform, isSuperAdmin } = useAuthContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [viewingCVRequest, setViewingCVRequest] = useState<CalibrationRequest | null>(null);
 
   const { data: allRequests = [], isLoading } = useCalibrationRequests();
 
@@ -157,6 +161,12 @@ export const RequestListPage: React.FC = () => {
             <span className="size-1.5 rounded-full bg-purple-600" /> DISPATCHED
           </span>
         );
+      case 'NOT_SERVICEABLE':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">
+            <span className="size-1.5 rounded-full bg-rose-600" /> NOT SERVICEABLE
+          </span>
+        );
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
@@ -165,6 +175,20 @@ export const RequestListPage: React.FC = () => {
         );
     }
   };
+
+  // Full-page CV / Sale Order view
+  if (viewingCVRequest) {
+    return (
+      <div className="space-y-4">
+        <OfficialSaleOrderCVView
+          request={viewingCVRequest}
+          client={viewingCVRequest.clients}
+          onClose={() => setViewingCVRequest(null)}
+          isFullPage={true}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -553,6 +577,15 @@ export const RequestListPage: React.FC = () => {
                             </Link>
                           ) : null}
 
+                          {/* CV Full View Button */}
+                          <button
+                            type="button"
+                            onClick={() => setViewingCVRequest(req)}
+                            title="View & Print Sale Order / CV"
+                            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#EFF6FF] text-[#0274BB] hover:bg-blue-100 border border-[#BFDBFE] transition-colors inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <FileCheck className="size-3" /> CV
+                          </button>
                           <div className="inline-block">
                             <button
                               type="button"
@@ -578,6 +611,14 @@ export const RequestListPage: React.FC = () => {
                                 >
                                   <Eye className="size-3.5 text-slate-400" /> View Full Request
                                 </Link>
+
+                                <button
+                                  type="button"
+                                  onClick={() => { setViewingCVRequest(req); setOpenActionId(null); }}
+                                  className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0274BB] transition-colors w-full text-left"
+                                >
+                                  <FileCheck className="size-3.5 text-[#0274BB]" /> View / Print CV
+                                </button>
 
                                 {req.status === 'CREATED' && (
                                   <Link
