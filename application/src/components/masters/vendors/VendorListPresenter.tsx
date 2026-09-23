@@ -5,6 +5,10 @@ import { VendorListView } from './VendorListView';
 
 interface VendorListPresenterProps {
   vendors: Vendor[];
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  labCount: number;
   isLoading: boolean;
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -14,11 +18,20 @@ interface VendorListPresenterProps {
   onCategoryFilterChange: (cat: string) => void;
   onToggleStatus: (id: string) => void;
   isTogglingId?: string;
+  isImportOpen: boolean;
+  onToggleImport: () => void;
+  onCloseImport: () => void;
+  onImportBulk: (rows: any[]) => Promise<{ count: number }>;
+  onImportSuccess: () => void;
   errorMessage?: string | null;
 }
 
 export const VendorListPresenter: React.FC<VendorListPresenterProps> = ({
   vendors,
+  totalCount,
+  activeCount,
+  inactiveCount,
+  labCount,
   isLoading,
   searchQuery,
   onSearchChange,
@@ -28,18 +41,27 @@ export const VendorListPresenter: React.FC<VendorListPresenterProps> = ({
   onCategoryFilterChange,
   onToggleStatus,
   isTogglingId,
+  isImportOpen,
+  onToggleImport,
+  onCloseImport,
+  onImportBulk,
+  onImportSuccess,
   errorMessage,
 }) => {
   return (
     <div className="space-y-4">
       {errorMessage && (
-        <div className="p-4 bg-[#FEF2F2] border border-[#DC2626]/30 text-[#DC2626] rounded-[4px] text-sm">
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm">
           {errorMessage}
         </div>
       )}
 
       <VendorListView
         vendors={vendors}
+        totalCount={totalCount}
+        activeCount={activeCount}
+        inactiveCount={inactiveCount}
+        labCount={labCount}
         isLoading={isLoading}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
@@ -49,6 +71,11 @@ export const VendorListPresenter: React.FC<VendorListPresenterProps> = ({
         onCategoryFilterChange={onCategoryFilterChange}
         onToggleStatus={onToggleStatus}
         isTogglingId={isTogglingId}
+        isImportOpen={isImportOpen}
+        onToggleImport={onToggleImport}
+        onCloseImport={onCloseImport}
+        onImportBulk={onImportBulk}
+        onImportSuccess={onImportSuccess}
       />
     </div>
   );

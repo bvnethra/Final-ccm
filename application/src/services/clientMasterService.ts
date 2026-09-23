@@ -28,10 +28,53 @@ export function validatePhone(phone: string): boolean {
   return cleaned.length >= 10 && cleaned.length <= 15 && /^\+?[0-9]+$/.test(cleaned);
 }
 
-export function generateClientCode(): string {
-  const year = new Date().getFullYear();
-  const randomSuffix = Math.floor(10000 + Math.random() * 90000);
-  return `CLI-${year}-${randomSuffix}`;
+export function formatTccClientCode(seq: number): string {
+  if (seq >= 1000) {
+    return `TCC-MAS-${seq}`;
+  }
+  return `TCC-MAS-${String(seq).padStart(3, '0')}`;
+}
+
+export function generateClientCode(sequence?: number): string {
+  if (typeof sequence === 'number' && sequence > 0) {
+    return formatTccClientCode(sequence);
+  }
+  return formatTccClientCode(1);
+}
+
+export async function getNextTccClientCode(tenantId?: string): Promise<string> {
+  let maxNum = 0;
+  if (tenantId) {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('client_code')
+        .eq('tenant_id', tenantId)
+        .ilike('client_code', 'TCC-MAS-%');
+
+      if (!error && data && data.length > 0) {
+        for (const row of data) {
+          const match = (row.client_code || '').match(/TCC\s*-\s*MAS\s*-\s*(\d+)/i);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNum) maxNum = num;
+          }
+        }
+      }
+    } catch (_err) {
+      // fallback
+    }
+
+    const local = getLocalClients(tenantId);
+    for (const c of local) {
+      const match = (c.client_code || '').match(/TCC\s*-\s*MAS\s*-\s*(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+  }
+  return formatTccClientCode(maxNum + 1);
 }
 
 function getLocalClients(tenantId: string): Client[] {
@@ -191,7 +234,7 @@ export async function createClient(
   const billingAddress = formData.billing_address?.trim() || formData.address.trim();
 
   // Auto-generate client code if not provided
-  const clientCode = formData.client_code?.trim() || generateClientCode();
+  const clientCode = formData.client_code?.trim() || (await getNextTccClientCode(tenantId));
   const now = new Date().toISOString();
 
   const newClient: Client = {
@@ -472,22 +515,61 @@ export async function createClientsBulk(
   if (!tenantId) throw new Error('tenantId is required');
   if (!records.length) return { count: 0 };
 
+  // Calculate starting sequence for auto-generated codes
+  let currentSeq = 0;
+  try {
+    const { data } = await supabase
+      .from('clients')
+      .select('client_code')
+      .eq('tenant_id', tenantId)
+      .ilike('client_code', 'TCC-MAS-%');
+
+    if (data && data.length > 0) {
+      for (const row of data) {
+        const match = (row.client_code || '').match(/TCC\s*-\s*MAS\s*-\s*(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > currentSeq) currentSeq = num;
+        }
+      }
+    }
+  } catch (_seqErr) {
+    // fallback
+  }
+
+  const existingLocal = getLocalClients(tenantId);
+  for (const c of existingLocal) {
+    const match = (c.client_code || '').match(/TCC\s*-\s*MAS\s*-\s*(\d+)/i);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > currentSeq) currentSeq = num;
+    }
+  }
+
   const now = new Date().toISOString();
-  const dbRows = records.map((r, idx) => ({
-    tenant_id: tenantId,
-    organization_id: organizationId || null,
-    client_code: r.client_code?.trim() || `CLI-${Date.now()}-${idx + 1}`,
-    client_name: r.client_name.trim(),
-    address: r.address?.trim() || 'Facility Address',
-    billing_address: r.billing_address?.trim() || r.address?.trim() || 'Facility Address',
-    gst_tax_number: r.gst_tax_number?.trim() || null,
-    contact_person: r.contact_person?.trim() || 'Quality Manager',
-    email: r.email?.trim() || null,
-    phone: r.phone?.trim() || null,
-    status: r.status || 'ACTIVE',
-    created_at: now,
-    updated_at: now,
-  }));
+  const dbRows = records.map((r) => {
+    let code = r.client_code?.trim();
+    if (!code) {
+      currentSeq += 1;
+      code = formatTccClientCode(currentSeq);
+    }
+
+    return {
+      tenant_id: tenantId,
+      organization_id: organizationId || null,
+      client_code: code,
+      client_name: r.client_name.trim(),
+      address: r.address?.trim() || 'Facility Address',
+      billing_address: r.billing_address?.trim() || r.address?.trim() || 'Facility Address',
+      gst_tax_number: r.gst_tax_number?.trim() || null,
+      contact_person: r.contact_person?.trim() || 'Quality Manager',
+      email: r.email?.trim() || null,
+      phone: r.phone?.trim() || null,
+      status: r.status || 'ACTIVE',
+      created_at: now,
+      updated_at: now,
+    };
+  });
 
   const CHUNK_SIZE = 50;
   for (let i = 0; i < dbRows.length; i += CHUNK_SIZE) {

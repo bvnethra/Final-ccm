@@ -19,10 +19,53 @@ export const METROLOGY_SERVICE_CATEGORIES = [
   'Outsourced Laboratory Testing',
 ] as const;
 
-export function generateVendorCode(): string {
-  const year = new Date().getFullYear();
-  const randomSuffix = Math.floor(10000 + Math.random() * 90000);
-  return `VND-${year}-${randomSuffix}`;
+export function formatTccVendorCode(seq: number): string {
+  if (seq >= 1000) {
+    return `TCC-MAS-VC-${seq}`;
+  }
+  return `TCC-MAS-VC-${String(seq).padStart(3, '0')}`;
+}
+
+export function generateVendorCode(sequence?: number): string {
+  if (typeof sequence === 'number' && sequence > 0) {
+    return formatTccVendorCode(sequence);
+  }
+  return formatTccVendorCode(1);
+}
+
+export async function getNextTccVendorCode(tenantId?: string): Promise<string> {
+  let maxNum = 0;
+  if (tenantId) {
+    try {
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('vendor_code')
+        .eq('tenant_id', tenantId)
+        .ilike('vendor_code', 'TCC-MAS-VC-%');
+
+      if (!error && data && data.length > 0) {
+        for (const row of data) {
+          const match = (row.vendor_code || '').match(/TCC\s*-\s*MAS\s*-\s*VC\s*-\s*(\d+)/i);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNum) maxNum = num;
+          }
+        }
+      }
+    } catch (_err) {
+      // fallback
+    }
+
+    const local = getLocalVendors(tenantId);
+    for (const v of local) {
+      const match = (v.vendor_code || '').match(/TCC\s*-\s*MAS\s*-\s*VC\s*-\s*(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+  }
+  return formatTccVendorCode(maxNum + 1);
 }
 
 function getLocalVendors(tenantId: string): Vendor[] {
@@ -184,7 +227,7 @@ export async function createVendor(
     }
   }
 
-  const vendorCode = formData.vendor_code?.trim() || generateVendorCode();
+  const vendorCode = formData.vendor_code?.trim() || (await getNextTccVendorCode(tenantId));
   const now = new Date().toISOString();
 
   const newVendor: Vendor = {
@@ -433,4 +476,110 @@ export async function toggleVendorStatus(
   });
 
   return updated;
+}
+
+export async function createVendorsBulk(
+  tenantId: string,
+  organizationId: string | undefined,
+  records: Array<{
+    vendor_name: string;
+    vendor_code?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pin?: string;
+    gst_tax_number?: string;
+    contact_person?: string;
+    email?: string;
+    phone?: string;
+    serviced_categories?: string[] | string;
+    status?: 'ACTIVE' | 'INACTIVE';
+  }>
+): Promise<{ count: number }> {
+  if (!tenantId) throw new Error('tenantId is required');
+  if (!records.length) return { count: 0 };
+
+  // Calculate starting sequence for auto-generated codes
+  let currentSeq = 0;
+  try {
+    const { data } = await supabase
+      .from('vendors')
+      .select('vendor_code')
+      .eq('tenant_id', tenantId)
+      .ilike('vendor_code', 'TCC-MAS-VC-%');
+
+    if (data && data.length > 0) {
+      for (const row of data) {
+        const match = (row.vendor_code || '').match(/TCC\s*-\s*MAS\s*-\s*VC\s*-\s*(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > currentSeq) currentSeq = num;
+        }
+      }
+    }
+  } catch (_seqErr) {
+    // fallback
+  }
+
+  const existingLocal = getLocalVendors(tenantId);
+  for (const v of existingLocal) {
+    const match = (v.vendor_code || '').match(/TCC\s*-\s*MAS\s*-\s*VC\s*-\s*(\d+)/i);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > currentSeq) currentSeq = num;
+    }
+  }
+
+  const now = new Date().toISOString();
+  const dbRows = records.map((r) => {
+    let categories: string[] = [];
+    if (Array.isArray(r.serviced_categories)) {
+      categories = r.serviced_categories;
+    } else if (typeof r.serviced_categories === 'string' && r.serviced_categories.trim()) {
+      categories = r.serviced_categories.split(',').map((c) => c.trim()).filter(Boolean);
+    } else {
+      categories = ['Calibration & Testing'];
+    }
+
+    let code = r.vendor_code?.trim();
+    if (!code) {
+      currentSeq += 1;
+      code = formatTccVendorCode(currentSeq);
+    }
+
+    return {
+      id: crypto.randomUUID(),
+      tenant_id: tenantId,
+      organization_id: organizationId || null,
+      vendor_code: code,
+      vendor_name: r.vendor_name.trim(),
+      address: r.address?.trim() || 'Facility Address',
+      city: r.city?.trim() || 'Chennai',
+      state: r.state?.trim() || 'Tamil Nadu',
+      pin: r.pin?.trim() || '600001',
+      gst_tax_number: r.gst_tax_number?.trim() || 'UNREGISTERED',
+      contact_person: r.contact_person?.trim() || 'Laboratory Manager',
+      email: r.email?.trim() || 'vendor@example.com',
+      phone: r.phone?.trim() || '+91 98400 00000',
+      serviced_categories: categories,
+      status: r.status || 'ACTIVE',
+      created_at: now,
+      updated_at: now,
+    };
+  });
+
+  try {
+    const { error } = await supabase.from('vendors').insert(dbRows);
+    if (!error) {
+      const local = getLocalVendors(tenantId);
+      saveLocalVendors(tenantId, [...dbRows, ...local]);
+      return { count: dbRows.length };
+    }
+  } catch (_remoteErr) {
+    // Ignore and fallback
+  }
+
+  const local = getLocalVendors(tenantId);
+  saveLocalVendors(tenantId, [...dbRows, ...local]);
+  return { count: dbRows.length };
 }

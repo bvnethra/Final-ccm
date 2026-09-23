@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Client, ClientFormData } from '../../../types/domain';
 import { useCreateClient, useUpdateClient } from '../../../hooks/useClientMaster';
-import { validateGSTIN, validateEmail, validatePhone } from '../../../services/clientMasterService';
+import { validateGSTIN, validateEmail, validatePhone, getNextTccClientCode } from '../../../services/clientMasterService';
+import { useAuthContext } from '../../../contexts/AuthContext';
 import { ClientFormPresenter } from './ClientFormPresenter';
 
 interface ClientFormContainerProps {
@@ -15,6 +16,7 @@ export const ClientFormContainer: React.FC<ClientFormContainerProps> = ({
   isEditMode = false,
 }) => {
   const navigate = useNavigate();
+  const { tenantId } = useAuthContext();
   const [searchParams] = useSearchParams();
   const returnUrl = searchParams.get('returnUrl');
   const createMutation = useCreateClient();
@@ -68,8 +70,17 @@ export const ClientFormContainer: React.FC<ClientFormContainerProps> = ({
         payment_term: initialData.payment_term || 'IMMEDIATE',
         status: initialData.status || 'ACTIVE',
       });
+    } else if (!isEditMode) {
+      getNextTccClientCode(tenantId).then((nextCode) => {
+        setFormData((prev) => {
+          if (!prev.client_code) {
+            return { ...prev, client_code: nextCode };
+          }
+          return prev;
+        });
+      });
     }
-  }, [initialData]);
+  }, [initialData, isEditMode, tenantId]);
 
   const handleChange = (field: keyof ClientFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

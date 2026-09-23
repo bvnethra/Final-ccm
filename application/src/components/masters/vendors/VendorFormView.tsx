@@ -147,7 +147,7 @@ export const VendorFormView: React.FC<VendorFormViewProps> = ({
                 Vendor Code <span className="text-xs text-[#6B7280]">(Auto-generated if empty)</span>
               </FieldLabel>
               <Input
-                placeholder="e.g. VND-2026-39102"
+                placeholder="e.g. TCC-MAS-VC-001"
                 value={formData.vendor_code || ''}
                 onChange={(e) => onChange('vendor_code', e.target.value)}
                 disabled={isEditMode}

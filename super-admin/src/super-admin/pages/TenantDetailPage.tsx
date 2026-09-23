@@ -491,6 +491,9 @@ export default function TenantDetailPage() {
                           <option value="GOVERNMENT_DEFENSE">Government / Defense Metrology</option>
                         </>
                       )}
+                      {enterpriseForm.tenantType && !tenantTypes.some(t => t.code === enterpriseForm.tenantType) && (
+                        <option value={enterpriseForm.tenantType}>{enterpriseForm.tenantType}</option>
+                      )}
                     </select>
                   </div>
                   <Input

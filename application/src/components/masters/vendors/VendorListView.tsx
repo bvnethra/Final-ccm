@@ -1,33 +1,87 @@
 // application/src/components/masters/vendors/VendorListView.tsx
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { Vendor } from '../../../types/domain';
-import {
-  Card,
-  CardContent,
-  Button,
-  Input,
-  Badge,
-} from '../../ui/UIPrimitives';
+import { useAuthContext } from '../../../contexts/AuthContext';
+import { Button } from '../../ui/UIPrimitives';
 import {
   Search,
   Plus,
-  Truck,
   Phone,
   Mail,
   Eye,
   Edit2,
-  ToggleLeft,
-  ToggleRight,
   Clock,
   User,
-  Wrench,
+  MapPin,
+  ChevronRight,
+  MoreVertical,
+  FileSpreadsheet,
+  ToggleLeft,
+  ToggleRight,
+  Handshake,
+  FlaskConical,
 } from 'lucide-react';
 import { METROLOGY_SERVICE_CATEGORIES } from '../../../services/vendorMasterService';
-import { useAuthContext } from '../../../contexts/AuthContext';
+import { ExcelBulkImportPanel, type FieldMapping } from '../../ui/ExcelBulkImportPanel';
+import { cn } from '../../../lib/utils';
+
+const VENDOR_IMPORT_FIELDS: FieldMapping[] = [
+  { key: 'vendor_name', label: 'Vendor / Laboratory Name', required: true },
+  { key: 'vendor_code', label: 'Vendor Code' },
+  { key: 'contact_person', label: 'Contact Person' },
+  { key: 'phone', label: 'Phone Number' },
+  { key: 'email', label: 'Email Address' },
+  { key: 'address', label: 'Address' },
+  { key: 'city', label: 'City' },
+  { key: 'state', label: 'State' },
+  { key: 'pin', label: 'PIN Code' },
+  { key: 'gst_tax_number', label: 'GST / Tax ID' },
+  { key: 'serviced_categories', label: 'Disciplines Serviced' },
+];
+
+const SAMPLE_VENDORS = [
+  {
+    'Vendor / Laboratory Name': 'National Metrology Standards Lab',
+    'Vendor Code': 'TCC-MAS-VC-001',
+    'Contact Person': 'Technical Director',
+    'Phone': '+91 98400 11223',
+    'Email': 'contact@nmsl-calib.org',
+    'Address': 'NABL Technology Park, Guindy',
+    'City': 'Chennai',
+    'State': 'Tamil Nadu',
+    'PIN Code': '600032',
+    'GST / Tax ID': '33AAACN9999Z1Z8',
+    'Disciplines Serviced': 'Mechanical Calibration, Thermal Calibration',
+  },
+  {
+    'Vendor / Laboratory Name': 'Apex Precision Metrology Services',
+    'Vendor Code': 'TCC-MAS-VC-002',
+    'Contact Person': 'Operations Manager',
+    'Phone': '+91 98400 44556',
+    'Email': 'support@apexmetrology.com',
+    'Address': 'SIDCO Industrial Estate, Ambattur',
+    'City': 'Chennai',
+    'State': 'Tamil Nadu',
+    'PIN Code': '600058',
+    'GST / Tax ID': '33AAACN8888Z2Z1',
+    'Disciplines Serviced': 'Electro-Technical Calibration, Pressure & Vacuum',
+  },
+];
+
+const AVATAR_PALETTES = [
+  { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100' },
+  { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100' },
+  { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-100' },
+  { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100' },
+];
 
 interface VendorListViewProps {
   vendors: Vendor[];
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  labCount: number;
   isLoading: boolean;
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -37,10 +91,19 @@ interface VendorListViewProps {
   onCategoryFilterChange: (cat: string) => void;
   onToggleStatus: (id: string) => void;
   isTogglingId?: string;
+  isImportOpen: boolean;
+  onToggleImport: () => void;
+  onCloseImport: () => void;
+  onImportBulk: (rows: any[]) => Promise<{ count: number }>;
+  onImportSuccess: () => void;
 }
 
 export const VendorListView: React.FC<VendorListViewProps> = ({
   vendors,
+  totalCount,
+  activeCount,
+  inactiveCount,
+  labCount,
   isLoading,
   searchQuery,
   onSearchChange,
@@ -50,281 +113,518 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
   onCategoryFilterChange,
   onToggleStatus,
   isTogglingId,
+  isImportOpen,
+  onToggleImport,
+  onCloseImport,
+  onImportBulk,
+  onImportSuccess,
 }) => {
-  const { canPerform, isSuperAdmin } = useAuthContext();
+  const { canPerform, isSuperAdmin, tenantName, organizationName } = useAuthContext();
   const canCreateMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE');
-  const canEditMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE_EDIT') || canCreateMaster;
-  const isViewOnlyMaster = !canCreateMaster;
+  const canEditMaster =
+    isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE_EDIT') || canCreateMaster;
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(vendors.length / pageSize));
+
+  // Reset page when filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, categoryFilter]);
+
+  const pagedVendors = vendors.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  // Active Dropdown Row for Actions
+  const [openActionId, setOpenActionId] = useState<string | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target as Node)) {
+        setOpenActionId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const enterprisePrefix = (tenantName || organizationName || 'Nethra').replace(/\s+/g, '_');
+  const templateFileName = `${enterprisePrefix}_Vendor_Master_Template.xlsx`;
 
   return (
-    <div className="space-y-6">
-      {/* Header Bar */}
+    <div className="space-y-5">
+      {/* Top Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-[4px] bg-[#EF7626] flex items-center justify-center text-white">
-              <Truck className="size-4" />
-            </div>
-            <h1 className="text-2xl font-bold text-[#111827] tracking-tight">
+        <div className="flex items-center gap-3">
+          <div className="size-12 rounded-xl bg-[#0274BB] flex items-center justify-center text-white shadow-sm shrink-0">
+            <Handshake className="size-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight">
               Vendor Master Directory
             </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Authorized Calibration Laboratories &amp; Outsource Service Providers ({totalCount} Registered)
+            </p>
           </div>
-          <p className="text-sm text-[#6B7280] mt-1">
-            Authorized Calibration Laboratories, Tool Suppliers & Outsource Vendors {isViewOnlyMaster && '(View Only)'}
-          </p>
         </div>
 
-        {!isViewOnlyMaster && (
-          <Link to="/masters/vendors/new">
-            <Button variant="warning">
-              <Plus className="size-4" /> Add New Vendor
-            </Button>
-          </Link>
-        )}
+        <div className="hidden md:flex flex-col items-end">
+          <span className="text-xs font-semibold text-[#0274BB] tracking-wide">
+            Qualify • Partner • Comply
+          </span>
+          <div className="h-0.5 w-7 bg-[#0274BB] mt-1 rounded-full" />
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <Card>
-        <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
-            <Input
-              placeholder="Search by vendor code, name, city, discipline..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9"
+      <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="relative flex-1">
+          <Search className="size-4.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by vendor code, name, city, discipline, contact..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0274BB]/20 focus:border-[#0274BB] transition-all shadow-xs"
+          />
+        </div>
+
+        {/* Filter Buttons & Actions */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Category Dropdown */}
+          <select
+            value={categoryFilter}
+            onChange={(e) => onCategoryFilterChange(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:border-[#0274BB] focus:outline-none shadow-xs transition-colors cursor-pointer"
+          >
+            <option value="ALL">All Disciplines</option>
+            {METROLOGY_SERVICE_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange('ALL')}
+            className={cn(
+              'px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
+              statusFilter === 'ALL'
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            )}
+          >
+            All
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange('ACTIVE')}
+            className={cn(
+              'inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
+              statusFilter === 'ACTIVE'
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            )}
+          >
+            <span
+              className={cn(
+                'size-2 rounded-full',
+                statusFilter === 'ACTIVE' ? 'bg-white' : 'bg-emerald-500'
+              )}
             />
-          </div>
+            Active
+          </button>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Category Filter Dropdown */}
-            <select
-              value={categoryFilter}
-              onChange={(e) => onCategoryFilterChange(e.target.value)}
-              className="rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-medium text-[#374151] focus:border-[#EF7626] focus:outline-none"
-            >
-              <option value="ALL">All Disciplines / Categories</option>
-              {METROLOGY_SERVICE_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange('INACTIVE')}
+            className={cn(
+              'inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
+              statusFilter === 'INACTIVE'
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            )}
+          >
+            <span
+              className={cn(
+                'size-2 rounded-full',
+                statusFilter === 'INACTIVE' ? 'bg-white' : 'bg-slate-400'
+              )}
+            />
+            Inactive
+          </button>
 
-            {/* Status Filter Buttons */}
-            <div className="flex items-center gap-1.5">
-              {(['ALL', 'ACTIVE', 'INACTIVE'] as const).map((st) => (
-                <button
-                  key={st}
-                  onClick={() => onStatusFilterChange(st)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-[4px] transition-colors ${
-                    statusFilter === st
-                      ? 'bg-[#EF7626] text-white'
-                      : 'bg-[#F3F4F6] text-[#4B5563] hover:bg-[#E5E7EB]'
-                  }`}
-                >
-                  {st}
-                </button>
-              ))}
+          {canCreateMaster && (
+            <>
+              <button
+                type="button"
+                onClick={onToggleImport}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
+                title="Bulk Import Excel Sheet"
+              >
+                <FileSpreadsheet className="size-4 text-[#0274BB]" />
+                <span className="hidden xl:inline">Import</span>
+              </button>
+
+              <Link to="/masters/vendors/new">
+                <Button className="bg-[#0274BB] hover:bg-[#02629e] text-white font-medium px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm shadow-xs transition-all">
+                  <Plus className="size-4" /> Add Vendor
+                </Button>
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Excel Bulk Import Accordion Panel */}
+      <ExcelBulkImportPanel
+        isOpen={isImportOpen}
+        onClose={onCloseImport}
+        title="Import Vendors in Bulk"
+        description="Upload your calibration vendor and subcontractor spreadsheet to register authorized partner profiles."
+        fields={VENDOR_IMPORT_FIELDS}
+        sampleTemplateFileName={templateFileName}
+        sampleData={SAMPLE_VENDORS}
+        onImport={onImportBulk}
+        onSuccess={onImportSuccess}
+      />
+
+      {/* 4 Stat Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Vendors */}
+        <div
+          onClick={() => onStatusFilterChange('ALL')}
+          className={cn(
+            'bg-[#F8F6FF] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
+            statusFilter === 'ALL'
+              ? 'border-purple-300 ring-2 ring-purple-400/20'
+              : 'border-purple-100 hover:border-purple-200'
+          )}
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+              <Handshake className="size-5" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 leading-none">{totalCount}</div>
+              <div className="text-xs text-slate-500 font-medium mt-1">Total Vendors</div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <ChevronRight className="size-5 text-purple-400" />
+        </div>
 
-      {/* Vendor Table */}
-      <Card>
+        {/* Card 2: Active Vendors */}
+        <div
+          onClick={() => onStatusFilterChange('ACTIVE')}
+          className={cn(
+            'bg-[#F0FDF4] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
+            statusFilter === 'ACTIVE'
+              ? 'border-emerald-300 ring-2 ring-emerald-400/20'
+              : 'border-emerald-100 hover:border-emerald-200'
+          )}
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <span className="size-3 rounded-full bg-emerald-500" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 leading-none">{activeCount}</div>
+              <div className="text-xs text-slate-500 font-medium mt-1">Active Vendors</div>
+            </div>
+          </div>
+          <ChevronRight className="size-5 text-emerald-400" />
+        </div>
+
+        {/* Card 3: Inactive Vendors */}
+        <div
+          onClick={() => onStatusFilterChange('INACTIVE')}
+          className={cn(
+            'bg-[#F8FAFC] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
+            statusFilter === 'INACTIVE'
+              ? 'border-slate-300 ring-2 ring-slate-400/20'
+              : 'border-slate-200 hover:border-slate-300'
+          )}
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+              <span className="size-3 rounded-full bg-slate-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 leading-none">{inactiveCount}</div>
+              <div className="text-xs text-slate-500 font-medium mt-1">Inactive Vendors</div>
+            </div>
+          </div>
+          <ChevronRight className="size-5 text-slate-400" />
+        </div>
+
+        {/* Card 4: Calibration Labs */}
+        <div
+          onClick={() => onStatusFilterChange('LABS')}
+          className={cn(
+            'bg-[#F0F7FF] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
+            statusFilter === 'LABS'
+              ? 'border-blue-300 ring-2 ring-blue-400/20'
+              : 'border-blue-100 hover:border-blue-200'
+          )}
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-blue-100 text-[#0274BB] flex items-center justify-center shrink-0">
+              <FlaskConical className="size-5" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 leading-none">{labCount}</div>
+              <div className="text-xs text-slate-500 font-medium mt-1">Calibration Labs</div>
+            </div>
+          </div>
+          <ChevronRight className="size-5 text-[#0274BB]/60" />
+        </div>
+      </div>
+
+      {/* Vendor Table Container */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB] text-[#4B5563] text-xs uppercase font-semibold">
+            <thead className="bg-[#F8FAFC] border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-semibold">
               <tr>
-                <th className="px-5 py-3.5">Vendor Info</th>
-                <th className="px-5 py-3.5">Contact Person</th>
-                <th className="px-5 py-3.5">Location</th>
-                <th className="px-5 py-3.5">GST / Tax ID</th>
-                <th className="px-5 py-3.5">Categories Serviced</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5">System Audit</th>
-                <th className="px-5 py-3.5 text-right">Actions</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Vendor Info</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Contact Person</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Location</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">GST / Tax ID</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Disciplines Serviced</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Status</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">System Audit</th>
+                <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
+            <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center text-[#6B7280]">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <div className="size-6 border-2 border-[#EF7626] border-t-transparent rounded-full animate-spin" />
-                      <span>Loading vendor master records...</span>
+                  <td colSpan={8} className="px-5 py-16 text-center text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-2.5">
+                      <div className="size-7 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm font-medium">Loading vendor directory...</span>
                     </div>
                   </td>
                 </tr>
-              ) : vendors.length === 0 ? (
+              ) : pagedVendors.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center text-[#6B7280]">
+                  <td colSpan={8} className="px-5 py-16 text-center text-slate-500">
                     <div className="max-w-sm mx-auto space-y-3">
-                      <div className="size-12 rounded-full bg-[#F3F4F6] flex items-center justify-center mx-auto text-[#9CA3AF]">
-                        <Truck className="size-6" />
+                      <div className="size-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                        <Handshake className="size-6" />
                       </div>
-                      <h3 className="font-semibold text-base text-[#111827]">No Vendors Found</h3>
-                      <p className="text-xs text-[#6B7280]">
-                        {searchQuery
-                          ? 'No matching vendors found for this search criteria.'
-                          : 'No external vendors registered yet. Register your first vendor using the full-page creation form.'}
+                      <h3 className="font-semibold text-base text-slate-900">No Vendors Found</h3>
+                      <p className="text-xs text-slate-500">
+                        {searchQuery || categoryFilter !== 'ALL'
+                          ? 'No matching vendors found for your search/filter criteria.'
+                          : 'No vendors registered yet in this enterprise directory.'}
                       </p>
-                      <Link to="/masters/vendors/new">
-                        <Button variant="secondary" size="sm">
-                          <Plus className="size-3.5" /> Register Vendor
-                        </Button>
-                      </Link>
+                      {canCreateMaster && (
+                        <Link to="/masters/vendors/new">
+                          <Button variant="secondary" size="sm" className="mt-2">
+                            <Plus className="size-3.5" /> Register Vendor
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </td>
                 </tr>
               ) : (
-                vendors.map((vendor) => {
-                  const phoneCount = vendor.phone_numbers?.length || 1;
-                  const emailCount = vendor.email_addresses?.length || 1;
+                pagedVendors.map((vendor, index) => {
+                  const palette = AVATAR_PALETTES[index % AVATAR_PALETTES.length];
+                  const isActionMenuOpen = openActionId === vendor.id;
                   const isToggling = isTogglingId === vendor.id;
 
                   return (
-                    <tr key={vendor.id} className="hover:bg-[#F9FAFB] transition-colors">
+                    <tr
+                      key={vendor.id}
+                      className="hover:bg-slate-50/70 transition-colors group"
+                    >
+                      {/* VENDOR INFO */}
                       <td className="px-5 py-4">
-                        <div className="font-semibold text-[#111827]">
-                          {vendor.vendor_name}
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="font-mono text-xs px-1.5 py-0.5 bg-[#FFF7ED] text-[#EF7626] border border-[#EF7626]/20 rounded-[3px] font-semibold">
-                            {vendor.vendor_code}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <div className="font-medium text-[#111827]">
-                          {vendor.contact_person}
-                        </div>
-                        <div className="flex flex-col gap-0.5 mt-1 text-xs text-[#6B7280]">
-                          <span className="flex items-center gap-1">
-                            <Phone className="size-3 text-[#9CA3AF]" />
-                            {vendor.phone}
-                            {phoneCount > 1 && (
-                              <span className="text-[10px] px-1 bg-[#F3F4F6] rounded text-[#4B5563]">
-                                +{phoneCount - 1}
-                              </span>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              'size-10 rounded-lg flex items-center justify-center border shrink-0',
+                              palette.bg,
+                              palette.text,
+                              palette.border
                             )}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Mail className="size-3 text-[#9CA3AF]" />
-                            {vendor.email}
-                            {emailCount > 1 && (
-                              <span className="text-[10px] px-1 bg-[#F3F4F6] rounded text-[#4B5563]">
-                                +{emailCount - 1}
-                              </span>
-                            )}
-                          </span>
+                          >
+                            <Handshake className="size-5" />
+                          </div>
+                          <div>
+                            <Link
+                              to={`/masters/vendors/${vendor.id}`}
+                              className="font-semibold text-slate-900 text-sm hover:text-[#0274BB] transition-colors leading-tight line-clamp-1"
+                              title={vendor.vendor_name}
+                            >
+                              {vendor.vendor_name}
+                            </Link>
+                            <span className="inline-block font-mono text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-[#0274BB] border border-blue-200 mt-1">
+                              {vendor.vendor_code}
+                            </span>
+                          </div>
                         </div>
                       </td>
 
+                      {/* CONTACT PERSON */}
                       <td className="px-5 py-4">
-                        <div className="text-xs text-[#111827] font-medium">
-                          {vendor.city}, {vendor.state}
-                        </div>
-                        <div className="text-[11px] text-[#6B7280] font-mono">
-                          PIN: {vendor.pin}
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                            <User className="size-3.5 text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[160px]">
+                              {vendor.contact_person || 'Laboratory Head'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-500 flex items-center gap-1.5 font-mono">
+                            <Phone className="size-3 text-slate-400 shrink-0" />
+                            <span>{vendor.phone}</span>
+                          </div>
+                          <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                            <Mail className="size-3 text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[160px]">{vendor.email}</span>
+                          </div>
                         </div>
                       </td>
 
-                      <td className="px-5 py-4">
-                        <span className="font-mono text-xs font-semibold text-[#374151] px-2 py-0.5 bg-[#F3F4F6] rounded">
-                          {vendor.gst_tax_number}
+                      {/* LOCATION */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                          <MapPin className="size-3.5 text-slate-400 shrink-0" />
+                          <span>{vendor.city}</span>
+                        </div>
+                        <div className="text-xs text-slate-500 font-mono ml-5 mt-0.5">
+                          {vendor.pin}
+                        </div>
+                      </td>
+
+                      {/* GST / TAX ID */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 font-mono text-xs font-semibold rounded tracking-wider whitespace-nowrap">
+                          {vendor.gst_tax_number || 'UNREGISTERED'}
                         </span>
                       </td>
 
+                      {/* DISCIPLINES SERVICED */}
                       <td className="px-5 py-4">
-                        <div className="flex flex-wrap gap-1 max-w-xs">
-                          {vendor.serviced_categories && vendor.serviced_categories.length > 0 ? (
-                            vendor.serviced_categories.slice(0, 2).map((cat, i) => (
+                        <div className="flex flex-wrap gap-1 max-w-[220px]">
+                          {vendor.serviced_categories?.length ? (
+                            vendor.serviced_categories.slice(0, 2).map((cat) => (
                               <span
-                                key={i}
-                                className="text-[11px] px-2 py-0.5 bg-[#F3F4F6] text-[#374151] rounded border border-[#E5E7EB] flex items-center gap-1"
+                                key={cat}
+                                className="inline-block whitespace-nowrap px-2 py-0.5 bg-[#E8F8F0] text-[#16A34A] rounded text-[11px] font-medium border border-[#D1F2E0]"
                               >
-                                <Wrench className="size-2.5 text-[#9CA3AF]" />
                                 {cat}
                               </span>
                             ))
                           ) : (
-                            <span className="text-xs text-[#9CA3AF] italic">General Services</span>
+                            <span className="inline-block whitespace-nowrap px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px]">
+                              General Metrology
+                            </span>
                           )}
-                          {vendor.serviced_categories && vendor.serviced_categories.length > 2 && (
-                            <span className="text-[10px] px-1.5 py-0.5 bg-[#EFF6FF] text-[#0274BB] rounded font-semibold">
-                              +{vendor.serviced_categories.length - 2} more
+                          {vendor.serviced_categories?.length > 2 && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-semibold">
+                              +{vendor.serviced_categories.length - 2}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      <td className="px-5 py-4">
-                        {!canEditMaster ? (
-                          <Badge variant={vendor.status === 'ACTIVE' ? 'success' : 'outline'}>
-                            {vendor.status}
-                          </Badge>
+                      {/* STATUS */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {vendor.status === 'ACTIVE' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#E8F8F0] text-[#16A34A] border border-[#D1F2E0] whitespace-nowrap">
+                            <span className="size-1.5 rounded-full bg-[#16A34A]" /> ACTIVE
+                          </span>
                         ) : (
-                          <button
-                            onClick={() => onToggleStatus(vendor.id)}
-                            disabled={isToggling}
-                            className="flex items-center gap-1 text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-50"
-                            title="Click to toggle status"
-                          >
-                            {vendor.status === 'ACTIVE' ? (
-                              <>
-                                <ToggleRight className="size-5 text-[#16A34A]" />
-                                <Badge variant="success">ACTIVE</Badge>
-                              </>
-                            ) : (
-                              <>
-                                <ToggleLeft className="size-5 text-[#9CA3AF]" />
-                                <Badge variant="outline">INACTIVE</Badge>
-                              </>
-                            )}
-                          </button>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
+                            <span className="size-1.5 rounded-full bg-slate-400" /> INACTIVE
+                          </span>
                         )}
                       </td>
 
-                      <td className="px-5 py-4 text-xs text-[#6B7280]">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            <Clock className="size-3 text-[#9CA3AF]" />
-                            <span>Created: {new Date(vendor.created_at).toLocaleDateString()}</span>
+                      {/* SYSTEM AUDIT */}
+                      <td className="px-5 py-4 text-xs text-slate-500 whitespace-nowrap">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="size-3 text-slate-400 shrink-0" />
+                            <span>Created:</span>
                           </div>
-                          <div className="flex items-center gap-1 text-[11px] text-[#9CA3AF]">
-                            <User className="size-3" />
-                            <span>By: {vendor.created_by_name || 'System'}</span>
+                          <div className="text-slate-600 ml-4 font-mono text-[11px]">
+                            {new Date(vendor.created_at).toLocaleDateString()}
                           </div>
-                          {vendor.updated_at && vendor.updated_at !== vendor.created_at && (
-                            <div className="text-[10px] text-[#9CA3AF] border-t border-[#E5E7EB] pt-0.5 mt-0.5">
-                              Mod: {new Date(vendor.updated_at).toLocaleDateString()} by {vendor.updated_by_name || 'System'}
-                            </div>
-                          )}
+                          <div className="text-[11px] text-slate-400 ml-4">
+                            By: {vendor.created_by_name || 'System'}
+                          </div>
                         </div>
                       </td>
 
-                      <td className="px-5 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link to={`/masters/vendors/${vendor.id}`}>
-                            <button
-                              className="p-1.5 text-[#4B5563] hover:text-[#0274BB] hover:bg-[#EFF6FF] rounded transition-colors"
-                              title="View Vendor Profile & History"
+                      {/* ACTIONS */}
+                      <td className="px-5 py-4 text-right relative">
+                        <div className="inline-block">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenActionId(isActionMenuOpen ? null : vendor.id);
+                            }}
+                            className="size-8 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+                            title="Actions"
+                          >
+                            <MoreVertical className="size-4" />
+                          </button>
+
+                          {isActionMenuOpen && (
+                            <div
+                              ref={actionMenuRef}
+                              className="absolute right-5 top-12 w-44 bg-white rounded-lg shadow-xl border border-slate-200 py-1.5 z-40 animate-in fade-in zoom-in-95 text-left"
                             >
-                              <Eye className="size-4" />
-                            </button>
-                          </Link>
-                          {canEditMaster && (
-                            <Link to={`/masters/vendors/${vendor.id}/edit`}>
-                              <button
-                                className="p-1.5 text-[#4B5563] hover:text-[#EF7626] hover:bg-[#FFF7ED] rounded transition-colors"
-                                title="Edit Vendor Record"
+                              <Link
+                                to={`/masters/vendors/${vendor.id}`}
+                                onClick={() => setOpenActionId(null)}
+                                className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0274BB] transition-colors"
                               >
-                                <Edit2 className="size-4" />
-                              </button>
-                            </Link>
+                                <Eye className="size-3.5 text-slate-400" /> View Details
+                              </Link>
+
+                              {canEditMaster && (
+                                <Link
+                                  to={`/masters/vendors/${vendor.id}/edit`}
+                                  onClick={() => setOpenActionId(null)}
+                                  className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#0274BB] transition-colors"
+                                >
+                                  <Edit2 className="size-3.5 text-slate-400" /> Edit Profile
+                                </Link>
+                              )}
+
+                              {canEditMaster && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenActionId(null);
+                                    onToggleStatus(vendor.id);
+                                  }}
+                                  disabled={isToggling}
+                                  className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-100 cursor-pointer"
+                                >
+                                  {vendor.status === 'ACTIVE' ? (
+                                    <>
+                                      <ToggleLeft className="size-3.5 text-slate-400" /> Deactivate
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ToggleRight className="size-3.5 text-emerald-600" /> Activate
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -335,7 +635,79 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
             </tbody>
           </table>
         </div>
-      </Card>
+
+        {/* Pagination Bar */}
+        <div className="bg-white border-t border-slate-200 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+          <div>
+            Showing{' '}
+            <span className="font-semibold text-slate-800">
+              {vendors.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+            </span>{' '}
+            –{' '}
+            <span className="font-semibold text-slate-800">
+              {Math.min(currentPage * pageSize, vendors.length)}
+            </span>{' '}
+            of <span className="font-semibold text-slate-800">{vendors.length}</span> vendors
+          </div>
+
+          <div className="flex items-center gap-1.5 self-center sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="size-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            >
+              ‹
+            </button>
+
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = i + 1;
+              return (
+                <button
+                  key={pageNum}
+                  type="button"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={cn(
+                    'size-8 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer',
+                    currentPage === pageNum
+                      ? 'bg-[#0274BB] text-white shadow-xs'
+                      : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  )}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            {totalPages > 5 && (
+              <>
+                <span className="px-1 text-slate-400">…</span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(totalPages)}
+                  className={cn(
+                    'size-8 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer',
+                    currentPage === totalPages
+                      ? 'bg-[#0274BB] text-white shadow-xs'
+                      : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  )}
+                >
+                  {totalPages}
+                </button>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="size-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            >
+              ›
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

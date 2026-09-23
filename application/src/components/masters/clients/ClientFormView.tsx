@@ -131,7 +131,7 @@ export const ClientFormView: React.FC<ClientFormViewProps> = ({
                 Client Code <span className="text-xs text-[#6B7280]">(Auto-generated if empty)</span>
               </FieldLabel>
               <Input
-                placeholder="e.g. CLI-2026-48201"
+                placeholder="e.g. TCC-MAS-001"
                 value={formData.client_code || ''}
                 onChange={(e) => onChange('client_code', e.target.value)}
                 disabled={isEditMode}

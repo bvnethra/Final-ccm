@@ -4,7 +4,9 @@ import {
   validateGSTIN,
   validateEmail,
   validatePhone,
+  formatTccClientCode,
   generateClientCode,
+  getNextTccClientCode,
   createClient,
   updateClient,
   toggleClientStatus,
@@ -17,7 +19,7 @@ describe('Client Master Data Business Logic & Validations', () => {
     localStorage.clear();
   });
 
-  describe('Validation Rules', () => {
+  describe('Validation Rules & Client Code Generation (TCC-MAS-001 to 999)', () => {
     it('validates 15-character Indian GSTIN alphanumeric structure correctly', () => {
       // Valid GSTIN: 2 digits, 5 letters, 4 digits, 1 letter, 1 alpha/num, 'Z', 1 alpha/num
       expect(validateGSTIN('27AAAAA0000A1Z5')).toBe(true);
@@ -47,14 +49,18 @@ describe('Client Master Data Business Logic & Validations', () => {
       expect(validatePhone('')).toBe(false);
     });
 
-    it('generates unique client codes matching format CLI-YYYY-XXXXX', () => {
-      const code1 = generateClientCode();
-      const code2 = generateClientCode();
-      const currentYear = new Date().getFullYear();
+    it('formats sequential client codes from TCC-MAS-001 to 999 correctly', () => {
+      expect(formatTccClientCode(1)).toBe('TCC-MAS-001');
+      expect(formatTccClientCode(25)).toBe('TCC-MAS-025');
+      expect(formatTccClientCode(100)).toBe('TCC-MAS-100');
+      expect(formatTccClientCode(999)).toBe('TCC-MAS-999');
+      expect(formatTccClientCode(1000)).toBe('TCC-MAS-1000');
+      expect(generateClientCode(50)).toBe('TCC-MAS-050');
+    });
 
-      expect(code1).toMatch(new RegExp(`^CLI-${currentYear}-\\d{5}$`));
-      expect(code2).toMatch(new RegExp(`^CLI-${currentYear}-\\d{5}$`));
-      expect(code1).not.toBe(code2);
+    it('retrieves next sequential client code starting at TCC-MAS-001', async () => {
+      const code1 = await getNextTccClientCode('tenant-fresh-client-01');
+      expect(code1).toBe('TCC-MAS-001');
     });
   });
 
@@ -85,7 +91,7 @@ describe('Client Master Data Business Logic & Validations', () => {
       expect(created.id).toBeDefined();
       expect(created.tenant_id).toBe(dummyTenant);
       expect(created.organization_id).toBe(dummyOrg);
-      expect(created.client_code).toMatch(/^CLI-\d{4}-\d{5}$/);
+      expect(created.client_code).toMatch(/^TCC-MAS-\d{3}$/);
       expect(created.client_name).toBe(sampleFormData.client_name);
       // When billing address is omitted, it defaults to registered address
       expect(created.billing_address).toBe(sampleFormData.address);

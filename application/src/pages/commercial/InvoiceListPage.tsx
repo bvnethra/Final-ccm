@@ -11,9 +11,6 @@ import {
 import { useAuthContext } from '../../contexts/AuthContext';
 import {
   Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   CardContent,
   Button,
   Badge,
@@ -47,6 +44,12 @@ import {
   AlertCircle,
   ShieldCheck,
   Clock,
+  Search,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  Building2,
+  Truck,
 } from 'lucide-react';
 
 export interface EditableInvoiceItem {
@@ -69,7 +72,11 @@ export const InvoiceListPage: React.FC = () => {
   const approveInvoiceMutation = useApproveInvoice();
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [filterType, setFilterType] = useState<'ALL' | 'PARTIAL' | 'ACTUAL'>('ALL');
+  const [filterType, setFilterType] = useState<'ALL' | 'PARTIAL' | 'ACTUAL' | 'APPROVED' | 'PENDING'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [activeActionMenuId, setActiveActionMenuId] = useState<string | null>(null);
 
   // Approval Modal State
   const [approvalModalInvoice, setApprovalModalInvoice] = useState<Invoice | null>(null);
@@ -107,16 +114,57 @@ export const InvoiceListPage: React.FC = () => {
 
   const partialInvoices = invoices.filter((i) => i.invoice_type === 'PARTIAL');
   const actualInvoices = invoices.filter((i) => i.invoice_type === 'ACTUAL' || !i.invoice_type);
-
-  const filteredInvoices = invoices.filter((inv) => {
-    if (filterType === 'PARTIAL') return inv.invoice_type === 'PARTIAL';
-    if (filterType === 'ACTUAL') return inv.invoice_type === 'ACTUAL' || !inv.invoice_type;
-    return true;
-  });
+  const approvedInvoices = invoices.filter((i) => i.approval_status === 'APPROVED');
+  const pendingInvoices = invoices.filter((i) => i.approval_status === 'PENDING_APPROVAL' || !i.approval_status);
 
   const totalInvoicedValue = invoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
   const partialInvoicedValue = partialInvoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
   const actualInvoicedValue = actualInvoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
+
+  const getClientNameForInvoice = (inv: Invoice) => {
+    if (!inv.request_id) return 'Direct Inward Client';
+    const req = requests.find((r) => r.id === inv.request_id);
+    return req?.clients?.client_name || 'Client Site';
+  };
+
+  const getRequestNumberForInvoice = (inv: Invoice) => {
+    if (!inv.request_id) return 'Direct Inward';
+    const req = requests.find((r) => r.id === inv.request_id);
+    return req?.request_number || 'N/A';
+  };
+
+  // Filter & Search
+  const filteredInvoices = invoices.filter((inv) => {
+    if (filterType === 'PARTIAL' && inv.invoice_type !== 'PARTIAL') return false;
+    if (filterType === 'ACTUAL' && (inv.invoice_type === 'PARTIAL')) return false;
+    if (filterType === 'APPROVED' && inv.approval_status !== 'APPROVED') return false;
+    if (filterType === 'PENDING' && inv.approval_status === 'APPROVED') return false;
+
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const clientName = getClientNameForInvoice(inv).toLowerCase();
+    const reqNum = getRequestNumberForInvoice(inv).toLowerCase();
+    return (
+      inv.invoice_number.toLowerCase().includes(query) ||
+      (inv.client_po_ref && inv.client_po_ref.toLowerCase().includes(query)) ||
+      clientName.includes(query) ||
+      reqNum.includes(query)
+    );
+  });
+
+  // Pagination
+  const totalItems = filteredInvoices.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const validPage = Math.min(currentPage, totalPages);
+  const startIndex = (validPage - 1) * itemsPerPage;
+  const paginatedInvoices = filteredInvoices.slice(startIndex, startIndex + itemsPerPage);
+
+  const avatarStyles = [
+    'bg-blue-50 text-[#0274BB] border border-blue-200',
+    'bg-emerald-50 text-emerald-700 border border-emerald-200',
+    'bg-purple-50 text-purple-700 border border-purple-200',
+    'bg-amber-50 text-amber-700 border border-amber-200',
+  ];
 
   // Eligible work orders for invoice generation (supports direct invoicing for all active requests)
   const eligibleRequests = requests.filter(
@@ -349,134 +397,232 @@ export const InvoiceListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
+      {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-[#111827]">Commercial Invoices &amp; Tax Billing</h1>
-            <Badge variant="success">{invoices.length} Issued</Badge>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0274BB] shrink-0">
+            <Receipt className="size-5" />
           </div>
-          <p className="text-sm text-[#6B7280]">
-            Official commercial tax invoices (fetched from approved quotations or generated directly from work orders)
-          </p>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl font-bold text-[#111827]">Commercial Invoices &amp; Tax Billing</h1>
+              <Badge variant="success" pill>
+                {invoices.length} Total Invoices
+              </Badge>
+            </div>
+            <p className="text-xs text-[#6B7280] mt-0.5">
+              Invoice • Collect • Reconcile — Official tax invoices generated from quotations or work orders
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Link to="/commercial/quotations">
-            <Button variant="outlineInk">
-              View Quotations <ArrowRight className="size-3.5" />
+            <Button variant="outlineInk" size="sm" className="h-9">
+              View Quotations <ArrowRight className="size-3.5 ml-1" />
             </Button>
           </Link>
           {(isSuperAdmin || canPerform('CREATE_INVOICE', 'CREATE')) && (
-            <Button variant="primary" onClick={handleOpenGenerateModal}>
-              <Receipt className="size-4" /> Generate Tax Invoice
+            <Button variant="primary" size="sm" className="h-9" onClick={handleOpenGenerateModal}>
+              <Receipt className="size-4 mr-1.5" /> Generate Tax Invoice
             </Button>
           )}
         </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card className="bg-white">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-[#EBF5FF] text-[#0274BB] rounded-[4px]">
+      {/* 4 Interactive KPI Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card
+          className={`cursor-pointer transition-all border ${
+            filterType === 'ALL' ? 'border-[#0274BB] ring-1 ring-[#0274BB]/20 shadow-xs' : 'hover:border-slate-300'
+          }`}
+          onClick={() => {
+            setFilterType('ALL');
+            setCurrentPage(1);
+          }}
+        >
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#0274BB] flex items-center justify-center shrink-0 border border-blue-100">
               <Receipt className="size-5" />
             </div>
-            <div>
-              <span className="text-xs text-[#6B7280] block">Total Invoices Issued</span>
+            <div className="min-w-0">
+              <span className="text-xs font-medium text-[#6B7280] block">Total Invoices</span>
               <span className="text-xl font-bold text-[#111827]">{invoices.length}</span>
+              <span className="text-[11px] text-[#6B7280] block truncate">Issued commercial invoices</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-[#FEF3C7] text-[#D97706] rounded-[4px]">
-              <Split className="size-5" />
-            </div>
-            <div>
-              <span className="text-xs text-[#6B7280] block">Partial Invoices ({partialInvoices.length})</span>
-              <span className="text-lg font-bold font-mono text-[#D97706]">
-                ₹{partialInvoicedValue.toFixed(2)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-[#ECFDF5] text-[#16A34A] rounded-[4px]">
+        <Card
+          className={`cursor-pointer transition-all border ${
+            filterType === 'ACTUAL' ? 'border-emerald-500 ring-1 ring-emerald-500/20 shadow-xs' : 'hover:border-slate-300'
+          }`}
+          onClick={() => {
+            setFilterType('ACTUAL');
+            setCurrentPage(1);
+          }}
+        >
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
               <Layers className="size-5" />
             </div>
-            <div>
-              <span className="text-xs text-[#6B7280] block">Actual / Final ({actualInvoices.length})</span>
-              <span className="text-lg font-bold font-mono text-[#16A34A]">
-                ₹{actualInvoicedValue.toFixed(2)}
+            <div className="min-w-0">
+              <span className="text-xs font-medium text-[#6B7280] block">Actual / Final ({actualInvoices.length})</span>
+              <span className="text-xl font-bold text-emerald-700 font-mono">
+                ₹{actualInvoicedValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </span>
+              <span className="text-[11px] text-[#6B7280] block truncate">100% fulfilled work orders</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-[#F3E8FF] text-[#7E22CE] rounded-[4px]">
+        <Card
+          className={`cursor-pointer transition-all border ${
+            filterType === 'PARTIAL' ? 'border-amber-500 ring-1 ring-amber-500/20 shadow-xs' : 'hover:border-slate-300'
+          }`}
+          onClick={() => {
+            setFilterType('PARTIAL');
+            setCurrentPage(1);
+          }}
+        >
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
+              <Split className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-medium text-[#6B7280] block">Partial Invoices ({partialInvoices.length})</span>
+              <span className="text-xl font-bold text-amber-700 font-mono">
+                ₹{partialInvoicedValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </span>
+              <span className="text-[11px] text-[#6B7280] block truncate">Interim progressive billing</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border hover:border-slate-300">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
               <IndianRupee className="size-5" />
             </div>
-            <div>
-              <span className="text-xs text-[#6B7280] block">Total Billed Gross</span>
-              <span className="text-lg font-bold font-mono text-[#7E22CE]">
-                ₹{totalInvoicedValue.toFixed(2)}
+            <div className="min-w-0">
+              <span className="text-xs font-medium text-[#6B7280] block">Gross Billed Revenue</span>
+              <span className="text-xl font-bold text-purple-700 font-mono">
+                ₹{totalInvoicedValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </span>
+              <span className="text-[11px] text-[#6B7280] block truncate">{invoices.length} billed invoices</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#E5E7EB] pb-2">
-        <button
-          type="button"
-          onClick={() => setFilterType('ALL')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-[4px] transition-colors cursor-pointer ${
-            filterType === 'ALL'
-              ? 'bg-[#0274BB] text-white shadow-sm'
-              : 'bg-white text-[#4B5563] border border-[#D1D5DB] hover:bg-[#F9FAFB]'
-          }`}
-        >
-          All Invoices ({invoices.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterType('PARTIAL')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-[4px] transition-colors cursor-pointer ${
-            filterType === 'PARTIAL'
-              ? 'bg-[#D97706] text-white shadow-sm'
-              : 'bg-white text-[#4B5563] border border-[#D1D5DB] hover:bg-[#F9FAFB]'
-          }`}
-        >
-          Partial Invoices ({partialInvoices.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterType('ACTUAL')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-[4px] transition-colors cursor-pointer ${
-            filterType === 'ACTUAL'
-              ? 'bg-[#16A34A] text-white shadow-sm'
-              : 'bg-white text-[#4B5563] border border-[#D1D5DB] hover:bg-[#F9FAFB]'
-          }`}
-        >
-          Actual / Final Invoices ({actualInvoices.length})
-        </button>
+      {/* Search and Filters Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-[#E5E7EB] shadow-xs">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#9CA3AF]" />
+          <input
+            type="text"
+            placeholder="Search by invoice #, client PO ref, client name..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#F8FAFC] border border-[#E2E8F0] rounded-md focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:bg-white text-[#111827] placeholder-[#9CA3AF]"
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('ALL');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'ALL'
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            All ({invoices.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('ACTUAL');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'ACTUAL'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            • Actual ({actualInvoices.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('PARTIAL');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'PARTIAL'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            • Partial ({partialInvoices.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('APPROVED');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'APPROVED'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            • Approved ({approvedInvoices.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('PENDING');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'PENDING'
+                ? 'bg-slate-700 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            • Pending ({pendingInvoices.length})
+          </button>
+
+          <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
+
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700 cursor-pointer"
+          >
+            <option value={10}>10 / page</option>
+            <option value={25}>25 / page</option>
+            <option value={50}>50 / page</option>
+            <option value={100}>100 / page</option>
+          </select>
+        </div>
       </div>
 
-      {/* Invoices Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Issued Tax Invoices</CardTitle>
-          <CardDescription>
-            Legally valid commercial tax invoices (fetched from approved quotations or directly from work orders)
-          </CardDescription>
-        </CardHeader>
+      {/* Invoices Directory Table */}
+      <Card className="border border-[#E5E7EB] overflow-hidden">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-12 text-center text-sm text-[#6B7280]">
@@ -486,13 +632,15 @@ export const InvoiceListPage: React.FC = () => {
           ) : filteredInvoices.length === 0 ? (
             <div className="p-12 text-center text-[#6B7280] space-y-3">
               <Receipt className="size-8 mx-auto text-[#9CA3AF]" />
-              <p className="text-base font-semibold text-[#374151]">No invoices found</p>
+              <p className="text-base font-semibold text-[#374151]">No commercial tax invoices found</p>
               <p className="text-xs text-[#6B7280] max-w-md mx-auto">
-                Generate tax invoices directly from calibrated work orders, or fetch line items automatically from an existing quotation.
+                {searchQuery
+                  ? `No invoices match "${searchQuery}". Try adjusting your search query.`
+                  : 'Generate tax invoices directly from calibrated work orders, or fetch line items automatically from an existing quotation.'}
               </p>
               <div className="flex items-center justify-center gap-3 pt-2">
                 <Button variant="primary" size="sm" onClick={handleOpenGenerateModal}>
-                  <Receipt className="size-3.5" /> Generate Tax Invoice
+                  <Receipt className="size-3.5 mr-1" /> Generate Tax Invoice
                 </Button>
                 <Link to="/commercial/quotations">
                   <Button variant="secondary" size="sm">
@@ -503,105 +651,250 @@ export const InvoiceListPage: React.FC = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#F5F7FA] border-b border-[#E5E7EB] text-[#374151] font-semibold text-xs uppercase">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F8FAFC] border-b border-[#E5E7EB] text-[#475569] font-semibold text-[11px] uppercase tracking-wider">
                   <tr>
-                    <th className="px-6 py-3">Invoice #</th>
-                    <th className="px-6 py-3">Type</th>
-                    <th className="px-6 py-3">Client PO Reference</th>
-                    <th className="px-6 py-3">Subtotal</th>
-                    <th className="px-6 py-3">Tax (GST)</th>
-                    <th className="px-6 py-3">Grand Total</th>
-                    <th className="px-6 py-3">Approval</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3">Invoice Date</th>
-                    <th className="px-6 py-3 text-right">Action</th>
+                    <th className="px-5 py-3 whitespace-nowrap">Invoice &amp; Work Order</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Type</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Client PO Ref</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Subtotal</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Tax (GST 18%)</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Grand Total</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Approval</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Invoice Date</th>
+                    <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E7EB]">
-                  {filteredInvoices.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-[#FAFAFA]">
-                      <td className="px-6 py-4 font-mono font-bold text-[#0274BB]">
-                        {inv.invoice_number}
-                      </td>
-                      <td className="px-6 py-4">
-                        {inv.invoice_type === 'PARTIAL' ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-                            <Split className="size-3" /> Partial Invoice
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                            <Layers className="size-3" /> Actual Invoice
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 font-mono text-xs">
-                        {inv.client_po_ref ? (
-                          <span className="px-2 py-0.5 bg-[#F1F5F9] rounded border border-[#E2E8F0] font-semibold text-[#334155]">
-                            {inv.client_po_ref}
-                          </span>
-                        ) : (
-                          <span className="text-[#9CA3AF] italic">Not Provided</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 font-mono text-[#374151]">
-                        ₹{inv.subtotal.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 font-mono text-[#6B7280]">
-                        ₹{inv.tax_amount.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 font-mono font-bold text-[#111827]">
-                        ₹{inv.total_amount.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4">
-                        {inv.approval_status === 'APPROVED' ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                            <CheckCircle2 className="size-3 text-emerald-600" /> Approved
-                          </span>
-                        ) : inv.approval_status === 'REJECTED' ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-300">
-                            <X className="size-3 text-red-600" /> Rejected
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-                            <Clock className="size-3 text-amber-600" /> Pending
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge variant="success">{inv.invoice_status}</Badge>
-                      </td>
-                      <td className="px-6 py-4 text-[#6B7280] text-xs">
-                        {new Date(inv.invoice_date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {(isSuperAdmin || canPerform('CREATE_INVOICE', 'APPROVE')) && inv.approval_status !== 'APPROVED' && (
-                            <Button
-                              variant="outlineInk"
-                              size="sm"
-                              onClick={() => {
-                                setApprovalModalInvoice(inv);
-                                setInvoiceApproverNotes('');
-                              }}
-                              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 text-xs"
-                            >
-                              <ShieldCheck className="size-3.5" /> Approve
-                            </Button>
+                  {paginatedInvoices.map((inv, idx) => {
+                    const clientName = getClientNameForInvoice(inv);
+                    const reqNum = getRequestNumberForInvoice(inv);
+                    const avatarStyle = avatarStyles[idx % avatarStyles.length];
+
+                    return (
+                      <tr key={inv.id} className="hover:bg-[#F8FAFC] transition-colors">
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${avatarStyle}`}>
+                              <Receipt className="size-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-mono font-bold text-[#0274BB] block text-xs hover:underline cursor-pointer" onClick={() => setSelectedInvoice(inv)}>
+                                {inv.invoice_number}
+                              </span>
+                              <div className="flex items-center gap-1.5 text-[11px] text-[#6B7280]">
+                                <Building2 className="size-3 text-slate-400 shrink-0" />
+                                <span className="font-medium text-[#374151] truncate max-w-[140px]" title={clientName}>
+                                  {clientName}
+                                </span>
+                                <span className="text-slate-300">•</span>
+                                <span className="font-mono text-[10px] text-slate-500 truncate">
+                                  WO: {reqNum}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          {inv.invoice_type === 'PARTIAL' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                              <Split className="size-3" /> Partial
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <Layers className="size-3" /> Actual / Final
+                            </span>
                           )}
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setSelectedInvoice(inv)}
-                          >
-                            <Printer className="size-3.5" /> View / Print
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          {inv.client_po_ref ? (
+                            <span className="px-2 py-0.5 bg-slate-50 rounded border border-slate-200 font-mono text-[11px] font-semibold text-slate-700">
+                              {inv.client_po_ref}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">Not Provided</span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3.5 font-mono text-slate-700 whitespace-nowrap">
+                          ₹{inv.subtotal.toFixed(2)}
+                        </td>
+
+                        <td className="px-4 py-3.5 font-mono text-slate-500 whitespace-nowrap">
+                          ₹{inv.tax_amount.toFixed(2)}
+                        </td>
+
+                        <td className="px-4 py-3.5 font-mono font-bold text-slate-900 whitespace-nowrap">
+                          ₹{inv.total_amount.toFixed(2)}
+                        </td>
+
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          {inv.approval_status === 'APPROVED' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <CheckCircle2 className="size-3 text-emerald-600" /> Approved
+                            </span>
+                          ) : inv.approval_status === 'REJECTED' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                              <X className="size-3 text-rose-600" /> Rejected
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                              <Clock className="size-3 text-amber-600" /> Pending
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <Badge variant="success" pill className="text-[10px]">
+                            {inv.invoice_status}
+                          </Badge>
+                        </td>
+
+                        <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px] whitespace-nowrap">
+                          {new Date(inv.invoice_date).toLocaleDateString()}
+                        </td>
+
+                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setSelectedInvoice(inv)}
+                              className="h-7 text-xs px-2.5"
+                            >
+                              <Printer className="size-3 mr-1" /> View / Print
+                            </Button>
+
+                            {(isSuperAdmin || canPerform('CREATE_INVOICE', 'APPROVE')) && inv.approval_status !== 'APPROVED' && (
+                              <Button
+                                variant="outlineInk"
+                                size="sm"
+                                onClick={() => {
+                                  setApprovalModalInvoice(inv);
+                                  setInvoiceApproverNotes('');
+                                }}
+                                className="h-7 text-xs px-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                              >
+                                <ShieldCheck className="size-3 mr-1" /> Approve
+                              </Button>
+                            )}
+
+                            {/* 3-dots Action Menu */}
+                            <div className="relative inline-block text-left">
+                              <button
+                                type="button"
+                                onClick={() => setActiveActionMenuId(activeActionMenuId === inv.id ? null : inv.id)}
+                                className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                              >
+                                <MoreVertical className="size-4" />
+                              </button>
+
+                              {activeActionMenuId === inv.id && (
+                                <div
+                                  className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-slate-200 z-30 py-1 animate-in fade-in"
+                                  onMouseLeave={() => setActiveActionMenuId(null)}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedInvoice(inv);
+                                      setActiveActionMenuId(null);
+                                    }}
+                                    className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                  >
+                                    <Receipt className="size-3.5 text-slate-400" /> View Tax Invoice
+                                  </button>
+
+                                  <Link
+                                    to="/logistics/dispatch/new"
+                                    className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                    onClick={() => setActiveActionMenuId(null)}
+                                  >
+                                    <Truck className="size-3.5 text-slate-400" /> Create Dispatch DC
+                                  </Link>
+
+                                  {(isSuperAdmin || canPerform('CREATE_INVOICE', 'APPROVE')) && inv.approval_status !== 'APPROVED' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setApprovalModalInvoice(inv);
+                                        setInvoiceApproverNotes('');
+                                        setActiveActionMenuId(null);
+                                      }}
+                                      className="w-full text-left px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50 flex items-center gap-2"
+                                    >
+                                      <ShieldCheck className="size-3.5 text-emerald-600" /> Authorize / Approve
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Numbered Pagination */}
+          {!isLoading && filteredInvoices.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-slate-200 bg-[#F8FAFC] text-xs text-slate-500">
+              <div>
+                Showing <span className="font-semibold text-slate-800">{startIndex + 1}</span> to{' '}
+                <span className="font-semibold text-slate-800">
+                  {Math.min(startIndex + itemsPerPage, totalItems)}
+                </span>{' '}
+                of <span className="font-semibold text-slate-800">{totalItems}</span> tax invoices
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={validPage <= 1}
+                  className="p-1 rounded border border-slate-200 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - validPage) <= 1)
+                  .map((page, i, arr) => {
+                    const prevPage = arr[i - 1];
+                    const showEllipsis = prevPage && page - prevPage > 1;
+                    return (
+                      <React.Fragment key={page}>
+                        {showEllipsis && <span className="px-1 text-slate-400">...</span>}
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-7 h-7 rounded text-xs font-semibold transition-colors ${
+                            validPage === page
+                              ? 'bg-[#0274BB] text-white'
+                              : 'border border-slate-200 hover:bg-white text-slate-700'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      </React.Fragment>
+                    );
+                  })}
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={validPage >= totalPages}
+                  className="p-1 rounded border border-slate-200 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
             </div>
           )}
         </CardContent>

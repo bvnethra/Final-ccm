@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, Button, Input } from '../../../../components/ui/UIPrimitives';
 import { useOnboardTenant } from '../../../hooks/useTenants';
 import { usePlatformConfig } from '../../../hooks/usePlatformConfig';
+import { generateTenantCodeFromName } from '../../../services/tenantManagementService';
 import { 
   Building2, 
   MapPin, 
@@ -28,6 +29,8 @@ export const OnboardingWizard: React.FC = () => {
 
   const [step, setStep] = useState(1);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isCodeCustomized, setIsCodeCustomized] = useState(false);
+  const [customTenantType, setCustomTenantType] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -126,6 +129,10 @@ export const OnboardingWizard: React.FC = () => {
         setErrorMessage('Please select a Tenant Type from the dynamic list.');
         return false;
       }
+      if (formData.tenantType === 'OTHER' && !customTenantType.trim()) {
+        setErrorMessage('Please specify your custom Tenant Type.');
+        return false;
+      }
     }
     if (currentStep === 2) {
       if (!formData.city.trim()) {
@@ -165,11 +172,14 @@ export const OnboardingWizard: React.FC = () => {
     e.preventDefault();
     if (!validateStep(4)) return;
 
+    const effectiveTenantType =
+      formData.tenantType === 'OTHER' ? customTenantType.trim() : formData.tenantType;
+
     onboardMutation.mutate(
       {
         name: formData.name,
         code: formData.code,
-        tenantType: formData.tenantType,
+        tenantType: effectiveTenantType,
         registrationNumber: formData.registrationNumber,
         gstNumber: formData.gstNumber,
         phone: formData.phone,
@@ -281,7 +291,16 @@ export const OnboardingWizard: React.FC = () => {
                     label="Tenant Legal Name *"
                     placeholder="e.g. Apex Metrology Systems Ltd"
                     value={formData.name}
-                    onChange={(e) => handleChange('name', e.target.value)}
+                    onChange={(e) => {
+                      const newName = e.target.value;
+                      setFormData((prev) => {
+                        const updates: Record<string, any> = { name: newName };
+                        if (!isCodeCustomized) {
+                          updates.code = generateTenantCodeFromName(newName);
+                        }
+                        return { ...prev, ...updates };
+                      });
+                    }}
                     required
                   />
 
@@ -289,7 +308,10 @@ export const OnboardingWizard: React.FC = () => {
                     label="Tenant Code / ID *"
                     placeholder="e.g. TNT-APEX"
                     value={formData.code}
-                    onChange={(e) => handleChange('code', e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      setIsCodeCustomized(true);
+                      handleChange('code', e.target.value.toUpperCase());
+                    }}
                     required
                   />
                 </div>
@@ -301,7 +323,13 @@ export const OnboardingWizard: React.FC = () => {
                     </label>
                     <select
                       value={formData.tenantType}
-                      onChange={(e) => handleChange('tenantType', e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleChange('tenantType', val);
+                        if (val !== 'OTHER') {
+                          setCustomTenantType('');
+                        }
+                      }}
                       className="bg-white border border-[#E5E7EB] rounded-[4px] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:border-[#0274BB] transition"
                     >
                       {tenantTypes.map((t) => (
@@ -309,7 +337,20 @@ export const OnboardingWizard: React.FC = () => {
                           {t.label}
                         </option>
                       ))}
+                      <option value="OTHER">Other</option>
                     </select>
+
+                    {formData.tenantType === 'OTHER' && (
+                      <div className="mt-2 animate-fadeIn">
+                        <Input
+                          label="Specify Custom Tenant Type *"
+                          placeholder="e.g. Defense & Aerospace Testing Facility"
+                          value={customTenantType}
+                          onChange={(e) => setCustomTenantType(e.target.value)}
+                          required
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <Input

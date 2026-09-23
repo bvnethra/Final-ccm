@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ItemMaster, ItemMasterFormData } from '../../../types/domain';
 import { useCreateItemMaster, useUpdateItemMaster } from '../../../hooks/useItemMaster';
+import { deriveItemCode } from '../../../services/itemMasterService';
 import { ItemMasterFormPresenter } from './ItemMasterFormPresenter';
 
 interface ItemMasterFormContainerProps {
@@ -34,6 +35,7 @@ export const ItemMasterFormContainer: React.FC<ItemMasterFormContainerProps> = (
     status: 'ACTIVE',
   });
 
+  const [isCodeCustomized, setIsCodeCustomized] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -54,16 +56,35 @@ export const ItemMasterFormContainer: React.FC<ItemMasterFormContainerProps> = (
         calibration_frequency: initialData.calibration_frequency || 12,
         status: initialData.status || 'ACTIVE',
       });
+      setIsCodeCustomized(true);
     }
   }, [initialData]);
 
   const handleChange = (field: keyof ItemMasterFormData, value: any) => {
+    if (field === 'item_code') {
+      setIsCodeCustomized(Boolean(value && String(value).trim()));
+    }
+
     setFormData((prev) => {
       const next = { ...prev, [field]: value };
       // Auto-sync least count unit if range unit is changed and least count unit was same
       if (field === 'range_unit' && prev.least_count_unit === prev.range_unit) {
         next.least_count_unit = value;
       }
+
+      // Automatically suggest dynamic item code (e.g. VC-50 for Vernier Caliper 0-50mm)
+      // if not manually overridden by user and not in edit mode of existing item
+      if (!isEditMode && (!isCodeCustomized || field === 'item_name')) {
+        const derived = deriveItemCode(
+          next.item_name,
+          next.range_max,
+          `${next.range_min} - ${next.range_max} ${next.range_unit}`
+        );
+        if (derived && derived !== 'ITM') {
+          next.item_code = derived;
+        }
+      }
+
       return next;
     });
 

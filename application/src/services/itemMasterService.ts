@@ -53,9 +53,125 @@ export function formatTccItemCode(seq: number): string {
   return `TCC-MAS-${String(seq).padStart(3, '0')}`;
 }
 
-export function generateItemCode(sequence?: number): string {
-  if (typeof sequence === 'number' && sequence > 0) {
-    return formatTccItemCode(sequence);
+export function deriveItemCode(
+  itemName?: string,
+  rangeMax?: number | string,
+  measurementRange?: string
+): string {
+  const name = (itemName || '').trim();
+  const rangeStr = (measurementRange || '').trim();
+
+  // 1. Determine Range Suffix
+  let rangeSuffix = '';
+  if (
+    rangeMax !== undefined &&
+    rangeMax !== null &&
+    rangeMax !== '' &&
+    !isNaN(Number(rangeMax)) &&
+    Number(rangeMax) > 0
+  ) {
+    rangeSuffix = String(Number(rangeMax));
+  } else {
+    // Check measurementRange first, then name
+    const targets = [rangeStr, name].filter(Boolean);
+    for (const target of targets) {
+      if (target === 'ALL RANGE' || target === 'Standard Range') continue;
+      const rangeMatch = target.match(
+        /(?:(?:\d+(?:\.\d+)?)\s*(?:-|–|to|\*)\s*(\d+(?:\.\d+)?)|(?:upto\s*[-–]?\s*(\d+(?:\.\d+)?)))/i
+      );
+      if (rangeMatch) {
+        rangeSuffix = String(Number(rangeMatch[1] || rangeMatch[2]));
+        break;
+      }
+      const numMatches = target.match(/\d+(?:\.\d+)?/g);
+      if (numMatches && numMatches.length > 0) {
+        const nums = numMatches.map(Number).filter((n) => !isNaN(n) && n > 0);
+        if (nums.length > 0) {
+          rangeSuffix = String(Math.max(...nums));
+          break;
+        }
+      }
+    }
+  }
+
+  // 2. Determine Instrument Acronym
+  // Remove parenthesized content
+  let cleanedName = name.replace(/\([^)]*\)/g, ' ');
+  // Remove explicit ranges like 0-50mm or 0 to 50 mm
+  cleanedName = cleanedName.replace(
+    /(?:\d+(?:\.\d+)?)\s*(?:-|–|to|\*)\s*(?:\d+(?:\.\d+)?)\s*(?:mm|cm|m|in|bar|psi|kpa|mpa|°c|°f|k|kg|g|mg|n|nm|v|mv|kv|a|ma|ω|hz|khz|rpm|db)?/gi,
+    ' '
+  );
+  // Remove standalone units
+  cleanedName = cleanedName.replace(
+    /\b(?:mm|cm|m|in|bar|psi|kpa|mpa|°c|°f|k|kg|g|mg|n|nm|v|mv|kv|a|ma|ω|hz|khz|rpm|db)\b/gi,
+    ' '
+  );
+  // Normalize compound phrases
+  cleanedName = cleanedName.replace(/MEASURINGTAPE/gi, 'MEASURING TAPE');
+  cleanedName = cleanedName.replace(/BOREDIAL/gi, 'BORE DIAL');
+  // Strip non-alphanumeric
+  cleanedName = cleanedName.replace(/[^a-zA-Z0-9\s]/g, ' ');
+
+  const allWords = cleanedName.split(/\s+/).filter((w) => w.length > 0);
+
+  const STOP_WORDS = new Set(['and', 'with', 'without', 'or', 'for', 'of', 'the', 'in', 'all', 'range', 'go', 'nogo', 'upto']);
+  const filteredWords: string[] = [];
+  for (let i = 0; i < allWords.length; i++) {
+    const w = allWords[i];
+    if (STOP_WORDS.has(w.toLowerCase())) continue;
+    if (/^\d+$/.test(w)) {
+      if (i + 1 < allWords.length && /^[a-zA-Z]/.test(allWords[i + 1])) {
+        filteredWords.push(w);
+      }
+    } else {
+      filteredWords.push(w);
+    }
+  }
+
+  // Secondary filter: If there are 3+ words and the first word is a modifier (e.g. Digital Vernier Caliper),
+  // extract initials from core metrology instrument words (Vernier Caliper -> VC)
+  const MODIFIERS = new Set(['digital', 'electronic', 'analog', 'standard', 'precision', 'portable']);
+  let targetWords = filteredWords;
+  if (filteredWords.length >= 3 && MODIFIERS.has(filteredWords[0].toLowerCase())) {
+    const withoutMod = filteredWords.filter((w) => !MODIFIERS.has(w.toLowerCase()));
+    if (withoutMod.length >= 2) {
+      targetWords = withoutMod;
+    }
+  }
+
+  let acronym = '';
+  if (targetWords.length >= 2) {
+    // Take digit or first letter of each word
+    acronym = targetWords.map((w) => (/^\d+$/.test(w) ? w : w[0].toUpperCase())).join('');
+  } else if (targetWords.length === 1) {
+    const w = targetWords[0].toUpperCase();
+    if (w.length <= 3) {
+      acronym = w;
+    } else {
+      acronym = w.slice(0, 3);
+    }
+  } else {
+    acronym = 'ITM';
+  }
+
+  // 3. Combine Acronym with Range Suffix
+  if (rangeSuffix) {
+    return `${acronym}-${rangeSuffix}`;
+  }
+  return acronym;
+}
+
+export function generateItemCode(
+  sequenceOrName?: number | string,
+  rangeMax?: number | string,
+  measurementRange?: string
+): string {
+  if (typeof sequenceOrName === 'number' && sequenceOrName > 0) {
+    return formatTccItemCode(sequenceOrName);
+  }
+  if (typeof sequenceOrName === 'string' && sequenceOrName.trim()) {
+    return deriveItemCode(sequenceOrName, rangeMax, measurementRange);
   }
   const year = new Date().getFullYear();
   const randomSuffix = Math.floor(10000 + Math.random() * 90000);
@@ -235,7 +351,12 @@ export async function createItemMaster(
     throw new Error('Standard Cost is required and must be zero or a positive numeric amount');
   }
 
-  const itemCode = formData.item_code?.trim() || generateItemCode();
+  const derivedCode = deriveItemCode(
+    formData.item_name,
+    formData.range_max,
+    `${formData.range_min} - ${formData.range_max} ${formData.range_unit?.trim()}`
+  );
+  const itemCode = formData.item_code?.trim() || derivedCode;
   const now = new Date().toISOString();
   const formattedRange = `${formData.range_min} - ${formData.range_max} ${formData.range_unit.trim()}`;
 
@@ -431,8 +552,13 @@ export async function createItemMastersBulk(
   const dbRows = records.map((r) => {
     let itemCode = r.item_code?.trim();
     if (!itemCode) {
-      currentSeq += 1;
-      itemCode = formatTccItemCode(currentSeq);
+      const derived = deriveItemCode(r.item_name, undefined, r.measurement_range);
+      if (derived && derived !== 'ITM') {
+        itemCode = derived;
+      } else {
+        currentSeq += 1;
+        itemCode = formatTccItemCode(currentSeq);
+      }
     }
 
     return {

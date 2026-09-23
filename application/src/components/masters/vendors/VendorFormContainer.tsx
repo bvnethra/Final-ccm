@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import type { Vendor, VendorFormData } from '../../../types/domain';
 import { useCreateVendor, useUpdateVendor } from '../../../hooks/useVendorMaster';
 import { validateGSTIN, validateEmail, validatePhone } from '../../../services/clientMasterService';
+import { useAuthContext } from '../../../contexts/AuthContext';
+import { getNextTccVendorCode } from '../../../services/vendorMasterService';
 import { VendorFormPresenter } from './VendorFormPresenter';
 
 interface VendorFormContainerProps {
@@ -16,6 +18,7 @@ export const VendorFormContainer: React.FC<VendorFormContainerProps> = ({
   isEditMode = false,
 }) => {
   const navigate = useNavigate();
+  const { tenantId } = useAuthContext();
   const createMutation = useCreateVendor();
   const updateMutation = useUpdateVendor();
 
@@ -59,8 +62,17 @@ export const VendorFormContainer: React.FC<VendorFormContainerProps> = ({
         serviced_categories: initialData.serviced_categories || [],
         status: initialData.status || 'ACTIVE',
       });
+    } else if (!isEditMode) {
+      getNextTccVendorCode(tenantId).then((nextCode) => {
+        setFormData((prev) => {
+          if (!prev.vendor_code) {
+            return { ...prev, vendor_code: nextCode };
+          }
+          return prev;
+        });
+      });
     }
-  }, [initialData]);
+  }, [initialData, isEditMode, tenantId]);
 
   const handleChange = (field: keyof VendorFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

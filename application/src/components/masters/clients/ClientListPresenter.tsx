@@ -5,6 +5,10 @@ import { ClientListView } from './ClientListView';
 
 interface ClientListPresenterProps {
   clients: Client[];
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  enterpriseCount: number;
   isLoading: boolean;
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -22,6 +26,10 @@ interface ClientListPresenterProps {
 
 export const ClientListPresenter: React.FC<ClientListPresenterProps> = ({
   clients,
+  totalCount,
+  activeCount,
+  inactiveCount,
+  enterpriseCount,
   isLoading,
   searchQuery,
   onSearchChange,
@@ -39,13 +47,17 @@ export const ClientListPresenter: React.FC<ClientListPresenterProps> = ({
   return (
     <div className="space-y-4">
       {errorMessage && (
-        <div className="p-4 bg-[#FEF2F2] border border-[#DC2626]/30 text-[#DC2626] rounded-[4px] text-sm">
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm">
           {errorMessage}
         </div>
       )}
 
       <ClientListView
         clients={clients}
+        totalCount={totalCount}
+        activeCount={activeCount}
+        inactiveCount={inactiveCount}
+        enterpriseCount={enterpriseCount}
         isLoading={isLoading}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}

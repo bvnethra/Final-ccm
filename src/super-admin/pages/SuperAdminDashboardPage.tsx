@@ -3,9 +3,11 @@ import { useSuperAdminDashboard } from '../hooks/useSuperAdminDashboard';
 import { TenantMetricsCards } from '../components/dashboard/TenantMetricsCards';
 import { TenantStatusDistribution } from '../components/dashboard/TenantStatusDistribution';
 import { RecentPlatformActivity } from '../components/dashboard/RecentPlatformActivity';
-import { Card, Button, Badge } from '../../components/ui/UIPrimitives';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusBadge } from '../components/ui/StatusBadge';
+import { Card, Button } from '../../components/ui/UIPrimitives';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, Plus, ArrowUpRight, RefreshCw } from 'lucide-react';
+import { Building2, Plus, ArrowUpRight, RefreshCw, AlertTriangle } from 'lucide-react';
 import { usePlatformAuth } from '../hooks/usePlatformAuth';
 
 export default function SuperAdminDashboardPage() {
@@ -16,8 +18,12 @@ export default function SuperAdminDashboardPage() {
 
   if (error) {
     return (
-      <div className="p-6 rounded-lg bg-red-950/20 border border-red-800/40 text-red-300 text-sm">
-        Failed to load platform metrics: {(error as Error).message}
+      <div className="p-4 rounded-[8px] bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-sm flex items-start gap-3">
+        <AlertTriangle className="size-4 mt-0.5 shrink-0" />
+        <div>
+          <div className="font-semibold text-xs mb-0.5">Failed to load platform metrics</div>
+          <div className="text-xs text-[#9CA3AF]">{(error as Error).message}</div>
+        </div>
       </div>
     );
   }
@@ -35,61 +41,53 @@ export default function SuperAdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner & Quick Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2.5 tracking-tight">
-            <span>Platform Governance Dashboard</span>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
-              Live
-            </span>
-          </h1>
-          <p className="text-slate-500 text-xs mt-1">
-            Centralized platform oversight, enterprise tenant metrics, and immutable audit telemetry.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="text-xs gap-1.5 h-9 px-3.5 rounded-lg border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-medium shadow-xs"
-            title="Refresh database metrics"
-          >
-            <RefreshCw className="size-3.5" />
-            <span>Refresh</span>
-          </Button>
-
-          {!isSupport && (
+      {/* Page Header */}
+      <PageHeader
+        title="Platform Governance Dashboard"
+        description="Centralized platform oversight, enterprise tenant metrics, and immutable audit telemetry."
+        bordered={false}
+        actions={
+          <>
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
-              onClick={() => navigate('/tenants/new')}
-              className="text-xs gap-1.5 h-9 px-4 rounded-[4px] bg-[#0274BB] hover:bg-[#003B8C] text-white font-semibold shadow-xs"
+              onClick={() => refetch()}
+              className="text-xs gap-1.5 h-8 px-3 rounded-[4px] border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F5F7FA] font-medium shadow-xs"
+              title="Refresh database metrics"
             >
-              <Plus className="size-4" />
-              <span>Onboard New Tenant</span>
+              <RefreshCw className="size-3.5" />
+              <span>Refresh</span>
             </Button>
-          )}
-        </div>
-      </div>
 
-      {/* KPI Cards */}
+            {!isSupport && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => navigate('/tenants/new')}
+                className="text-xs gap-1.5 h-8 px-3.5 rounded-[4px] bg-[#0274BB] hover:bg-[#003B8C] text-white font-semibold shadow-xs"
+              >
+                <Plus className="size-3.5" />
+                <span>Onboard Tenant</span>
+              </Button>
+            )}
+          </>
+        }
+      />
+
+      {/* KPI Metric Cards */}
       <TenantMetricsCards metrics={data} isLoading={isLoading} />
 
-      {/* Charts & Distribution Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Distribution + Recent Tenants row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <TenantStatusDistribution
           distribution={data.statusDistribution}
           totalTenants={data.totalTenants}
         />
 
-        {/* Recently Onboarded Tenants Card */}
+        {/* Recently Onboarded Tenants */}
         <Card className="p-5 bg-white border-[#E5E7EB] rounded-[8px] shadow-xs">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <div className="size-8 rounded-[4px] bg-[#E6F2FF] text-[#0274BB] flex items-center justify-center shrink-0">
                 <Building2 className="size-4" />
               </div>
@@ -100,38 +98,44 @@ export default function SuperAdminDashboardPage() {
             </div>
             <Link
               to="/tenants"
-              className="text-xs text-[#0274BB] hover:text-[#003B8C] font-semibold transition-colors flex items-center gap-1"
+              className="text-xs text-[#0274BB] hover:text-[#003B8C] font-semibold transition-colors"
             >
-              View All &rarr;
+              View All →
             </Link>
           </div>
 
           {data.recentTenants.length === 0 ? (
-            <div className="py-8 text-center text-xs text-[#9CA3AF]">
+            <div className="py-10 text-center text-xs text-[#9CA3AF]">
               No recent tenants registered.
             </div>
           ) : (
-            <div className="divide-y divide-[#E5E7EB]">
+            <div className="divide-y divide-[#F5F7FA]">
               {data.recentTenants.map((t) => (
-                <div key={t.id} className="py-3.5 flex items-center justify-between gap-4 first:pt-0 last:pb-0 text-xs">
-                  <div>
-                    <div className="font-semibold text-[#111827] hover:text-[#0274BB] transition-colors">
-                      <Link to={`/tenants/${t.id}`}>{t.name}</Link>
-                    </div>
-                    <div className="text-[11px] text-[#6B7280] font-mono mt-0.5">
-                      {t.code} {t.adminEmail ? <>&bull; <span className="text-[#9CA3AF]">{t.adminEmail}</span></> : null}
+                <div
+                  key={t.id}
+                  className="py-3 flex items-center justify-between gap-3 first:pt-0 last:pb-0"
+                >
+                  <div className="min-w-0">
+                    <Link
+                      to={`/tenants/${t.id}`}
+                      className="text-xs font-semibold text-[#111827] hover:text-[#0274BB] transition-colors block truncate"
+                    >
+                      {t.name}
+                    </Link>
+                    <div className="text-[10px] text-[#9CA3AF] font-mono mt-0.5 truncate">
+                      {t.code}
+                      {t.adminEmail && <> · {t.adminEmail}</>}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2.5">
-                    <Badge variant={t.status === 'ACTIVE' ? 'success' : 'destructive'} className="rounded-full px-2.5">
-                      {t.status}
-                    </Badge>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <StatusBadge status={t.status} showDot={false} />
                     <Link
                       to={`/tenants/${t.id}`}
                       className="p-1 rounded-[4px] text-[#9CA3AF] hover:text-[#111827] hover:bg-[#F5F7FA] transition-colors"
+                      title={`View ${t.name}`}
                     >
-                      <ArrowUpRight className="size-4" />
+                      <ArrowUpRight className="size-3.5" />
                     </Link>
                   </div>
                 </div>
@@ -141,7 +145,7 @@ export default function SuperAdminDashboardPage() {
         </Card>
       </div>
 
-      {/* Real Audit Activity Stream */}
+      {/* Audit Activity Stream */}
       <RecentPlatformActivity activity={data.recentActivity} />
     </div>
   );

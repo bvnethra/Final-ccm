@@ -12,6 +12,37 @@ import type {
 } from '../types/superAdmin';
 import { logPlatformEvent } from './platformAuditService';
 
+/**
+ * Automatically generates a standardized tenant code from a tenant name.
+ * e.g., "Apex Metrology Systems Ltd" -> "TNT-APEX"
+ * e.g., "E2E Precision Labs" -> "TNT-E2E-PRECISION"
+ * e.g., "Nethra Calibration Centre" -> "TNT-NETHRA"
+ */
+export function generateTenantCodeFromName(name: string): string {
+  if (!name || !name.trim()) return '';
+
+  // Clean out common corporate designations
+  const cleaned = name
+    .replace(/\b(pvt|private|ltd|limited|inc|incorporated|corp|corporation|llc|llp|gmbh|co|company)\b\.?/gi, '')
+    .trim();
+
+  const tokens = cleaned.split(/[^a-zA-Z0-9]+/).filter(Boolean);
+  if (tokens.length === 0) return '';
+
+  let core = '';
+  if (tokens.length === 1) {
+    core = tokens[0].toUpperCase();
+  } else if (tokens[0].length >= 4) {
+    core = tokens[0].toUpperCase();
+  } else {
+    core = `${tokens[0].toUpperCase()}-${tokens[1].toUpperCase()}`;
+  }
+
+  // Remove any remaining invalid characters and cap length
+  core = core.replace(/[^A-Z0-9\-]/g, '').slice(0, 16).replace(/-+$/, '');
+  return `TNT-${core}`;
+}
+
 export async function fetchTenants(filters: TenantFilters = {}): Promise<PaginatedTenants> {
   const page = filters.page || 1;
   const pageSize = filters.pageSize || 10;

@@ -2,8 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
-import { Button, Badge } from '../ui/UIPrimitives';
-import { LogOut, User, Building2, Bell, Clock, ArrowRight } from 'lucide-react';
+import { Badge } from '../ui/UIPrimitives';
+import { LogOut, User, Building2, Bell, Clock, ArrowRight, ChevronDown } from 'lucide-react';
 import { useVendorReminders } from '../../hooks/useVendorReminders';
 
 export const AppHeader: React.FC = () => {
@@ -23,33 +23,38 @@ export const AppHeader: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const enterpriseName =
+    user?.tenantName || user?.organizationName || (user?.tenantId ? `Tenant ${user.tenantId.slice(0, 8)}` : 'Nethra Metrology Services Ltd');
+
   return (
-    <header className="h-16 bg-white border-b border-[#E5E7EB] px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+      {/* Brand & Enterprise Context */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="size-8 rounded-[4px] bg-[#0274BB] flex items-center justify-center text-white font-bold text-base shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="size-9 rounded-lg bg-[#0274BB] flex items-center justify-center text-white font-bold text-lg shadow-xs">
             C
           </div>
           <div>
-            <h1 className="text-sm font-bold text-[#111827] leading-none tracking-tight">
+            <h1 className="text-sm font-bold text-slate-900 leading-none tracking-tight">
               Nethra CCM
             </h1>
-            <span className="text-[11px] text-[#6B7280]">Calibration Operations</span>
+            <span className="text-[11px] text-slate-500">Calibration Operations</span>
           </div>
         </div>
 
-        {(user?.tenantName || user?.tenantId) && (
-          <div className="hidden sm:flex items-center gap-1.5 pl-4 border-l border-[#E5E7EB]">
-            <Building2 className="size-3.5 text-[#6B7280]" />
-            <span className="text-xs font-medium text-[#374151]">
-              Enterprise: <span className="font-semibold text-xs text-[#0274BB]">{user.tenantName || user.organizationName || user.tenantId.slice(0, 8)}</span>
-            </span>
-          </div>
-        )}
+        <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-slate-200">
+          <Building2 className="size-4 text-slate-500" />
+          <span className="text-xs text-slate-500">
+            Enterprise:{' '}
+            <span className="font-semibold text-xs text-[#0274BB]">{enterpriseName}</span>
+          </span>
+          <ChevronDown className="size-3.5 text-[#0274BB]" />
+        </div>
       </div>
 
+      {/* Right User Actions & Reminders */}
       <div className="flex items-center gap-3">
-        {/* Notification Trigger for Collection Agent (Vendor Returns <= 5 days) */}
+        {/* Notification Trigger for Collection Agent */}
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
@@ -58,10 +63,12 @@ export const AppHeader: React.FC = () => {
             title="Collection Agent Reminders (Vendor Returns <= 5 Days)"
           >
             <Bell className="size-5" />
-            {count > 0 && (
+            {count > 0 ? (
               <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white shadow-xs animate-pulse">
                 {count}
               </span>
+            ) : (
+              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-rose-500" />
             )}
           </button>
 
@@ -149,31 +156,26 @@ export const AppHeader: React.FC = () => {
           )}
         </div>
 
-        <div className="hidden md:flex items-center gap-2 text-right">
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold text-[#111827]">{user?.fullName || user?.email}</span>
-            <span className="text-[11px] text-[#6B7280]">{user?.roles.join(', ') || 'Operator'}</span>
-          </div>
-          <div className="size-8 rounded-full bg-[#E6F2FF] text-[#0274BB] flex items-center justify-center font-semibold text-xs border border-[#0274BB]/20">
+        {/* User Info & Avatar */}
+        <div className="hidden sm:flex items-center gap-2.5 pl-2">
+          <div className="size-8 rounded-full bg-[#EBF5FF] text-[#0274BB] flex items-center justify-center border border-blue-200/60 font-semibold text-xs shrink-0">
             <User className="size-4" />
           </div>
+          <span className="text-xs font-semibold text-slate-800 leading-tight">
+            {user?.fullName || 'Lab Entry Technician'}
+          </span>
+          <ChevronDown className="size-3.5 text-slate-400" />
         </div>
 
-        {user?.roles.length ? (
-          <Badge variant="primary" pill>
-            {user.roles[0]}
-          </Badge>
-        ) : null}
-
-        <Button
-          variant="outlineInk"
-          size="sm"
+        {/* Sign Out Button */}
+        <button
+          type="button"
           onClick={() => logout()}
-          className="text-xs flex items-center gap-1.5"
+          className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors ml-1"
         >
-          <LogOut className="size-3.5" />
+          <LogOut className="size-4 text-slate-500" />
           <span className="hidden sm:inline">Sign Out</span>
-        </Button>
+        </button>
       </div>
     </header>
   );

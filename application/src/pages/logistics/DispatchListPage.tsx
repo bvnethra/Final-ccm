@@ -12,9 +12,6 @@ import {
 import { useAuthContext } from '../../contexts/AuthContext';
 import {
   Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   CardContent,
   Button,
   Badge,
@@ -47,6 +44,11 @@ import {
   Check,
   Send,
   ShieldCheck,
+  Search,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  Building2,
 } from 'lucide-react';
 import { useVendorReminders } from '../../hooks/useVendorReminders';
 import { SignaturePad } from '../../components/ui/SignaturePad';
@@ -81,6 +83,65 @@ export const DispatchListPage: React.FC = () => {
   const [successToast, setSuccessToast] = useState<string | undefined>();
   const [deliveryError, setDeliveryError] = useState<string | undefined>();
 
+  // Filter, search & pagination state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'ALL' | 'DELIVERED' | 'IN_TRANSIT' | 'DISPATCHED' | 'APPROVED' | 'PENDING'>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [activeActionMenuId, setActiveActionMenuId] = useState<string | null>(null);
+
+  const deliveredDispatches = dispatches.filter((d) => d.status === 'DELIVERED');
+  const inTransitDispatches = dispatches.filter((d) => d.status === 'IN_TRANSIT');
+  const dispatchedOnly = dispatches.filter((d) => d.status === 'DISPATCHED');
+  const activeMovementCount = inTransitDispatches.length + dispatchedOnly.length;
+  const dcApprovedDispatches = dispatches.filter((d) => d.approval_status === 'APPROVED');
+  const dcPendingDispatches = dispatches.filter((d) => d.approval_status === 'PENDING_APPROVAL' || !d.approval_status);
+
+  const avatarStyles = [
+    'bg-blue-50 text-[#0274BB] border border-blue-200',
+    'bg-emerald-50 text-emerald-700 border border-emerald-200',
+    'bg-purple-50 text-purple-700 border border-purple-200',
+    'bg-amber-50 text-amber-700 border border-amber-200',
+  ];
+
+  const getRequestInfo = (requestId: string) => {
+    return requests.find((r) => r.id === requestId);
+  };
+
+  const getDeliveryInfo = (dispatchId: string) => {
+    return deliveries.find((d) => d.dispatch_id === dispatchId);
+  };
+
+  const filteredDispatches = dispatches.filter((d) => {
+    if (filterType === 'DELIVERED' && d.status !== 'DELIVERED') return false;
+    if (filterType === 'IN_TRANSIT' && d.status !== 'IN_TRANSIT') return false;
+    if (filterType === 'DISPATCHED' && d.status !== 'DISPATCHED') return false;
+    if (filterType === 'APPROVED' && d.approval_status !== 'APPROVED') return false;
+    if (filterType === 'PENDING' && d.approval_status === 'APPROVED') return false;
+
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const req = getRequestInfo(d.request_id);
+    const clientName = req?.clients?.client_name?.toLowerCase() || '';
+    const reqNum = req?.request_number?.toLowerCase() || '';
+
+    return (
+      d.gate_pass_number.toLowerCase().includes(query) ||
+      (d.tracking_number && d.tracking_number.toLowerCase().includes(query)) ||
+      (d.recipient_name && d.recipient_name.toLowerCase().includes(query)) ||
+      (d.courier_partner && d.courier_partner.toLowerCase().includes(query)) ||
+      (d.collection_agent_name && d.collection_agent_name.toLowerCase().includes(query)) ||
+      clientName.includes(query) ||
+      reqNum.includes(query)
+    );
+  });
+
+  const totalItems = filteredDispatches.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const validPage = Math.min(currentPage, totalPages);
+  const startIndex = (validPage - 1) * itemsPerPage;
+  const paginatedDispatches = filteredDispatches.slice(startIndex, startIndex + itemsPerPage);
+
   const handleApproveDispatch = async (approved: boolean) => {
     if (!approvalModalDispatch || !tenantId) return;
     try {
@@ -98,14 +159,6 @@ export const DispatchListPage: React.FC = () => {
     } catch (err: any) {
       setDeliveryError(err.message || 'Failed to update DC approval.');
     }
-  };
-
-  const getRequestInfo = (requestId: string) => {
-    return requests.find((r) => r.id === requestId);
-  };
-
-  const getDeliveryInfo = (dispatchId: string) => {
-    return deliveries.find((d) => d.dispatch_id === dispatchId);
   };
 
   const handleOpenDeliveryModal = (dispatch: Dispatch) => {
@@ -218,260 +271,531 @@ export const DispatchListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#111827]">Gate Pass Dispatch &amp; Tracking</h1>
-          <p className="text-sm text-[#6B7280]">
-            Track dispatches, record client delivery digital signatures, and transition work orders to COMPLETED
-          </p>
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0274BB] shrink-0">
+            <Truck className="size-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl font-bold text-[#111827]">Logistics &amp; Dispatch Registry</h1>
+              <Badge variant="success" pill>
+                {dispatches.length} Gate Passes
+              </Badge>
+            </div>
+            <p className="text-xs text-[#6B7280] mt-0.5">
+              Pack • Ship • Deliver — Outward material dispatches, courier consignment tracking, and client digital POD
+            </p>
+          </div>
         </div>
 
-        <Link to="/logistics/dispatch/new">
-          <Button variant="primary">
-            <Plus className="size-4" /> Issue Gate Pass
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <Link to="/logistics/dispatch/new">
+            <Button variant="primary" size="sm" className="h-9">
+              <Plus className="size-4 mr-1.5" /> Issue Gate Pass
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Logistics Dispatches &amp; Delivery Tracking ({dispatches.length})</CardTitle>
-          <CardDescription>
-            Outward dispatches with live tracking, client delivery digital receipts, and completed work order lifecycle
-          </CardDescription>
-        </CardHeader>
+      {/* 4 Interactive KPI Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card
+          className={`cursor-pointer transition-all border ${
+            filterType === 'ALL' ? 'border-[#0274BB] ring-1 ring-[#0274BB]/20 shadow-xs' : 'hover:border-slate-300'
+          }`}
+          onClick={() => {
+            setFilterType('ALL');
+            setCurrentPage(1);
+          }}
+        >
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#0274BB] flex items-center justify-center shrink-0 border border-blue-100">
+              <Truck className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-medium text-[#6B7280] block">Total Gate Passes</span>
+              <span className="text-xl font-bold text-[#111827]">{dispatches.length}</span>
+              <span className="text-[11px] text-[#6B7280] block truncate">Outward material passes</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={`cursor-pointer transition-all border ${
+            filterType === 'DELIVERED' ? 'border-emerald-500 ring-1 ring-emerald-500/20 shadow-xs' : 'hover:border-slate-300'
+          }`}
+          onClick={() => {
+            setFilterType('DELIVERED');
+            setCurrentPage(1);
+          }}
+        >
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+              <CheckCircle2 className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-medium text-[#6B7280] block">Delivered &amp; Completed</span>
+              <span className="text-xl font-bold text-emerald-700">{deliveredDispatches.length}</span>
+              <span className="text-[11px] text-[#6B7280] block truncate">Client verified POD signed</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={`cursor-pointer transition-all border ${
+            filterType === 'IN_TRANSIT' ? 'border-amber-500 ring-1 ring-amber-500/20 shadow-xs' : 'hover:border-slate-300'
+          }`}
+          onClick={() => {
+            setFilterType('IN_TRANSIT');
+            setCurrentPage(1);
+          }}
+        >
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
+              <Send className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-medium text-[#6B7280] block">In Transit / Active</span>
+              <span className="text-xl font-bold text-amber-700">{activeMovementCount}</span>
+              <span className="text-[11px] text-[#6B7280] block truncate">
+                {inTransitDispatches.length} in transit, {dispatchedOnly.length} dispatched
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border hover:border-slate-300">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
+              <Clock className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-medium text-[#6B7280] block">Vendor Returns Due</span>
+              <span className="text-xl font-bold text-purple-700">{vendorRemindersCount}</span>
+              <span className="text-[11px] text-[#6B7280] block truncate">$\le$ 5 days outsource alert</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-[#E5E7EB] shadow-xs">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#9CA3AF]" />
+          <input
+            type="text"
+            placeholder="Search by gate pass #, AWB, recipient, courier, client..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#F8FAFC] border border-[#E2E8F0] rounded-md focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:bg-white text-[#111827] placeholder-[#9CA3AF]"
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('ALL');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'ALL'
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            All ({dispatches.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('DELIVERED');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'DELIVERED'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            • Delivered ({deliveredDispatches.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('IN_TRANSIT');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'IN_TRANSIT'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            • In Transit ({inTransitDispatches.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('DISPATCHED');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'DISPATCHED'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            • Dispatched ({dispatchedOnly.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('APPROVED');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'APPROVED'
+                ? 'bg-teal-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            • DC Approved ({dcApprovedDispatches.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterType('PENDING');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+              filterType === 'PENDING'
+                ? 'bg-slate-700 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            • Pending ({dcPendingDispatches.length})
+          </button>
+
+          <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
+
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700 cursor-pointer"
+          >
+            <option value={10}>10 / page</option>
+            <option value={25}>25 / page</option>
+            <option value={50}>50 / page</option>
+            <option value={100}>100 / page</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Dispatches Directory Table */}
+      <Card className="border border-[#E5E7EB] overflow-hidden">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center text-sm text-[#6B7280]">
+            <div className="p-12 text-center text-sm text-[#6B7280]">
               <div className="size-6 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
               Loading dispatches...
             </div>
           ) : error ? (
-            <div className="p-8 text-center text-sm text-[#DC2626]">
+            <div className="p-12 text-center text-sm text-[#DC2626]">
               <AlertCircle className="size-6 mx-auto mb-2" />
               {(error as Error).message}
             </div>
-          ) : dispatches.length === 0 ? (
+          ) : filteredDispatches.length === 0 ? (
             <div className="p-12 text-center text-[#6B7280] space-y-3">
               <Truck className="size-8 mx-auto text-[#9CA3AF]" />
-              <p className="text-base font-semibold text-[#374151]">No gate passes issued</p>
-              <p className="text-xs text-[#6B7280]">
-                Issue a gate pass to dispatch calibrated equipment or commercial invoices to clients.
+              <p className="text-base font-semibold text-[#374151]">No gate passes found</p>
+              <p className="text-xs text-[#6B7280] max-w-md mx-auto">
+                {searchQuery
+                  ? `No dispatches match "${searchQuery}". Try adjusting your search query.`
+                  : 'Issue a gate pass to dispatch calibrated equipment or commercial invoices to clients.'}
               </p>
               <Link to="/logistics/dispatch/new">
                 <Button variant="secondary" size="sm" className="mt-2">
-                  <Plus className="size-4" /> Generate Gate Pass
+                  <Plus className="size-4 mr-1" /> Generate Gate Pass
                 </Button>
               </Link>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#F5F7FA] border-b border-[#E5E7EB] text-[#374151] font-semibold text-xs uppercase">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F8FAFC] border-b border-[#E5E7EB] text-[#475569] font-semibold text-[11px] uppercase tracking-wider">
                   <tr>
-                    <th className="px-5 py-3">Gate Pass / Order #</th>
-                    <th className="px-5 py-3">Dispatch Mode</th>
-                    <th className="px-5 py-3">Package Content</th>
-                    <th className="px-5 py-3">Logistics / Agent</th>
-                    <th className="px-5 py-3">Recipient &amp; Client</th>
-                    <th className="px-5 py-3">DC Approval</th>
-                    <th className="px-5 py-3">Client Digital Signature</th>
-                    <th className="px-5 py-3">Tracking Status</th>
-                    <th className="px-5 py-3 text-right">Actions</th>
+                    <th className="px-5 py-3 whitespace-nowrap">Gate Pass &amp; Order #</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Dispatch Mode</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Package Content</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Logistics / Agent</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Recipient &amp; Client</th>
+                    <th className="px-4 py-3 whitespace-nowrap">DC Approval</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Client Digital POD</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Tracking Status</th>
+                    <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E7EB]">
-                  {dispatches.map((d) => {
+                  {paginatedDispatches.map((d, idx) => {
                     const req = getRequestInfo(d.request_id);
                     const delivery = getDeliveryInfo(d.id);
                     const isCollectionAgent = d.dispatch_type === 'COLLECTION_AGENT' || (!d.dispatch_type && !d.courier_partner);
                     const isInvoiceOnly = d.package_type === 'INVOICE_ONLY';
                     const hasSignature = Boolean(d.client_signature || delivery?.signature_data_url);
+                    const avatarStyle = avatarStyles[idx % avatarStyles.length];
 
                     return (
-                      <tr key={d.id} className="hover:bg-[#FAFAFA] transition-colors">
-                        <td className="px-5 py-4">
-                          <span className="font-mono font-bold text-[#0274BB] block">
-                            {d.gate_pass_number}
-                          </span>
-                          <span className="text-[11px] text-[#6B7280] block">
-                            WO: {req?.request_number || 'N/A'}
-                          </span>
-                          <span className="text-[10px] text-[#9CA3AF]">
-                            {new Date(d.dispatch_date).toLocaleDateString()}
-                          </span>
+                      <tr key={d.id} className="hover:bg-[#F8FAFC] transition-colors">
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${avatarStyle}`}>
+                              <Truck className="size-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <span
+                                className="font-mono font-bold text-[#0274BB] block text-xs hover:underline cursor-pointer"
+                                onClick={() => setSelectedDispatch(d)}
+                              >
+                                {d.gate_pass_number}
+                              </span>
+                              <div className="flex items-center gap-1.5 text-[11px] text-[#6B7280]">
+                                <span className="font-mono text-[10px] text-slate-500">
+                                  WO: {req?.request_number || 'N/A'}
+                                </span>
+                                <span className="text-slate-300">•</span>
+                                <span className="text-[10px] text-slate-400">
+                                  {new Date(d.dispatch_date).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3.5 whitespace-nowrap">
                           {isCollectionAgent ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                              <UserCheck className="size-3.5" /> Collection Agent
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              <UserCheck className="size-3" /> Collection Agent
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                              <Truck className="size-3.5" /> Courier
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                              <Truck className="size-3" /> Courier
                             </span>
                           )}
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3.5 whitespace-nowrap">
                           {isInvoiceOnly ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded bg-purple-50 text-purple-700 border border-purple-200">
-                              <Receipt className="size-3.5" /> Invoice Alone
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                              <Receipt className="size-3" /> Invoice Alone
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <Package className="size-3.5" /> Items + Invoice
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <Package className="size-3" /> Items + Invoice
                             </span>
                           )}
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3.5 whitespace-nowrap">
                           {isCollectionAgent ? (
                             <div>
-                              <span className="font-medium text-slate-900 block text-xs">
-                                {d.collection_agent_name || d.dispatched_by || 'Field Agent'}
+                              <span className="font-medium text-slate-800 block text-xs">
+                                {d.collection_agent_name || d.dispatched_by || 'Field Personnel'}
                               </span>
                               {d.collection_agent_phone && (
-                                <span className="text-[11px] text-slate-500 font-mono">
+                                <span className="text-[10px] text-slate-400 font-mono block">
                                   {d.collection_agent_phone}
                                 </span>
                               )}
                             </div>
                           ) : (
                             <div>
-                              <span className="font-medium text-slate-900 block text-xs">
+                              <span className="font-medium text-slate-800 block text-xs">
                                 {d.courier_partner || 'Courier Partner'}
                               </span>
-                              <span className="text-[11px] text-[#0274BB] font-mono block">
+                              <span className="text-[10px] text-[#0274BB] font-mono block">
                                 AWB: {d.tracking_number || 'No AWB'}
                               </span>
                             </div>
                           )}
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3.5 whitespace-nowrap">
                           <span className="font-medium text-slate-800 block text-xs">
                             {d.recipient_name}
                           </span>
-                          <span className="text-[11px] text-slate-500 block">
-                            {req?.clients?.client_name || 'Client Site'}
-                          </span>
-                          {d.recipient_phone && (
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              {d.recipient_phone}
+                          <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                            <Building2 className="size-3 text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[130px]" title={req?.clients?.client_name || 'Client Site'}>
+                              {req?.clients?.client_name || 'Client Site'}
                             </span>
-                          )}
+                          </div>
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3.5 whitespace-nowrap">
                           {d.approval_status === 'APPROVED' ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                               <CheckCircle2 className="size-3 text-emerald-600" /> DC Approved
                             </span>
                           ) : d.approval_status === 'REJECTED' ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
-                              <X className="size-3 text-red-600" /> DC Rejected
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                              <X className="size-3 text-rose-600" /> DC Rejected
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                              <Clock className="size-3 text-amber-600" /> Pending Approval
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                              <Clock className="size-3 text-amber-600" /> Pending DC
                             </span>
                           )}
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3.5 whitespace-nowrap">
                           {hasSignature ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                               <CheckCircle2 className="size-3 text-emerald-600" /> Digitally Signed
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                            <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                               <Clock className="size-3 text-amber-600" /> Sign on Delivery
                             </span>
                           )}
                         </td>
 
-                        <td className="px-5 py-4">
-                          <div className="space-y-1">
-                            <Badge
-                              variant={
-                                d.status === 'DELIVERED'
-                                  ? 'success'
-                                  : d.status === 'IN_TRANSIT'
-                                  ? 'warning'
-                                  : 'primary'
-                              }
-                            >
-                              {d.status === 'DELIVERED' ? 'DELIVERED & COMPLETED' : d.status}
-                            </Badge>
-                            {d.status === 'DELIVERED' && (
-                              <span className="text-[10px] text-emerald-700 block font-semibold">
-                                ✓ Work Order Completed
-                              </span>
-                            )}
-                          </div>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <Badge
+                            variant={
+                              d.status === 'DELIVERED'
+                                ? 'success'
+                                : d.status === 'IN_TRANSIT'
+                                ? 'warning'
+                                : 'primary'
+                            }
+                            pill
+                            className="text-[10px]"
+                          >
+                            {d.status === 'DELIVERED' ? 'DELIVERED & COMPLETED' : d.status}
+                          </Badge>
                         </td>
 
-                        <td className="px-5 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                            {(isSuperAdmin || canPerform('CREATE_REQUEST', 'APPROVE')) && d.approval_status !== 'APPROVED' && (
-                              <Button
-                                variant="outlineInk"
-                                size="sm"
-                                onClick={() => {
-                                  setApprovalModalDispatch(d);
-                                  setApproverNotes('');
-                                }}
-                                className="text-xs h-7 px-2 border-emerald-400 text-emerald-700 hover:bg-emerald-50"
-                              >
-                                <ShieldCheck className="size-3" /> Approve DC
-                              </Button>
-                            )}
-
-                            {d.status === 'DISPATCHED' && (
-                              <Button
-                                variant="outlineInk"
-                                size="sm"
-                                onClick={() => handleAdvanceToInTransit(d.id)}
-                                title="Advance tracking to In Transit"
-                                className="text-xs h-7 px-2"
-                              >
-                                <Send className="size-3" /> In Transit
-                              </Button>
-                            )}
-
-                            {d.status !== 'DELIVERED' && (
+                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {d.status !== 'DELIVERED' ? (
                               <Button
                                 variant="primary"
                                 size="sm"
                                 onClick={() => handleOpenDeliveryModal(d)}
-                                className="text-xs h-7 px-2 bg-emerald-700 hover:bg-emerald-800"
+                                className="h-7 text-xs px-2.5 bg-emerald-700 hover:bg-emerald-800"
                               >
-                                <PenTool className="size-3" /> Record Delivery
+                                <PenTool className="size-3 mr-1" /> Record Delivery
                               </Button>
-                            )}
-
-                            {d.status === 'DELIVERED' && (
+                            ) : (
                               <Button
                                 variant="outlineInk"
                                 size="sm"
                                 onClick={() => setSelectedPODDelivery({ dispatch: d, delivery })}
-                                className="text-xs h-7 px-2 text-emerald-800 border-emerald-300 hover:bg-emerald-50"
+                                className="h-7 text-xs px-2 text-emerald-800 border-emerald-300 hover:bg-emerald-50"
                               >
-                                <ShieldCheck className="size-3 text-emerald-600" /> Proof of Delivery
+                                <ShieldCheck className="size-3 mr-1 text-emerald-600" /> View POD
                               </Button>
                             )}
 
                             <Button
-                              variant="outlineInk"
+                              variant="secondary"
                               size="sm"
                               onClick={() => setSelectedDispatch(d)}
-                              className="text-xs h-7 px-2"
+                              className="h-7 text-xs px-2"
                             >
-                              <Eye className="size-3" /> Gate Pass
+                              <Eye className="size-3 mr-1" /> Gate Pass
                             </Button>
+
+                            {/* 3-dots Action Menu */}
+                            <div className="relative inline-block text-left">
+                              <button
+                                type="button"
+                                onClick={() => setActiveActionMenuId(activeActionMenuId === d.id ? null : d.id)}
+                                className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                              >
+                                <MoreVertical className="size-4" />
+                              </button>
+
+                              {activeActionMenuId === d.id && (
+                                <div
+                                  className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-slate-200 z-30 py-1 animate-in fade-in"
+                                  onMouseLeave={() => setActiveActionMenuId(null)}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedDispatch(d);
+                                      setActiveActionMenuId(null);
+                                    }}
+                                    className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                  >
+                                    <FileText className="size-3.5 text-slate-400" /> View / Print Gate Pass
+                                  </button>
+
+                                  {d.status === 'DISPATCHED' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleAdvanceToInTransit(d.id);
+                                        setActiveActionMenuId(null);
+                                      }}
+                                      className="w-full text-left px-3 py-1.5 text-xs text-[#0274BB] hover:bg-blue-50 flex items-center gap-2"
+                                    >
+                                      <Send className="size-3.5" /> Advance to In Transit
+                                    </button>
+                                  )}
+
+                                  {d.status !== 'DELIVERED' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleOpenDeliveryModal(d);
+                                        setActiveActionMenuId(null);
+                                      }}
+                                      className="w-full text-left px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50 flex items-center gap-2"
+                                    >
+                                      <PenTool className="size-3.5" /> Capture Client Signature
+                                    </button>
+                                  )}
+
+                                  {d.status === 'DELIVERED' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedPODDelivery({ dispatch: d, delivery });
+                                        setActiveActionMenuId(null);
+                                      }}
+                                      className="w-full text-left px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50 flex items-center gap-2"
+                                    >
+                                      <ShieldCheck className="size-3.5" /> Official Proof of Delivery
+                                    </button>
+                                  )}
+
+                                  {(isSuperAdmin || canPerform('CREATE_REQUEST', 'APPROVE')) && d.approval_status !== 'APPROVED' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setApprovalModalDispatch(d);
+                                        setApproverNotes('');
+                                        setActiveActionMenuId(null);
+                                      }}
+                                      className="w-full text-left px-3 py-1.5 text-xs text-teal-700 hover:bg-teal-50 flex items-center gap-2"
+                                    >
+                                      <ShieldCheck className="size-3.5" /> Review &amp; Approve DC
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -479,6 +803,62 @@ export const DispatchListPage: React.FC = () => {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Numbered Pagination */}
+          {!isLoading && filteredDispatches.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-slate-200 bg-[#F8FAFC] text-xs text-slate-500">
+              <div>
+                Showing <span className="font-semibold text-slate-800">{startIndex + 1}</span> to{' '}
+                <span className="font-semibold text-slate-800">
+                  {Math.min(startIndex + itemsPerPage, totalItems)}
+                </span>{' '}
+                of <span className="font-semibold text-slate-800">{totalItems}</span> gate passes
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={validPage <= 1}
+                  className="p-1 rounded border border-slate-200 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - validPage) <= 1)
+                  .map((page, i, arr) => {
+                    const prevPage = arr[i - 1];
+                    const showEllipsis = prevPage && page - prevPage > 1;
+                    return (
+                      <React.Fragment key={page}>
+                        {showEllipsis && <span className="px-1 text-slate-400">...</span>}
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-7 h-7 rounded text-xs font-semibold transition-colors ${
+                            validPage === page
+                              ? 'bg-[#0274BB] text-white'
+                              : 'border border-slate-200 hover:bg-white text-slate-700'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      </React.Fragment>
+                    );
+                  })}
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={validPage >= totalPages}
+                  className="p-1 rounded border border-slate-200 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
             </div>
           )}
         </CardContent>

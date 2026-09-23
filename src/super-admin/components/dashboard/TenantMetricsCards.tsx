@@ -9,48 +9,46 @@ interface Props {
   isLoading?: boolean;
 }
 
+const cards = [
+  {
+    title: 'Total Tenants',
+    key: 'totalTenants' as const,
+    subtext: 'Registered platform enterprises',
+    icon: Building2,
+    iconBg: 'bg-[#E6F2FF] text-[#0274BB]',
+    path: '/tenants',
+  },
+  {
+    title: 'Active Tenants',
+    key: 'activeTenants' as const,
+    subtext: 'Operational & calibrating labs',
+    icon: FlaskConical,
+    iconBg: 'bg-[#F0FDF4] text-[#16A34A]',
+    path: '/tenants?status=ACTIVE',
+  },
+  {
+    title: 'Deactivated Tenants',
+    key: 'deactivatedTenants' as const,
+    subtext: 'Archived / inactive enterprises',
+    icon: Ban,
+    iconBg: 'bg-[#F5F7FA] text-[#9CA3AF]',
+    path: '/tenants?status=DEACTIVATED',
+  },
+];
+
 export const TenantMetricsCards: React.FC<Props> = ({ metrics, isLoading }) => {
   const navigate = useNavigate();
 
-  const cards = [
-    {
-      title: 'TOTAL TENANTS',
-      count: metrics.totalTenants,
-      subtext: 'Registered platform enterprises',
-      icon: Building2,
-      cardBg: 'bg-[#eff6ff] border-[#dbeafe] hover:border-blue-300 hover:shadow-sm',
-      iconBg: 'bg-blue-100 text-blue-600',
-      path: '/tenants',
-    },
-    {
-      title: 'ACTIVE TENANTS',
-      count: metrics.activeTenants,
-      subtext: 'Operational & calibrating labs',
-      icon: FlaskConical,
-      cardBg: 'bg-[#f0fdf4] border-[#dcfce7] hover:border-emerald-300 hover:shadow-sm',
-      iconBg: 'bg-emerald-100 text-emerald-600',
-      path: '/tenants?status=ACTIVE',
-    },
-    {
-      title: 'DEACTIVATED TENANTS',
-      count: metrics.deactivatedTenants,
-      subtext: 'Archived / inactive enterprises',
-      icon: Ban,
-      cardBg: 'bg-[#fff1f2] border-[#ffe4e6] hover:border-rose-300 hover:shadow-sm',
-      iconBg: 'bg-rose-100 text-rose-600',
-      path: '/tenants?status=DEACTIVATED',
-    },
-  ];
-
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-      {cards.map((c, idx) => {
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {cards.map((c) => {
         const Icon = c.icon;
+        const count = metrics[c.key];
         return (
           <div
-            key={idx}
+            key={c.key}
             onClick={() => navigate(c.path)}
-            className={`rounded-xl border ${c.cardBg} p-5 shadow-xs transition-all relative flex flex-col justify-between cursor-pointer group select-none`}
+            className="rounded-[8px] border border-[#E5E7EB] bg-white p-5 shadow-xs transition-all hover:border-[#b8dcff] hover:shadow-sm cursor-pointer select-none group"
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
@@ -60,27 +58,24 @@ export const TenantMetricsCards: React.FC<Props> = ({ metrics, isLoading }) => {
               }
             }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className={`size-10 rounded-lg ${c.iconBg} flex items-center justify-center shrink-0`}>
-                  <Icon className="size-5" />
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    {c.title}
-                  </span>
-                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mt-0.5">
-                    {isLoading ? (
-                      <div className="w-12 h-8 rounded bg-slate-200 animate-pulse" />
-                    ) : (
-                      c.count
-                    )}
-                  </div>
-                </div>
+            <div className="flex items-start justify-between mb-4">
+              <div className={`size-9 rounded-[6px] ${c.iconBg} flex items-center justify-center shrink-0`}>
+                <Icon className="size-4" />
               </div>
             </div>
-            <div className="text-xs text-slate-500 font-medium pl-1">
-              {c.subtext}
+
+            <div className="space-y-1">
+              {isLoading ? (
+                <div className="w-10 h-7 rounded-[4px] bg-[#F5F7FA] animate-pulse" />
+              ) : (
+                <div className="text-2xl font-bold text-[#111827] tracking-tight tabular-nums">
+                  {count}
+                </div>
+              )}
+              <div className="text-[11px] font-semibold text-[#374151] uppercase tracking-wider">
+                {c.title}
+              </div>
+              <div className="text-xs text-[#6B7280]">{c.subtext}</div>
             </div>
           </div>
         );

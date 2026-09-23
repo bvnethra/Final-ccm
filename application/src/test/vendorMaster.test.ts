@@ -1,7 +1,9 @@
 // application/src/test/vendorMaster.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
+  formatTccVendorCode,
   generateVendorCode,
+  getNextTccVendorCode,
   createVendor,
   updateVendor,
   toggleVendorStatus,
@@ -13,15 +15,19 @@ describe('Vendor Master Data Business Logic & Validations', () => {
     localStorage.clear();
   });
 
-  describe('Vendor Code Generation', () => {
-    it('generates unique vendor codes matching format VND-YYYY-XXXXX', () => {
-      const code1 = generateVendorCode();
-      const code2 = generateVendorCode();
-      const currentYear = new Date().getFullYear();
+  describe('Vendor Code Generation (TCC-MAS-VC-001 to 999)', () => {
+    it('formats sequential vendor codes from TCC-MAS-VC-001 to 999 correctly', () => {
+      expect(formatTccVendorCode(1)).toBe('TCC-MAS-VC-001');
+      expect(formatTccVendorCode(25)).toBe('TCC-MAS-VC-025');
+      expect(formatTccVendorCode(100)).toBe('TCC-MAS-VC-100');
+      expect(formatTccVendorCode(999)).toBe('TCC-MAS-VC-999');
+      expect(formatTccVendorCode(1000)).toBe('TCC-MAS-VC-1000');
+      expect(generateVendorCode(75)).toBe('TCC-MAS-VC-075');
+    });
 
-      expect(code1).toMatch(new RegExp(`^VND-${currentYear}-\\d{5}$`));
-      expect(code2).toMatch(new RegExp(`^VND-${currentYear}-\\d{5}$`));
-      expect(code1).not.toBe(code2);
+    it('retrieves next sequential vendor code starting at TCC-MAS-VC-001', async () => {
+      const code1 = await getNextTccVendorCode('tenant-fresh-01');
+      expect(code1).toBe('TCC-MAS-VC-001');
     });
   });
 
@@ -52,7 +58,7 @@ describe('Vendor Master Data Business Logic & Validations', () => {
       expect(created.id).toBeDefined();
       expect(created.tenant_id).toBe(dummyTenant);
       expect(created.organization_id).toBe(dummyOrg);
-      expect(created.vendor_code).toMatch(/^VND-\d{4}-\d{5}$/);
+      expect(created.vendor_code).toMatch(/^TCC-MAS-VC-\d{3}$/);
       expect(created.vendor_name).toBe(sampleFormData.vendor_name);
       expect(created.status).toBe('ACTIVE');
       expect(created.phone_numbers?.length).toBe(2);

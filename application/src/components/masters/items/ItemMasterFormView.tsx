@@ -118,14 +118,17 @@ export const ItemMasterFormView: React.FC<ItemMasterFormViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field>
               <FieldLabel>
-                Item Code <span className="text-xs text-[#6B7280]">(Auto-generated if empty)</span>
+                Item Code <span className="text-xs text-[#6B7280]">(Auto-derived e.g. VC-50)</span>
               </FieldLabel>
               <Input
-                placeholder="e.g. ITM-2026-10482"
+                placeholder="e.g. VC-50"
                 value={formData.item_code || ''}
                 onChange={(e) => onChange('item_code', e.target.value)}
                 disabled={isEditMode}
               />
+              <span className="text-[11px] text-[#6B7280]">
+                Auto-derived from instrument name and range (e.g. VC-50 for Vernier Caliper 0-50mm) or custom code
+              </span>
               {errors.item_code && (
                 <span className="text-xs text-[#DC2626]">{errors.item_code}</span>
               )}

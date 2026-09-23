@@ -18,9 +18,8 @@ export default function AddOrganizationPage() {
   const [address, setAddress] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const tenantDetailPath = window.location.pathname.startsWith('/super-admin')
-    ? `/super-admin/tenants/${id}`
-    : `/tenants/${id}`;
+  // This page is always rendered inside the Super Admin router — path is always /tenants/:id
+  const tenantDetailPath = `/tenants/${id}`;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

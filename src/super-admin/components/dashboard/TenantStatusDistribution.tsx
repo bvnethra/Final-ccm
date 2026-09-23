@@ -1,80 +1,80 @@
 // src/super-admin/components/dashboard/TenantStatusDistribution.tsx
 import React from 'react';
 import { Card } from '../../../components/ui/UIPrimitives';
-import { Activity } from 'lucide-react';
+import { BarChart2 } from 'lucide-react';
 import type { TenantStatus } from '../../types/superAdmin';
+import { getStatusConfig } from '../ui/StatusBadge';
+
+interface DistributionItem {
+  status: TenantStatus;
+  count: number;
+  percentage: number;
+}
 
 interface Props {
-  distribution: {
-    status: TenantStatus;
-    count: number;
-    percentage: number;
-  }[];
+  distribution: DistributionItem[];
   totalTenants: number;
 }
 
 export const TenantStatusDistribution: React.FC<Props> = ({ distribution, totalTenants }) => {
   return (
-    <Card className="p-5 bg-white border-slate-200 shadow-xs">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="size-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-            <Activity className="size-4" />
+    <Card className="p-5 bg-white border-[#E5E7EB] rounded-[8px] shadow-xs">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2.5">
+          <div className="size-8 rounded-[4px] bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center shrink-0">
+            <BarChart2 className="size-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Status Distribution</h3>
-            <p className="text-xs text-slate-500">Live multi-tenant distribution</p>
+            <h3 className="text-sm font-bold text-[#111827]">Status Distribution</h3>
+            <p className="text-xs text-[#6B7280]">Live tenant status breakdown</p>
           </div>
         </div>
-        <span className="text-xs font-mono font-medium text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
-          Total: {totalTenants}
+        <span className="text-xs font-mono font-medium text-[#6B7280] bg-[#F5F7FA] px-2.5 py-0.5 rounded-full border border-[#E5E7EB]">
+          {totalTenants} total
         </span>
       </div>
 
       {totalTenants === 0 ? (
-        <div className="py-8 text-center text-xs text-slate-400">
+        <div className="py-10 text-center text-xs text-[#9CA3AF]">
           No tenant records found in database.
         </div>
       ) : (
-        <div className="space-y-5">
-          {/* Distribution Progress Bar */}
-          <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
-            {distribution.map((d, i) => {
-              const isGreen = d.status === 'ACTIVE';
+        <div className="space-y-4">
+          {/* Segmented Progress Bar */}
+          <div className="h-2 w-full bg-[#F5F7FA] rounded-full overflow-hidden flex gap-px">
+            {distribution.map((d) => {
               if (d.percentage === 0) return null;
+              const cfg = getStatusConfig(d.status);
               return (
                 <div
-                  key={i}
+                  key={d.status}
                   style={{ width: `${d.percentage}%` }}
-                  className={`${isGreen ? 'bg-emerald-500' : 'bg-slate-400'} transition-all duration-500 first:rounded-l-full last:rounded-r-full`}
+                  className={`${cfg.dot} transition-all duration-500`}
                   title={`${d.status}: ${d.count} (${d.percentage}%)`}
                 />
               );
             })}
           </div>
 
-          {/* Breakdown cards */}
-          <div className="grid grid-cols-2 gap-4">
-            {distribution.map((d, i) => {
-              const isGreen = d.status === 'ACTIVE';
+          {/* Status breakdown rows */}
+          <div className="space-y-2">
+            {distribution.map((d) => {
+              const cfg = getStatusConfig(d.status);
               return (
                 <div
-                  key={i}
-                  className="p-3.5 rounded-lg border border-slate-200/80 bg-slate-50/60 flex flex-col justify-between"
+                  key={d.status}
+                  className="flex items-center justify-between py-2 px-3 rounded-[6px] border border-[#E5E7EB] bg-[#FAFAFA]"
                 >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`size-2 rounded-full ${isGreen ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                      <span className={`text-xs font-bold tracking-wide ${isGreen ? 'text-emerald-700' : 'text-slate-600'}`}>
-                        {d.status}
-                      </span>
-                    </div>
-                    <span className="text-xs font-semibold text-slate-700">
-                      {d.percentage}%
+                  <div className="flex items-center gap-2">
+                    <span className={`size-2 rounded-full shrink-0 ${cfg.dot}`} />
+                    <span className="text-xs font-semibold text-[#374151] uppercase tracking-wide">
+                      {d.status}
                     </span>
                   </div>
-                  <div className="text-xl font-bold text-slate-900">
-                    {d.count} <span className="text-xs font-normal text-slate-500">tenants</span>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="font-bold text-[#111827] tabular-nums">{d.count}</span>
+                    <span className="text-[#9CA3AF] tabular-nums w-10 text-right">{d.percentage}%</span>
                   </div>
                 </div>
               );

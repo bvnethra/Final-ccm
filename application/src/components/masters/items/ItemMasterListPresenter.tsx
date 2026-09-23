@@ -5,6 +5,10 @@ import { ItemMasterListView } from './ItemMasterListView';
 
 interface ItemMasterListPresenterProps {
   items: ItemMaster[];
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  standardCount: number;
   isLoading: boolean;
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -24,6 +28,10 @@ interface ItemMasterListPresenterProps {
 
 export const ItemMasterListPresenter: React.FC<ItemMasterListPresenterProps> = ({
   items,
+  totalCount,
+  activeCount,
+  inactiveCount,
+  standardCount,
   isLoading,
   searchQuery,
   onSearchChange,
@@ -43,13 +51,17 @@ export const ItemMasterListPresenter: React.FC<ItemMasterListPresenterProps> = (
   return (
     <div className="space-y-4">
       {errorMessage && (
-        <div className="p-4 bg-[#FEF2F2] border border-[#DC2626]/30 text-[#DC2626] rounded-[4px] text-sm">
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm">
           {errorMessage}
         </div>
       )}
 
       <ItemMasterListView
         items={items}
+        totalCount={totalCount}
+        activeCount={activeCount}
+        inactiveCount={inactiveCount}
+        standardCount={standardCount}
         isLoading={isLoading}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}

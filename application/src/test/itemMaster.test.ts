@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   generateItemCode,
+  deriveItemCode,
   formatTccItemCode,
   createItemMaster,
   updateItemMaster,
@@ -16,15 +17,24 @@ describe('Item Master Data Business Logic & Metrology Validations', () => {
     localStorage.clear();
   });
 
-  describe('Item Code & Numbering Rules', () => {
-    it('generates unique item codes matching pattern ITM-YYYY-XXXXX', () => {
-      const code1 = generateItemCode();
-      const code2 = generateItemCode();
-      const currentYear = new Date().getFullYear();
+  describe('Item Code & Dynamic Derivation Rules', () => {
+    it('dynamically derives item codes from instrument name and range (e.g. VC-50)', () => {
+      // Direct user requirement test
+      expect(deriveItemCode('vernier caliper 0-50mm')).toBe('VC-50');
+      expect(deriveItemCode('vernier caliper', 50, '0 - 50 mm')).toBe('VC-50');
 
-      expect(code1).toMatch(new RegExp(`^ITM-${currentYear}-\\d{5}$`));
-      expect(code2).toMatch(new RegExp(`^ITM-${currentYear}-\\d{5}$`));
-      expect(code1).not.toBe(code2);
+      // Additional standard metrology instruments without hardcoding
+      expect(deriveItemCode('Screw Gauge', 25, '0 - 25 mm')).toBe('SG-25');
+      expect(deriveItemCode('Dial Indicator', 10, '0 - 10 mm')).toBe('DI-10');
+      expect(deriveItemCode('Digital Vernier Caliper', 150, '0 - 150 mm')).toBe('VC-150');
+      expect(deriveItemCode('Micrometer', 25, '0 - 25 mm')).toBe('MIC-25');
+      expect(deriveItemCode('Pressure Gauge', 100, '0 - 100 bar')).toBe('PG-100');
+      expect(deriveItemCode('Slip Gauge Block', 100, '0.5 - 100 mm')).toBe('SGB-100');
+    });
+
+    it('generates item code using dynamic derivation or fallback sequence', () => {
+      expect(generateItemCode('vernier caliper 0-50mm')).toBe('VC-50');
+      expect(generateItemCode(75)).toBe('TCC-MAS-075');
     });
 
     it('formats TCC-MAS sequential item codes from TCC-MAS-001 to 999 correctly', () => {
@@ -34,7 +44,6 @@ describe('Item Master Data Business Logic & Metrology Validations', () => {
       expect(formatTccItemCode(100)).toBe('TCC-MAS-100');
       expect(formatTccItemCode(999)).toBe('TCC-MAS-999');
       expect(formatTccItemCode(1000)).toBe('TCC-MAS-1000');
-      expect(generateItemCode(75)).toBe('TCC-MAS-075');
     });
   });
 
@@ -66,7 +75,7 @@ describe('Item Master Data Business Logic & Metrology Validations', () => {
       expect(created.id).toBeDefined();
       expect(created.tenant_id).toBe(dummyTenant);
       expect(created.organization_id).toBe(dummyOrg);
-      expect(created.item_code).toMatch(/^ITM-\d{4}-\d{5}$/);
+      expect(created.item_code).toBe('VC-300');
       expect(created.item_name).toBe(validFormData.item_name);
       expect(created.item_category).toBe('Dimensional Metrology');
       expect(created.range_min).toBe(0);
