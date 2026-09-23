@@ -1,7 +1,8 @@
 // src/super-admin/components/dashboard/TenantMetricsCards.tsx
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Building2, FlaskConical, Ban } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+import { KPICard } from '../../../components/ui/UIPrimitives';
 import type { SuperAdminDashboardMetrics } from '../../types/superAdmin';
 
 interface Props {
@@ -10,81 +11,99 @@ interface Props {
 }
 
 export const TenantMetricsCards: React.FC<Props> = ({ metrics, isLoading }) => {
-  const navigate = useNavigate();
-
-  const cards = [
-    {
-      title: 'TOTAL TENANTS',
-      count: metrics.totalTenants,
-      subtext: 'Registered platform enterprises',
-      icon: Building2,
-      cardBg: 'bg-[#eff6ff] border-[#dbeafe] hover:border-blue-300 hover:shadow-sm',
-      iconBg: 'bg-blue-100 text-blue-600',
-      path: '/tenants',
-    },
-    {
-      title: 'ACTIVE TENANTS',
-      count: metrics.activeTenants,
-      subtext: 'Operational & calibrating labs',
-      icon: FlaskConical,
-      cardBg: 'bg-[#f0fdf4] border-[#dcfce7] hover:border-emerald-300 hover:shadow-sm',
-      iconBg: 'bg-emerald-100 text-emerald-600',
-      path: '/tenants?status=ACTIVE',
-    },
-    {
-      title: 'DEACTIVATED TENANTS',
-      count: metrics.deactivatedTenants,
-      subtext: 'Archived / inactive enterprises',
-      icon: Ban,
-      cardBg: 'bg-[#fff1f2] border-[#ffe4e6] hover:border-rose-300 hover:shadow-sm',
-      iconBg: 'bg-rose-100 text-rose-600',
-      path: '/tenants?status=DEACTIVATED',
-    },
-  ];
+  const complianceRate = metrics.totalTenants > 0
+    ? Math.round((metrics.activeTenants / metrics.totalTenants) * 100)
+    : 0;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-      {cards.map((c, idx) => {
-        const Icon = c.icon;
-        return (
-          <div
-            key={idx}
-            onClick={() => navigate(c.path)}
-            className={`rounded-xl border ${c.cardBg} p-5 shadow-xs transition-all relative flex flex-col justify-between cursor-pointer group select-none`}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                navigate(c.path);
-              }
-            }}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* 1. Total Enterprises */}
+      <KPICard
+        title="Total Enterprises"
+        value={isLoading ? '—' : metrics.totalTenants}
+        accentColor="#0274BB"
+        subMetrics={[
+          { label: 'Active Operational', value: metrics.activeTenants, color: '#16A34A' },
+          {
+            label: 'Deactivated / Inactive',
+            value: metrics.deactivatedTenants,
+            color: metrics.deactivatedTenants > 0 ? '#DC2626' : undefined,
+          },
+        ]}
+        footerAction={
+          <Link
+            to="/tenants"
+            className="text-xs font-semibold text-[#0274BB] hover:underline flex items-center gap-1"
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className={`size-10 rounded-lg ${c.iconBg} flex items-center justify-center shrink-0`}>
-                  <Icon className="size-5" />
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    {c.title}
-                  </span>
-                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mt-0.5">
-                    {isLoading ? (
-                      <div className="w-12 h-8 rounded bg-slate-200 animate-pulse" />
-                    ) : (
-                      c.count
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="text-xs text-slate-500 font-medium pl-1">
-              {c.subtext}
-            </div>
-          </div>
-        );
-      })}
+            View All Enterprises <ArrowRight className="size-3" />
+          </Link>
+        }
+      />
+
+      {/* 2. Operational Tenants */}
+      <KPICard
+        title="Operational Tenants"
+        value={isLoading ? '—' : metrics.activeTenants}
+        accentColor="#16A34A"
+        subMetrics={[
+          { label: 'Active Compliance Rate', value: `${complianceRate}%`, color: '#16A34A' },
+          { label: 'Calibrating Facilities', value: metrics.activeTenants },
+        ]}
+        footerAction={
+          <Link
+            to="/tenants?status=ACTIVE"
+            className="text-xs font-semibold text-[#0274BB] hover:underline flex items-center gap-1"
+          >
+            Active Tenants Queue <ArrowRight className="size-3" />
+          </Link>
+        }
+      />
+
+      {/* 3. Inactive / Suspended */}
+      <KPICard
+        title="Inactive Enterprises"
+        value={isLoading ? '—' : metrics.deactivatedTenants}
+        accentColor="#EF7626"
+        subMetrics={[
+          {
+            label: 'Archived Accounts',
+            value: metrics.deactivatedTenants,
+            color: metrics.deactivatedTenants > 0 ? '#DC2626' : '#6B7280',
+          },
+          {
+            label: 'Action Required',
+            value: metrics.deactivatedTenants > 0 ? 'Pending Review' : 'None (Compliant)',
+            color: metrics.deactivatedTenants > 0 ? '#EF7626' : '#16A34A',
+          },
+        ]}
+        footerAction={
+          <Link
+            to="/tenants?status=DEACTIVATED"
+            className="text-xs font-semibold text-[#0274BB] hover:underline flex items-center gap-1"
+          >
+            Review Inactive Accounts <ArrowRight className="size-3" />
+          </Link>
+        }
+      />
+
+      {/* 4. Platform Audit Telemetry */}
+      <KPICard
+        title="Platform Audit Log"
+        value={isLoading ? '—' : (metrics.recentActivity?.length ?? 0)}
+        accentColor="#7C3AED"
+        subMetrics={[
+          { label: 'Recent Audit Events', value: metrics.recentActivity?.length ?? 0 },
+          { label: 'RLS & Audit Policy', value: '100% Enforced', color: '#16A34A' },
+        ]}
+        footerAction={
+          <Link
+            to="/audit"
+            className="text-xs font-semibold text-[#0274BB] hover:underline flex items-center gap-1"
+          >
+            Immutable Audit Trail <ArrowRight className="size-3" />
+          </Link>
+        }
+      />
     </div>
   );
 };

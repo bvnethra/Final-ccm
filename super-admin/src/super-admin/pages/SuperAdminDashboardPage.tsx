@@ -1,4 +1,5 @@
 // src/super-admin/pages/SuperAdminDashboardPage.tsx
+import React from 'react';
 import { useSuperAdminDashboard } from '../hooks/useSuperAdminDashboard';
 import { TenantMetricsCards } from '../components/dashboard/TenantMetricsCards';
 import { TenantStatusDistribution } from '../components/dashboard/TenantStatusDistribution';
@@ -32,30 +33,32 @@ export default function SuperAdminDashboardPage() {
   };
 
   const data = metrics || fallbackMetrics;
+  const operatorName = platformSession?.user?.fullName || 'Platform Administrator';
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner & Quick Action */}
+    <div className="space-y-8">
+      {/* Header Banner matching 5174 Command Center */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2.5 tracking-tight">
-            <span>Platform Governance Dashboard</span>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-[#111827] tracking-tight">
+              Platform Governance Dashboard
+            </h1>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Live
             </span>
-          </h1>
-          <p className="text-slate-500 text-xs mt-1">
-            Centralized platform oversight, enterprise tenant metrics, and immutable audit telemetry.
+          </div>
+          <p className="text-sm text-[#6B7280] mt-1">
+            Centralized Enterprise Oversight &amp; Immutable Audit Telemetry • Welcome, {operatorName}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            size="sm"
             onClick={() => refetch()}
-            className="text-xs gap-1.5 h-9 px-3.5 rounded-lg border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-medium shadow-xs"
+            className="text-xs gap-1.5 h-9 px-3.5"
             title="Refresh database metrics"
           >
             <RefreshCw className="size-3.5" />
@@ -64,10 +67,9 @@ export default function SuperAdminDashboardPage() {
 
           {!isSupport && (
             <Button
-              variant="default"
-              size="sm"
+              variant="primary"
               onClick={() => navigate('/tenants/new')}
-              className="text-xs gap-1.5 h-9 px-4 rounded-[4px] bg-[#0274BB] hover:bg-[#003B8C] text-white font-semibold shadow-xs"
+              className="text-xs gap-1.5 h-9 px-4"
             >
               <Plus className="size-4" />
               <span>Onboard New Tenant</span>
@@ -76,7 +78,7 @@ export default function SuperAdminDashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards Grid */}
       <TenantMetricsCards metrics={data} isLoading={isLoading} />
 
       {/* Charts & Distribution Row */}
@@ -87,10 +89,10 @@ export default function SuperAdminDashboardPage() {
         />
 
         {/* Recently Onboarded Tenants Card */}
-        <Card className="p-5 bg-white border-[#E5E7EB] rounded-[8px] shadow-xs">
+        <Card className="p-5 bg-white border-[#E5E7EB] rounded-lg shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="size-8 rounded-[4px] bg-[#E6F2FF] text-[#0274BB] flex items-center justify-center shrink-0">
+              <div className="size-8 rounded-lg bg-[#E6F2FF] text-[#0274BB] flex items-center justify-center shrink-0">
                 <Building2 className="size-4" />
               </div>
               <div>

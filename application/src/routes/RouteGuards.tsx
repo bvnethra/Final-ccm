@@ -231,13 +231,13 @@ export const RequireMasterEditRoute: React.FC<{ children: React.ReactNode }> = (
 };
 
 /**
- * Root dashboard redirect based on active operational permissions.
+ * Root dashboard route guard - renders dashboard for authenticated users.
  */
 export const DashboardRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { canPerform, isLoading, isSuperAdmin } = useAuthContext();
+  const { isLoading, isAuthenticated } = useAuthContext();
 
   if (isLoading) return null;
-  if (isSuperAdmin) return <>{children}</>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  return <Navigate to={getDefaultRouteForUser(canPerform)} replace />;
+  return <>{children}</>;
 };
