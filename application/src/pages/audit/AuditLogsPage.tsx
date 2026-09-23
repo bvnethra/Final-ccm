@@ -104,6 +104,9 @@ export const AuditLogsPage: React.FC = () => {
                 onChange={(e) => setSelectedEntity(e.target.value)}
               >
                 <option value="ALL">All Modules / Entities</option>
+                <option value="CLIENT">Client Master</option>
+                <option value="VENDOR">Vendor Master</option>
+                <option value="ITEM_MASTER">Item / Equipment Master</option>
                 <option value="CALIBRATION_REQUEST">Inward Requests</option>
                 <option value="ROUTING">Item Routing (In-house/Vendor)</option>
                 <option value="CALIBRATION">Calibrations &amp; Verifications</option>

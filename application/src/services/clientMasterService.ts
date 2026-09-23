@@ -1,6 +1,7 @@
 // application/src/services/clientMasterService.ts
 import { supabase } from '../lib/supabaseClient';
 import type { Client, ClientFormData } from '../types/domain';
+import { logAuditEvent } from './auditLogService';
 
 const CLIENTS_STORAGE_PREFIX = 'ccm_tenant_clients_';
 
@@ -241,7 +242,35 @@ export async function createClient(
       .single();
 
     if (!error && data) {
-      return { ...newClient, ...data };
+      const savedClient = { ...newClient, ...data };
+      await logAuditEvent({
+        tenantId,
+        organizationId,
+        actorUserId: creator?.id,
+        actorName: creator?.name || 'Authorized Operator',
+        action: 'CREATE_CLIENT',
+        entity: 'CLIENT',
+        entityId: savedClient.id,
+        newData: {
+          client_code: savedClient.client_code,
+          client_name: savedClient.client_name,
+          address: savedClient.address,
+          billing_address: savedClient.billing_address,
+          city: savedClient.city,
+          state: savedClient.state,
+          pin: savedClient.pin,
+          gst_tax_number: savedClient.gst_tax_number,
+          contact_person: savedClient.contact_person,
+          email: savedClient.email,
+          phone: savedClient.phone,
+          phone_numbers: savedClient.phone_numbers,
+          email_addresses: savedClient.email_addresses,
+          payment_term: savedClient.payment_term,
+          status: savedClient.status,
+        },
+        remarks: `Registered new client "${savedClient.client_name}" (${savedClient.client_code}).`,
+      });
+      return savedClient;
     }
   } catch (_remoteErr) {
     // Save to local tenant store
@@ -249,6 +278,35 @@ export async function createClient(
 
   const existing = getLocalClients(tenantId);
   saveLocalClients(tenantId, [newClient, ...existing]);
+
+  await logAuditEvent({
+    tenantId,
+    organizationId,
+    actorUserId: creator?.id,
+    actorName: creator?.name || 'Authorized Operator',
+    action: 'CREATE_CLIENT',
+    entity: 'CLIENT',
+    entityId: newClient.id,
+    newData: {
+      client_code: newClient.client_code,
+      client_name: newClient.client_name,
+      address: newClient.address,
+      billing_address: newClient.billing_address,
+      city: newClient.city,
+      state: newClient.state,
+      pin: newClient.pin,
+      gst_tax_number: newClient.gst_tax_number,
+      contact_person: newClient.contact_person,
+      email: newClient.email,
+      phone: newClient.phone,
+      phone_numbers: newClient.phone_numbers,
+      email_addresses: newClient.email_addresses,
+      payment_term: newClient.payment_term,
+      status: newClient.status,
+    },
+    remarks: `Registered new client "${newClient.client_name}" (${newClient.client_code}).`,
+  });
+
   return newClient;
 }
 
@@ -334,6 +392,40 @@ export async function updateClient(
   const clients = getLocalClients(tenantId);
   const updatedList = clients.map((c) => (c.id === id ? updatedClient : c));
   saveLocalClients(tenantId, updatedList);
+
+  await logAuditEvent({
+    tenantId,
+    organizationId: updatedClient.organization_id,
+    actorUserId: modifier?.id,
+    actorName: modifier?.name || 'Authorized Operator',
+    action: 'UPDATE_CLIENT',
+    entity: 'CLIENT',
+    entityId: id,
+    oldData: {
+      client_name: current.client_name,
+      contact_person: current.contact_person,
+      email: current.email,
+      phone: current.phone,
+      address: current.address,
+      billing_address: current.billing_address,
+      gst_tax_number: current.gst_tax_number,
+      payment_term: current.payment_term,
+      status: current.status,
+    },
+    newData: {
+      client_name: updatedClient.client_name,
+      contact_person: updatedClient.contact_person,
+      email: updatedClient.email,
+      phone: updatedClient.phone,
+      address: updatedClient.address,
+      billing_address: updatedClient.billing_address,
+      gst_tax_number: updatedClient.gst_tax_number,
+      payment_term: updatedClient.payment_term,
+      status: updatedClient.status,
+    },
+    remarks: `Updated profile for client "${updatedClient.client_name}" (${updatedClient.client_code}).`,
+  });
+
   return updatedClient;
 }
 
@@ -344,7 +436,22 @@ export async function toggleClientStatus(
 ): Promise<Client> {
   const current = await getClientById(id, tenantId);
   const nextStatus = current.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-  return updateClient(id, tenantId, { status: nextStatus }, modifier);
+  const updated = await updateClient(id, tenantId, { status: nextStatus }, modifier);
+
+  await logAuditEvent({
+    tenantId,
+    organizationId: updated.organization_id,
+    actorUserId: modifier?.id,
+    actorName: modifier?.name || 'Authorized Operator',
+    action: nextStatus === 'ACTIVE' ? 'ACTIVATE_CLIENT' : 'DEACTIVATE_CLIENT',
+    entity: 'CLIENT',
+    entityId: id,
+    oldData: { status: current.status },
+    newData: { status: nextStatus },
+    remarks: `Changed client status to ${nextStatus} for "${updated.client_name}".`,
+  });
+
+  return updated;
 }
 
 export async function createClientsBulk(
@@ -391,6 +498,15 @@ export async function createClientsBulk(
       throw new Error(`Bulk insert failed: ${error.message}`);
     }
   }
+
+  await logAuditEvent({
+    tenantId,
+    organizationId,
+    action: 'BULK_IMPORT_CLIENTS',
+    entity: 'CLIENT',
+    newData: { count: dbRows.length },
+    remarks: `Bulk imported ${dbRows.length} client master records.`,
+  });
 
   return { count: dbRows.length };
 }

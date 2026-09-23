@@ -2,6 +2,7 @@
 import { supabase } from '../lib/supabaseClient';
 import type { Vendor, VendorFormData } from '../types/domain';
 import { validateGSTIN, validateEmail, validatePhone } from './clientMasterService';
+import { logAuditEvent } from './auditLogService';
 
 const VENDORS_STORAGE_PREFIX = 'ccm_tenant_vendors_';
 
@@ -233,7 +234,32 @@ export async function createVendor(
       .single();
 
     if (!error && data) {
-      return { ...newVendor, ...data };
+      const savedVendor = { ...newVendor, ...data };
+      await logAuditEvent({
+        tenantId,
+        organizationId,
+        actorUserId: creator?.id,
+        actorName: creator?.name || 'Authorized Operator',
+        action: 'CREATE_VENDOR',
+        entity: 'VENDOR',
+        entityId: savedVendor.id,
+        newData: {
+          vendor_code: savedVendor.vendor_code,
+          vendor_name: savedVendor.vendor_name,
+          address: savedVendor.address,
+          city: savedVendor.city,
+          state: savedVendor.state,
+          pin: savedVendor.pin,
+          gst_tax_number: savedVendor.gst_tax_number,
+          contact_person: savedVendor.contact_person,
+          email: savedVendor.email,
+          phone: savedVendor.phone,
+          serviced_categories: savedVendor.serviced_categories,
+          status: savedVendor.status,
+        },
+        remarks: `Registered new vendor "${savedVendor.vendor_name}" (${savedVendor.vendor_code}).`,
+      });
+      return savedVendor;
     }
   } catch (_remoteErr) {
     // Local store fallback
@@ -241,6 +267,32 @@ export async function createVendor(
 
   const existing = getLocalVendors(tenantId);
   saveLocalVendors(tenantId, [newVendor, ...existing]);
+
+  await logAuditEvent({
+    tenantId,
+    organizationId,
+    actorUserId: creator?.id,
+    actorName: creator?.name || 'Authorized Operator',
+    action: 'CREATE_VENDOR',
+    entity: 'VENDOR',
+    entityId: newVendor.id,
+    newData: {
+      vendor_code: newVendor.vendor_code,
+      vendor_name: newVendor.vendor_name,
+      address: newVendor.address,
+      city: newVendor.city,
+      state: newVendor.state,
+      pin: newVendor.pin,
+      gst_tax_number: newVendor.gst_tax_number,
+      contact_person: newVendor.contact_person,
+      email: newVendor.email,
+      phone: newVendor.phone,
+      serviced_categories: newVendor.serviced_categories,
+      status: newVendor.status,
+    },
+    remarks: `Registered new vendor "${newVendor.vendor_name}" (${newVendor.vendor_code}).`,
+  });
+
   return newVendor;
 }
 
@@ -325,6 +377,36 @@ export async function updateVendor(
   const vendors = getLocalVendors(tenantId);
   const updatedList = vendors.map((v) => (v.id === id ? updatedVendor : v));
   saveLocalVendors(tenantId, updatedList);
+
+  await logAuditEvent({
+    tenantId,
+    organizationId: updatedVendor.organization_id,
+    actorUserId: modifier?.id,
+    actorName: modifier?.name || 'Authorized Operator',
+    action: 'UPDATE_VENDOR',
+    entity: 'VENDOR',
+    entityId: id,
+    oldData: {
+      vendor_name: current.vendor_name,
+      contact_person: current.contact_person,
+      email: current.email,
+      phone: current.phone,
+      gst_tax_number: current.gst_tax_number,
+      serviced_categories: current.serviced_categories,
+      status: current.status,
+    },
+    newData: {
+      vendor_name: updatedVendor.vendor_name,
+      contact_person: updatedVendor.contact_person,
+      email: updatedVendor.email,
+      phone: updatedVendor.phone,
+      gst_tax_number: updatedVendor.gst_tax_number,
+      serviced_categories: updatedVendor.serviced_categories,
+      status: updatedVendor.status,
+    },
+    remarks: `Updated profile for vendor "${updatedVendor.vendor_name}" (${updatedVendor.vendor_code}).`,
+  });
+
   return updatedVendor;
 }
 
@@ -335,5 +417,20 @@ export async function toggleVendorStatus(
 ): Promise<Vendor> {
   const current = await getVendorById(id, tenantId);
   const nextStatus = current.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-  return updateVendor(id, tenantId, { status: nextStatus }, modifier);
+  const updated = await updateVendor(id, tenantId, { status: nextStatus }, modifier);
+
+  await logAuditEvent({
+    tenantId,
+    organizationId: updated.organization_id,
+    actorUserId: modifier?.id,
+    actorName: modifier?.name || 'Authorized Operator',
+    action: nextStatus === 'ACTIVE' ? 'ACTIVATE_VENDOR' : 'DEACTIVATE_VENDOR',
+    entity: 'VENDOR',
+    entityId: id,
+    oldData: { status: current.status },
+    newData: { status: nextStatus },
+    remarks: `Changed vendor status to ${nextStatus} for "${updated.vendor_name}".`,
+  });
+
+  return updated;
 }

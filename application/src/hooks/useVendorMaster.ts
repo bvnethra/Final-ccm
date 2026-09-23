@@ -42,6 +42,7 @@ export function useCreateVendor() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vendors', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs', tenantId] });
     },
   });
 }
@@ -59,6 +60,7 @@ export function useUpdateVendor() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['vendors', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['vendor', variables.id, tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs', tenantId] });
     },
   });
 }
@@ -76,6 +78,7 @@ export function useToggleVendorStatus() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ['vendors', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['vendor', id, tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs', tenantId] });
     },
   });
 }

@@ -42,6 +42,7 @@ export function useCreateClient() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs', tenantId] });
     },
   });
 }
@@ -59,6 +60,7 @@ export function useUpdateClient() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['clients', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['client', variables.id, tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs', tenantId] });
     },
   });
 }
@@ -76,6 +78,7 @@ export function useToggleClientStatus() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ['clients', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['client', id, tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs', tenantId] });
     },
   });
 }

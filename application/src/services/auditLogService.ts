@@ -30,12 +30,62 @@ export interface LogAuditParams {
   remarks?: string;
 }
 
+const AUDIT_LOGS_STORAGE_PREFIX = 'ccm_tenant_audit_logs_';
+
+function getLocalAuditLogs(tenantId: string): AuditLogEntry[] {
+  try {
+    const raw = localStorage.getItem(`${AUDIT_LOGS_STORAGE_PREFIX}${tenantId}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalAuditLog(tenantId: string, entry: AuditLogEntry): void {
+  try {
+    const existing = getLocalAuditLogs(tenantId);
+    localStorage.setItem(
+      `${AUDIT_LOGS_STORAGE_PREFIX}${tenantId}`,
+      JSON.stringify([entry, ...existing.filter((e) => e.id !== entry.id)].slice(0, 200))
+    );
+  } catch (err) {
+    console.error('Failed to save audit log locally:', err);
+  }
+}
+
 /**
  * Inserts an immutable audit log record into audit_logs table
  */
 export async function logAuditEvent(params: LogAuditParams): Promise<void> {
+  if (!params.tenantId) return;
+
+  const entryId = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+  const entry: AuditLogEntry = {
+    id: entryId,
+    tenant_id: params.tenantId,
+    organization_id: params.organizationId,
+    actor_user_id: params.actorUserId,
+    actor_name: params.actorName || 'System / Authorized User',
+    action: params.action,
+    entity: params.entity,
+    entity_id: params.entityId,
+    old_data: params.oldData || null,
+    new_data: {
+      ...(params.newData || {}),
+      actor_name: params.actorName || 'System / Authorized User',
+      remarks: params.remarks || undefined,
+    },
+    remarks: params.remarks,
+    created_at: createdAt,
+  };
+
+  // Always save locally for resilience
+  saveLocalAuditLog(params.tenantId, entry);
+
   try {
     const payload = {
+      id: entry.id,
       tenant_id: params.tenantId,
       organization_id: params.organizationId || null,
       actor_user_id: params.actorUserId || null,
@@ -43,11 +93,8 @@ export async function logAuditEvent(params: LogAuditParams): Promise<void> {
       entity: params.entity,
       entity_id: params.entityId || null,
       old_data: params.oldData || null,
-      new_data: {
-        ...(params.newData || {}),
-        actor_name: params.actorName || 'System / Authorized User',
-        remarks: params.remarks || undefined,
-      },
+      new_data: entry.new_data,
+      created_at: entry.created_at,
     };
 
     await supabase.from('audit_logs').insert(payload);
@@ -65,6 +112,8 @@ export async function fetchAuditLogs(filters?: {
   entityId?: string;
   limit?: number;
 }): Promise<AuditLogEntry[]> {
+  const remoteLogs: AuditLogEntry[] = [];
+
   try {
     let query = supabase
       .from('audit_logs')
@@ -87,27 +136,43 @@ export async function fetchAuditLogs(filters?: {
     }
 
     const { data, error } = await query;
-    if (error) {
+    if (!error && data) {
+      for (const row of data) {
+        remoteLogs.push({
+          id: row.id,
+          tenant_id: row.tenant_id,
+          organization_id: row.organization_id,
+          actor_user_id: row.actor_user_id,
+          actor_name: row.new_data?.actor_name || 'System / User',
+          action: row.action,
+          entity: row.entity,
+          entity_id: row.entity_id,
+          old_data: row.old_data,
+          new_data: row.new_data,
+          remarks: row.new_data?.remarks || row.new_data?.notes,
+          created_at: row.created_at,
+        });
+      }
+    } else if (error) {
       console.warn('fetchAuditLogs error:', error.message);
-      return [];
     }
-
-    return (data || []).map((row: any) => ({
-      id: row.id,
-      tenant_id: row.tenant_id,
-      organization_id: row.organization_id,
-      actor_user_id: row.actor_user_id,
-      actor_name: row.new_data?.actor_name || 'System / User',
-      action: row.action,
-      entity: row.entity,
-      entity_id: row.entity_id,
-      old_data: row.old_data,
-      new_data: row.new_data,
-      remarks: row.new_data?.remarks || row.new_data?.notes,
-      created_at: row.created_at,
-    }));
   } catch (err) {
     console.warn('fetchAuditLogs exception:', err);
-    return [];
   }
+
+  // Merge with local fallback
+  if (filters?.tenantId) {
+    const localLogs = getLocalAuditLogs(filters.tenantId);
+    const existingIds = new Set(remoteLogs.map((l) => l.id));
+    for (const log of localLogs) {
+      if (!existingIds.has(log.id)) {
+        if (filters.entity && log.entity !== filters.entity) continue;
+        if (filters.entityId && log.entity_id !== filters.entityId) continue;
+        remoteLogs.push(log);
+      }
+    }
+    remoteLogs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+  return filters?.limit ? remoteLogs.slice(0, filters.limit) : remoteLogs;
 }

@@ -9,6 +9,7 @@ import {
   updateClient,
   toggleClientStatus,
 } from '../services/clientMasterService';
+import { fetchAuditLogs } from '../services/auditLogService';
 import type { ClientFormData } from '../types/domain';
 
 describe('Client Master Data Business Logic & Validations', () => {
@@ -96,6 +97,17 @@ describe('Client Master Data Business Logic & Validations', () => {
       expect(created.created_by).toBe('user-op-1');
       expect(created.created_by_name).toBe('Lead Metrologist');
       expect(created.created_at).toBeDefined();
+
+      // Verify immutable audit log stream records the new client creation and its form data
+      const auditLogs = await fetchAuditLogs({ tenantId: dummyTenant, entity: 'CLIENT' });
+      const clientAuditLog = auditLogs.find((l) => l.entity_id === created.id);
+      expect(clientAuditLog).toBeDefined();
+      expect(clientAuditLog?.action).toBe('CREATE_CLIENT');
+      expect(clientAuditLog?.actor_name).toBe('Lead Metrologist');
+      expect(clientAuditLog?.new_data.client_name).toBe(sampleFormData.client_name);
+      expect(clientAuditLog?.new_data.gst_tax_number).toBe(sampleFormData.gst_tax_number);
+      expect(clientAuditLog?.new_data.city).toBe('Pune');
+      expect(clientAuditLog?.new_data.payment_term).toBe('30_DAYS');
     });
 
     it('updates client fields and records modified by audit info', async () => {
