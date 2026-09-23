@@ -53,7 +53,7 @@ export const ItemMasterFormView: React.FC<ItemMasterFormViewProps> = ({
         <div className="flex items-center gap-3">
           <Link to="/masters/items">
             <Button variant="secondary" size="sm" type="button">
-              <ArrowLeft className="size-4" /> Back to Catalog
+              <ArrowLeft className="size-4" /> Back
             </Button>
           </Link>
           <div>

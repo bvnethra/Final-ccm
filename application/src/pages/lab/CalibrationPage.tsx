@@ -394,7 +394,7 @@ export const CalibrationPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <Link to="/lab/queue">
             <Button variant="outlineInk" size="sm">
-              <ArrowLeft className="size-4" /> Back to Lab Queue
+              <ArrowLeft className="size-4" /> Back
             </Button>
           </Link>
           <div>

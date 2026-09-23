@@ -48,7 +48,7 @@ export const TaxInvoiceDetailPage: React.FC = () => {
         </div>
         <Link to="/commercial/invoices">
           <Button variant="secondary" size="sm">
-            <ArrowLeft className="size-4" /> Back to Invoices List
+            <ArrowLeft className="size-4" /> Back
           </Button>
         </Link>
       </div>
@@ -166,6 +166,19 @@ export const TaxInvoiceDetailPage: React.FC = () => {
   const taxableCalc = Math.max(0, subtotalCalc - discountCalc);
   const taxCalc = (taxableCalc * 18) / 100;
   const grandTotalCalc = taxableCalc + taxCalc;
+
+  const handleDirectGrandTotalChange = (targetVal: number) => {
+    if (subtotalCalc <= 0) return;
+    // targetVal includes 18% GST: targetVal = taxable * 1.18 => taxable = targetVal / 1.18
+    const targetTaxable = Math.max(0, targetVal / 1.18);
+    const targetDiscount = Math.max(0, subtotalCalc - targetTaxable);
+    const calcPercent = Math.min(100, (targetDiscount / subtotalCalc) * 100);
+    if (editDiscountType === 'PERCENT') {
+      setEditDiscountValue(parseFloat(calcPercent.toFixed(2)));
+    } else {
+      setEditDiscountValue(parseFloat(targetDiscount.toFixed(2)));
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -429,8 +442,8 @@ export const TaxInvoiceDetailPage: React.FC = () => {
                   </span>
                 </div>
                 {discountCalc > 0 && (
-                  <div className="flex justify-between w-72 text-emerald-700 font-semibold">
-                    <span>Discount Applied:</span>
+                  <div className="flex justify-between w-72 text-indigo-700 font-medium">
+                    <span>CV / Voucher Adjustment:</span>
                     <span className="font-mono">-₹{discountCalc.toFixed(2)}</span>
                   </div>
                 )}
@@ -446,11 +459,20 @@ export const TaxInvoiceDetailPage: React.FC = () => {
                     ₹{taxCalc.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between w-72 text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5 mt-1">
-                  <span>Updated Grand Total (₹):</span>
-                  <span className="font-mono text-[#0274BB]">
-                    ₹{grandTotalCalc.toFixed(2)}
-                  </span>
+                <div className="flex items-center justify-between w-72 text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5 mt-1">
+                  <span>Amount Paid (₹):</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-slate-500 font-mono">₹</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={grandTotalCalc ? Number(grandTotalCalc.toFixed(2)) : ''}
+                      onChange={(e) => handleDirectGrandTotalChange(parseFloat(e.target.value) || 0)}
+                      className="w-28 px-2 py-0.5 border border-indigo-300 focus:border-indigo-600 rounded text-right font-mono font-bold text-sm bg-white text-[#0274BB]"
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

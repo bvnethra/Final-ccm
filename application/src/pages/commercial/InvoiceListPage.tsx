@@ -50,6 +50,8 @@ import {
   ChevronRight,
   Building2,
   Truck,
+  RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 
 export interface EditableInvoiceItem {
@@ -205,22 +207,33 @@ export const InvoiceListPage: React.FC = () => {
     const req = requests.find((r) => r.id === reqId);
     const initialRates: Record<string, number> = {};
 
+    const existingPo = quote?.client_po_ref || req?.client_po_ref;
+    if (existingPo && existingPo.trim()) {
+      setClientPoForInvoice(existingPo.trim());
+    } else {
+      const year = new Date().getFullYear();
+      const clientCode = req?.clients?.client_code ? req.clients.client_code.toUpperCase() : 'CLIENT';
+      const num = quote?.quotation_number
+        ? quote.quotation_number.replace(/\D/g, '').slice(-3)
+        : req?.request_number
+        ? req.request_number.replace(/\D/g, '').slice(-3)
+        : String(Math.floor(100 + Math.random() * 900));
+      setClientPoForInvoice(`PO/${year}/${clientCode}-${num || '001'}`);
+    }
+
     if (quote && quote.items && quote.items.length > 0) {
-      setClientPoForInvoice(quote.client_po_ref || req?.client_po_ref || '');
       const unbilled = quote.items.filter((it) => !it.invoiced);
       setSelectedItemIds(new Set(unbilled.map((it) => it.id)));
       quote.items.forEach((it) => {
         initialRates[it.id] = it.unit_price ?? 100;
       });
     } else if (req && req.request_items && req.request_items.length > 0) {
-      setClientPoForInvoice(req.client_po_ref || '');
       const unbilled = req.request_items.filter((it: any) => !it.invoiced);
       setSelectedItemIds(new Set(unbilled.map((it) => it.id)));
       req.request_items.forEach((it: any) => {
         initialRates[it.id] = it.item_masters?.standard_cost || 100;
       });
     } else {
-      setClientPoForInvoice(req?.client_po_ref || '');
       setSelectedItemIds(new Set());
     }
     setItemRates(initialRates);
@@ -1026,13 +1039,32 @@ export const InvoiceListPage: React.FC = () => {
                         </Field>
 
                         <Field>
-                          <FieldLabel>Client Purchase Order Reference (Optional)</FieldLabel>
+                          <div className="flex items-center justify-between mb-1">
+                            <FieldLabel className="mb-0">Client Purchase Order Reference</FieldLabel>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const year = new Date().getFullYear();
+                                const req = requests.find((r) => r.id === selectedRequestId);
+                                const code = req?.clients?.client_code ? req.clients.client_code.toUpperCase() : 'CLIENT';
+                                const randomSeq = String(Math.floor(100 + Math.random() * 900));
+                                setClientPoForInvoice(`PO/${year}/${code}-${randomSeq}`);
+                              }}
+                              className="text-[11px] font-semibold text-[#0274BB] hover:underline cursor-pointer flex items-center gap-1"
+                            >
+                              <RefreshCw className="size-3" /> Auto Generate PO
+                            </button>
+                          </div>
                           <Input
-                            placeholder="E.g. PO-CLIENT-2026-9921"
+                            placeholder="E.g. PO/2026/CLIENT-001"
                             value={clientPoForInvoice}
                             onChange={(e) => setClientPoForInvoice(e.target.value)}
                             className="bg-white"
                           />
+                          <p className="text-[11px] text-[#6B7280] mt-1 flex items-center gap-1">
+                            <Sparkles className="size-3 text-emerald-600 shrink-0" />
+                            Auto-fetched from quotation/request or auto-generated.
+                          </p>
                         </Field>
                       </div>
 
@@ -1277,7 +1309,7 @@ export const InvoiceListPage: React.FC = () => {
                         </div>
                         {discountCalc > 0 && (
                           <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded text-xs border border-emerald-200 shrink-0">
-                            -₹{discountCalc.toFixed(2)} off
+                            -₹{discountCalc.toFixed(2)} off ({((discountCalc / (subtotalCalc || 1)) * 100).toFixed(1)}%)
                           </span>
                         )}
                       </div>
@@ -1290,9 +1322,11 @@ export const InvoiceListPage: React.FC = () => {
                         <span className="font-mono text-[#1E293B] font-semibold">₹{subtotalCalc.toFixed(2)}</span>
                       </div>
                       {discountCalc > 0 && (
-                        <div className="flex justify-between w-80 text-emerald-700 font-semibold">
-                          <span>Client Discount Applied:</span>
-                          <span className="font-mono">-₹{discountCalc.toFixed(2)}</span>
+                        <div className="flex justify-between w-80 text-indigo-700 font-medium">
+                          <span>CV / Voucher Adjustment:</span>
+                          <span className="font-mono">
+                            -₹{discountCalc.toFixed(2)} ({((discountCalc / (subtotalCalc || 1)) * 100).toFixed(1)}%)
+                          </span>
                         </div>
                       )}
                       <div className="flex justify-between w-80 text-[#64748B]">
@@ -1303,9 +1337,26 @@ export const InvoiceListPage: React.FC = () => {
                         <span>GST (18%):</span>
                         <span className="font-mono text-[#1E293B] font-semibold">₹{taxCalc.toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between w-80 text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5 mt-1">
-                        <span>Total Tax Invoice:</span>
-                        <span className="font-mono text-[#0274BB]">₹{grandTotalCalc.toFixed(2)}</span>
+                      <div className="flex justify-between w-80 items-center border-t border-[#CBD5E1] pt-2 mt-1">
+                        <div>
+                          <span className="text-sm font-bold text-[#111827] block">Amount Paid (₹):</span>
+                          <span className="text-[10px] text-[#0274BB]">Editable — discount recorded in CV</span>
+                        </div>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0"
+                          value={grandTotalCalc.toFixed(2)}
+                          onChange={(e) => {
+                            const targetTotal = Math.max(0, parseFloat(e.target.value) || 0);
+                            const netTaxable = targetTotal / 1.18;
+                            const calculatedDiscount = Math.max(0, subtotalCalc - netTaxable);
+                            const calculatedPercent = subtotalCalc > 0 ? (calculatedDiscount / subtotalCalc) * 100 : 0;
+                            setDiscountType('PERCENT');
+                            setDiscountValue(parseFloat(calculatedPercent.toFixed(2)));
+                          }}
+                          className="w-32 px-2 py-1 border border-[#0274BB]/60 rounded text-right font-mono font-bold text-sm text-[#0274BB] bg-white focus:outline-none focus:ring-1 focus:ring-[#0274BB]"
+                        />
                       </div>
                     </div>
                   </>

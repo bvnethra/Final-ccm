@@ -14,7 +14,7 @@ import {
   FieldLabel,
   Badge,
 } from '../ui/UIPrimitives';
-import type { Client, ItemMaster, RequestPriority, ItemCondition, RequestAttachment } from '../../types/domain';
+import type { Client, ItemMaster, Vendor, RequestPriority, ItemCondition, RequestAttachment } from '../../types/domain';
 import {
   ArrowLeft,
   Plus,
@@ -30,27 +30,44 @@ import {
   Building2,
   Hash,
   Check,
+  FileCheck,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export interface IntakeItemFormState {
   itemMasterId: string;
+  itemCode?: string;
   quantity: number;
   serialNumber: string;
   accessories: string;
   itemCondition: ItemCondition;
   remarks: string;
+  destination: 'IN_HOUSE' | 'VENDOR_OUTSOURCE';
+  vendorId?: string;
+  vendorName?: string;
+  unitRate?: number;
 }
 
 export interface IntakeRequestViewProps {
   clients: Client[];
   itemMasters: ItemMaster[];
+  vendors: Vendor[];
+  voucherNo: string;
+  setVoucherNo: (v: string) => void;
+  dcNumber: string;
+  setDcNumber: (v: string) => void;
+  paymentTerms: string;
+  setPaymentTerms: (v: string) => void;
+  dispatchedThrough: string;
+  setDispatchedThrough: (v: string) => void;
   clientId: string;
   setClientId: (id: string) => void;
   collectionDate: string;
   setCollectionDate: (date: string) => void;
   priority: RequestPriority;
   setPriority: (p: RequestPriority) => void;
+  quotationRequired: boolean;
+  setQuotationRequired: (req: boolean) => void;
   clientPoRef: string;
   setClientPoRef: (ref: string) => void;
   remarks: string;
@@ -93,12 +110,23 @@ function getFileIcon(type: string, name: string) {
 export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
   clients,
   itemMasters,
+  vendors,
+  voucherNo,
+  setVoucherNo,
+  dcNumber,
+  setDcNumber,
+  paymentTerms,
+  setPaymentTerms,
+  dispatchedThrough,
+  setDispatchedThrough,
   clientId,
   setClientId,
   collectionDate,
   setCollectionDate,
   priority,
   setPriority,
+  quotationRequired,
+  setQuotationRequired,
   clientPoRef,
   setClientPoRef,
   remarks,
@@ -246,6 +274,44 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
     }
   };
 
+  const handleSelectItemByCode = (index: number, code: string) => {
+    const matched = itemMasters.find(
+      (im) => im.item_code?.toLowerCase() === code.trim().toLowerCase()
+    );
+    if (matched) {
+      onUpdateItem(index, 'itemMasterId', matched.id);
+      onUpdateItem(index, 'itemCode', matched.item_code);
+      if (!items[index].unitRate) {
+        onUpdateItem(index, 'unitRate', matched.standard_cost || 0);
+      }
+    } else {
+      onUpdateItem(index, 'itemCode', code);
+    }
+  };
+
+  const handleSelectItemById = (index: number, id: string) => {
+    const matched = itemMasters.find((im) => im.id === id);
+    onUpdateItem(index, 'itemMasterId', id);
+    if (matched) {
+      onUpdateItem(index, 'itemCode', matched.item_code);
+      if (!items[index].unitRate) {
+        onUpdateItem(index, 'unitRate', matched.standard_cost || 0);
+      }
+    }
+  };
+
+  const cvSubtotal = items.reduce(
+    (sum, it) => {
+      const matched = itemMasters.find((im) => im.id === it.itemMasterId);
+      const rate = typeof it.unitRate === 'number' ? it.unitRate : (matched?.standard_cost || 0);
+      return sum + (Number(it.quantity) || 0) * rate;
+    },
+    0
+  );
+  const cvCgst = Math.round(cvSubtotal * 0.09 * 100) / 100;
+  const cvSgst = Math.round(cvSubtotal * 0.09 * 100) / 100;
+  const cvTotal = Math.round(cvSubtotal + cvCgst + cvSgst);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       onAddAttachments(e.target.files);
@@ -266,21 +332,31 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
         <div className="flex items-center gap-3">
           <Link to="/requests">
             <Button variant="secondary" size="sm" type="button">
-              <ArrowLeft className="size-4" /> Back to Requests
+              <ArrowLeft className="size-4" /> Back
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-[#111827]">New Equipment Inward Request</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-[#111827]">CV Generation — Equipment Inward &amp; Sale Order / CV</h1>
+              <Badge variant="primary" className="font-mono text-xs">CV REGISTER</Badge>
+            </div>
             <p className="text-sm text-[#6B7280]">
-              Lifecycle Step 4 &amp; 5: Equipment Collection &amp; Inward Registration into Lab Queue
+              Lifecycle Step 4 &amp; 5: Customer Gauge Intake, Routing (Lab / Vendor), and Official Voucher Generation
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-[#F5F7FA] border border-[#E5E7EB] px-3 py-1.5 rounded-[4px] text-xs font-semibold text-[#374151]">
-          <Gauge className="size-4 text-[#0274BB]" />
-          <span>Total Inward Units: </span>
-          <span className="text-[#0274BB] font-mono font-bold">{totalItemCount}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-[#F5F7FA] border border-[#E5E7EB] px-3 py-1.5 rounded-[4px] text-xs font-semibold text-[#374151]">
+            <Gauge className="size-4 text-[#0274BB]" />
+            <span>Total Units: </span>
+            <span className="text-[#0274BB] font-mono font-bold">{totalItemCount}</span>
+          </div>
+          <div className="flex items-center gap-2 bg-[#EFF6FF] border border-[#BFDBFE] px-3 py-1.5 rounded-[4px] text-xs font-semibold text-[#0274BB]">
+            <FileCheck className="size-4 text-[#0274BB]" />
+            <span>CV Voucher: </span>
+            <span className="font-mono font-bold">{voucherNo}</span>
+          </div>
         </div>
       </div>
 
@@ -543,6 +619,69 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
               <input type="hidden" name="clientId" value="" required />
             )}
 
+            {/* CV Voucher & Challan Details Row: 4 Columns */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-[#F8FAFC] rounded-md border border-[#E2E8F0]">
+              <Field>
+                <FieldLabel htmlFor="cv-voucher-no">
+                  CV Voucher / Voucher No. <span className="text-[#DC2626]">*</span>
+                </FieldLabel>
+                <div className="relative">
+                  <Input
+                    id="cv-voucher-no"
+                    type="text"
+                    value={voucherNo}
+                    onChange={(e) => setVoucherNo(e.target.value)}
+                    required
+                    placeholder="e.g. 181299"
+                    className="font-mono font-bold text-xs pl-8 text-[#0274BB]"
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-[#9CA3AF]">
+                    <Hash className="size-3.5 text-[#0274BB]" />
+                  </div>
+                </div>
+                <span className="text-[10px] text-[#6B7280]">Official CV Register Voucher #</span>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="cv-dc-number">Delivery Challan (DC No. &amp; Date)</FieldLabel>
+                <Input
+                  id="cv-dc-number"
+                  type="text"
+                  placeholder="e.g. Dc No. 106/2026-27, Dt. 19.09.2026"
+                  value={dcNumber}
+                  onChange={(e) => setDcNumber(e.target.value)}
+                  className="text-xs"
+                />
+                <span className="text-[10px] text-[#6B7280]">Customer Inward Gatepass / DC ref</span>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="cv-payment-terms">Mode / Terms of Payment</FieldLabel>
+                <Input
+                  id="cv-payment-terms"
+                  type="text"
+                  placeholder="e.g. 30 Days"
+                  value={paymentTerms}
+                  onChange={(e) => setPaymentTerms(e.target.value)}
+                  className="text-xs"
+                />
+                <span className="text-[10px] text-[#6B7280]">Payment credit window</span>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="cv-dispatched-through">Dispatched Through</FieldLabel>
+                <Input
+                  id="cv-dispatched-through"
+                  type="text"
+                  placeholder="e.g. By Hand, Courier"
+                  value={dispatchedThrough}
+                  onChange={(e) => setDispatchedThrough(e.target.value)}
+                  className="text-xs"
+                />
+                <span className="text-[10px] text-[#6B7280]">Receipt / delivery transport method</span>
+              </Field>
+            </div>
+
             {/* Straight Schedule & Reference Row: 3 Balanced Columns */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
               <Field>
@@ -590,6 +729,42 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
               </Field>
             </div>
 
+            {/* Quotation Requirement Radio Toggle */}
+            <div className="bg-[#F8FAFC] p-4 rounded-md border border-[#E2E8F0] space-y-2 mt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-bold text-[#1E293B] block">
+                    Commercial Quotation Required for this Request? <span className="text-[#DC2626]">*</span>
+                  </span>
+                  <span className="text-[11px] text-[#64748B]">
+                    If Yes, sends notification to lab/commercial team to raise and approve quotation before calibration starts.
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <label className={`flex items-center gap-2 px-3 py-1.5 rounded border text-xs font-semibold cursor-pointer transition-all ${quotationRequired ? 'bg-[#EFF6FF] border-[#0274BB] text-[#0274BB] ring-1 ring-[#0274BB]' : 'bg-white border-[#CBD5E1] text-[#64748B] hover:border-slate-400'}`}>
+                    <input
+                      type="radio"
+                      name="quotationRequiredRadio"
+                      checked={quotationRequired}
+                      onChange={() => setQuotationRequired(true)}
+                      className="text-[#0274BB] focus:ring-[#0274BB]"
+                    />
+                    <span>Yes, Quotation Required</span>
+                  </label>
+                  <label className={`flex items-center gap-2 px-3 py-1.5 rounded border text-xs font-semibold cursor-pointer transition-all ${!quotationRequired ? 'bg-[#F0FDF4] border-[#16A34A] text-[#16A34A] ring-1 ring-[#16A34A]' : 'bg-white border-[#CBD5E1] text-[#64748B] hover:border-slate-400'}`}>
+                    <input
+                      type="radio"
+                      name="quotationRequiredRadio"
+                      checked={!quotationRequired}
+                      onChange={() => setQuotationRequired(false)}
+                      className="text-[#16A34A] focus:ring-[#16A34A]"
+                    />
+                    <span>No (Standard Inward)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             {/* Inward Notes Row: Full Width Straight Field */}
             <Field className="pt-1">
               <FieldLabel>Inward &amp; Special Handling Instructions</FieldLabel>
@@ -613,12 +788,12 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-base font-bold text-[#111827]">
-                    2. Equipment Inward Line Items ({items.length})
+                    2. CV Equipment Line Items &amp; Routing ({items.length})
                   </CardTitle>
                   <Badge variant="primary">{totalItemCount} Unit(s) Total</Badge>
                 </div>
                 <CardDescription className="text-xs text-[#6B7280]">
-                  Itemize every gauge and measurement instrument received from the customer for calibration
+                  Select instruments from Item Master (by Code or Name), assign Destination (Lab vs Vendor), and specify rate
                 </CardDescription>
               </div>
             </div>
@@ -631,24 +806,50 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
               <table className="w-full text-left text-sm">
                 <thead className="bg-[#F5F7FA] border-b border-[#E5E7EB] text-[#374151] font-semibold text-xs uppercase tracking-wider">
                   <tr>
-                    <th className="px-5 py-3.5 min-w-[280px]">Instrument / Equipment Master</th>
-                    <th className="px-4 py-3.5 w-24 text-center">Qty</th>
-                    <th className="px-4 py-3.5 min-w-[160px]">Serial # / Asset ID</th>
-                    <th className="px-4 py-3.5 w-36">Physical Condition</th>
-                    <th className="px-4 py-3.5 min-w-[200px]">Accessories &amp; Scope Notes</th>
-                    <th className="px-4 py-3.5 w-14 text-center"></th>
+                    <th className="px-3 py-3.5 w-36">Item Code</th>
+                    <th className="px-3 py-3.5 min-w-[220px]">Instrument Master / Service</th>
+                    <th className="px-3 py-3.5 min-w-[190px]">Destination (Lab / Vendor)</th>
+                    <th className="px-3 py-3.5 w-20 text-center">Qty</th>
+                    <th className="px-3 py-3.5 w-28 text-right">Rate (₹)</th>
+                    <th className="px-3 py-3.5 w-32">Serial # / Asset ID</th>
+                    <th className="px-3 py-3.5 min-w-[180px]">Condition &amp; Notes</th>
+                    <th className="px-3 py-3.5 w-12 text-center"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E7EB]">
                   {items.map((item, idx) => {
                     const matchedItem = itemMasters.find((im) => im.id === item.itemMasterId);
+                    const currentRate = typeof item.unitRate === 'number' ? item.unitRate : (matchedItem?.standard_cost || 0);
+                    const lineTotal = (Number(item.quantity) || 0) * currentRate;
+
                     return (
                       <tr key={idx} className="hover:bg-[#FAFAFA] align-top transition-colors">
-                        <td className="px-5 py-4">
+                        {/* 1. Item Code Selection */}
+                        <td className="px-3 py-3">
+                          <Select
+                            value={item.itemCode || matchedItem?.item_code || ''}
+                            onChange={(e) => handleSelectItemByCode(idx, e.target.value)}
+                            className="font-mono text-xs font-semibold"
+                          >
+                            <option value="">Select Code...</option>
+                            {itemMasters.map((im) => (
+                              <option key={im.id} value={im.item_code}>
+                                {im.item_code}
+                              </option>
+                            ))}
+                          </Select>
+                          <span className="text-[10px] text-[#6B7280] block mt-1">
+                            {itemMasters.length} items in master
+                          </span>
+                        </td>
+
+                        {/* 2. Instrument Description / Service Selection */}
+                        <td className="px-3 py-3">
                           <Select
                             value={item.itemMasterId}
-                            onChange={(e) => onUpdateItem(idx, 'itemMasterId', e.target.value)}
+                            onChange={(e) => handleSelectItemById(idx, e.target.value)}
                             required
+                            className="text-xs"
                           >
                             <option value="">Choose Instrument from Master...</option>
                             {itemMasters.map((im) => (
@@ -658,34 +859,81 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
                             ))}
                           </Select>
                           {matchedItem && (
-                            <div className="mt-2 text-[11px] text-[#6B7280] leading-tight space-y-1 bg-[#F9FAFB] p-2 rounded border border-[#E5E7EB]">
-                              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                            <div className="mt-1.5 text-[11px] text-[#6B7280] leading-tight space-y-0.5 bg-[#F9FAFB] p-2 rounded border border-[#E5E7EB]">
+                              <div className="flex flex-wrap items-center gap-x-2">
                                 <span>
                                   <strong className="text-[#111827]">Range:</strong>{' '}
                                   {matchedItem.measurement_range || `${matchedItem.range_min} - ${matchedItem.range_max} ${matchedItem.range_unit}`}
                                 </span>
                                 <span>•</span>
                                 <span>
-                                  <strong className="text-[#111827]">Least Count:</strong>{' '}
+                                  <strong className="text-[#111827]">LC:</strong>{' '}
                                   {matchedItem.least_count} {matchedItem.least_count_unit}
                                 </span>
                               </div>
-                              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 pt-0.5 border-t border-[#E5E7EB]">
-                                <span>
-                                  <strong className="text-[#111827]">Base Rate:</strong>{' '}
-                                  ₹{matchedItem.standard_cost?.toLocaleString()}
-                                </span>
+                              <div className="flex flex-wrap items-center gap-x-2 pt-0.5 text-[10px] text-[#0274BB] border-t border-[#E5E7EB]">
+                                <span>HSN/SAC: 998346</span>
                                 {matchedItem.item_category && (
                                   <>
                                     <span>•</span>
-                                    <span className="font-semibold text-[#0274BB]">{matchedItem.item_category}</span>
+                                    <span>{matchedItem.item_category}</span>
                                   </>
                                 )}
                               </div>
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-4">
+
+                        {/* 3. Destination (Lab vs Vendor) + Vendor Selection */}
+                        <td className="px-3 py-3">
+                          <Select
+                            value={item.destination || 'IN_HOUSE'}
+                            onChange={(e) => {
+                              const dest = e.target.value as 'IN_HOUSE' | 'VENDOR_OUTSOURCE';
+                              onUpdateItem(idx, 'destination', dest);
+                              if (dest === 'IN_HOUSE') {
+                                onUpdateItem(idx, 'vendorId', '');
+                                onUpdateItem(idx, 'vendorName', '');
+                              }
+                            }}
+                            className={`font-semibold text-xs ${
+                              item.destination === 'VENDOR_OUTSOURCE'
+                                ? 'text-amber-800 bg-amber-50 border-amber-300'
+                                : 'text-[#0274BB]'
+                            }`}
+                          >
+                            <option value="IN_HOUSE">🔬 Lab (In-House)</option>
+                            <option value="VENDOR_OUTSOURCE">🏢 Vendor (Outsource)</option>
+                          </Select>
+
+                          {item.destination === 'VENDOR_OUTSOURCE' && (
+                            <div className="mt-1.5 space-y-1">
+                              <Select
+                                value={item.vendorId || ''}
+                                onChange={(e) => {
+                                  const vend = vendors.find((v) => v.id === e.target.value);
+                                  onUpdateItem(idx, 'vendorId', e.target.value);
+                                  onUpdateItem(idx, 'vendorName', vend?.vendor_name || '');
+                                }}
+                                required
+                                className="text-xs border-amber-300 bg-white"
+                              >
+                                <option value="">Select Vendor from Master...</option>
+                                {vendors.map((v) => (
+                                  <option key={v.id} value={v.id}>
+                                    {v.vendor_name} ({v.vendor_code})
+                                  </option>
+                                ))}
+                              </Select>
+                              <span className="text-[10px] text-amber-700 block">
+                                {vendors.length} vendor option(s) in Vendor Master
+                              </span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* 4. Quantity */}
+                        <td className="px-3 py-3">
                           <Input
                             type="number"
                             min={1}
@@ -694,43 +942,67 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
                               onUpdateItem(idx, 'quantity', parseInt(e.target.value, 10) || 1)
                             }
                             required
-                            className="text-center font-bold"
+                            className="text-center font-bold text-xs"
                           />
                         </td>
-                        <td className="px-4 py-4">
+
+                        {/* 5. Rate (₹) */}
+                        <td className="px-3 py-3">
                           <Input
-                            placeholder="e.g. SN-2026-8921"
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            placeholder="0.00"
+                            value={currentRate || ''}
+                            onChange={(e) =>
+                              onUpdateItem(idx, 'unitRate', parseFloat(e.target.value) || 0)
+                            }
+                            className="text-right font-mono text-xs"
+                          />
+                          <div className="text-[10px] text-right text-[#6B7280] mt-0.5 font-mono">
+                            ₹{lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </div>
+                        </td>
+
+                        {/* 6. Serial # */}
+                        <td className="px-3 py-3">
+                          <Input
+                            placeholder="e.g. SN-8921"
                             value={item.serialNumber}
                             onChange={(e) => onUpdateItem(idx, 'serialNumber', e.target.value)}
                             className="font-mono text-xs"
                           />
                         </td>
-                        <td className="px-4 py-4">
+
+                        {/* 7. Condition & Accessories */}
+                        <td className="px-3 py-3 space-y-1.5">
                           <Select
                             value={item.itemCondition}
                             onChange={(e) =>
                               onUpdateItem(idx, 'itemCondition', e.target.value as ItemCondition)
                             }
+                            className="text-xs"
                           >
                             <option value="GOOD">GOOD — Clean</option>
                             <option value="SCRATCHED">SCRATCHED — Surface</option>
                             <option value="DAMAGED">DAMAGED — Physical</option>
                             <option value="FAULTY">FAULTY — Out of Spec</option>
                           </Select>
-                        </td>
-                        <td className="px-4 py-4">
                           <Input
-                            placeholder="Probes, test leads, carrying case, cables..."
+                            placeholder="Accessories..."
                             value={item.accessories}
                             onChange={(e) => onUpdateItem(idx, 'accessories', e.target.value)}
+                            className="text-xs"
                           />
                         </td>
-                        <td className="px-4 py-4 text-center">
+
+                        {/* 8. Actions */}
+                        <td className="px-3 py-3 text-center">
                           {items.length > 1 && (
                             <button
                               type="button"
                               onClick={() => onRemoveItem(idx)}
-                              className="text-[#DC2626] hover:text-[#b91c1c] p-2 cursor-pointer rounded-[4px] hover:bg-[#FEF2F2] transition-colors"
+                              className="text-[#DC2626] hover:text-[#b91c1c] p-1.5 cursor-pointer rounded-[4px] hover:bg-[#FEF2F2] transition-colors"
                               title="Remove item line"
                             >
                               <Trash2 className="size-4" />
@@ -744,12 +1016,27 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
               </table>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-[#F9FAFB] border-t border-[#E5E7EB]">
+          <CardFooter className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-[#F9FAFB] border-t border-[#E5E7EB]">
             <Button variant="secondary" size="sm" type="button" onClick={onAddItem}>
               <Plus className="size-4" /> Add Another Instrument
             </Button>
-            <div className="text-xs text-[#6B7280]">
-              Total Line Items: <strong className="text-[#111827]">{items.length}</strong> • Total Inward Quantity: <strong className="text-[#0274BB]">{totalItemCount} unit(s)</strong>
+            <div className="flex flex-wrap items-center gap-5 text-xs text-[#374151]">
+              <div>
+                Total Lines: <strong className="text-[#111827]">{items.length}</strong> (
+                <strong className="text-[#0274BB]">{totalItemCount} unit(s)</strong>)
+              </div>
+              <div>
+                Subtotal: <strong className="font-mono text-[#111827]">₹{cvSubtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+              </div>
+              <div>
+                CGST (9%): <span className="font-mono text-[#6B7280]">₹{cvCgst.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div>
+                SGST (9%): <span className="font-mono text-[#6B7280]">₹{cvSgst.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="bg-[#EFF6FF] px-3 py-1 rounded border border-[#BFDBFE] font-bold text-[#0274BB]">
+                CV Voucher Total: ₹{cvTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </div>
             </div>
           </CardFooter>
         </Card>
@@ -836,7 +1123,8 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
         <Card className="bg-[#F8FAFC] border border-[#E5E7EB]">
           <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="text-xs text-[#6B7280]">
-              Upon registration, these {totalItemCount} unit(s) will be automatically queued into the Lab Inward Verification workspace.
+              Upon registration, unique <strong className="text-[#0274BB] font-mono">CV #{voucherNo}</strong> will be generated.
+              In-house items enter the Lab Queue, and outsourced items are recorded for their assigned vendors.
             </div>
             <div className="flex items-center gap-3">
               <Link to="/requests">
@@ -846,7 +1134,7 @@ export const IntakeRequestView: React.FC<IntakeRequestViewProps> = ({
               </Link>
               <Button variant="primary" type="submit" disabled={isSubmitting}>
                 <Check className="size-4" />
-                {isSubmitting ? 'Registering Inward Work Order...' : 'Register Equipment & Queue into Lab'}
+                {isSubmitting ? 'Registering & Generating CV...' : `Generate CV Voucher (#${voucherNo})`}
               </Button>
             </div>
           </CardContent>

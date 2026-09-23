@@ -175,7 +175,7 @@ export const RolePermissionPage: React.FC = () => {
           <div>Only Administrators and Super Administrators are authorized to view and configure the Role &amp; Permission Matrix.</div>
         </div>
         <Button variant="outlineInk" size="sm" onClick={() => navigate('/')}>
-          Back to Dashboard
+          Back
         </Button>
       </div>
     );
@@ -186,7 +186,7 @@ export const RolePermissionPage: React.FC = () => {
       <div className="p-6 rounded-[8px] bg-rose-50 border border-rose-200 text-rose-700 text-sm max-w-lg mx-auto text-center space-y-4">
         <div>Failed to load permission matrix: {(error as Error)?.message}</div>
         <Button variant="outlineInk" size="sm" onClick={() => navigate('/')}>
-          Back to Dashboard
+          Back
         </Button>
       </div>
     );

@@ -3,7 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useClients } from '../../hooks/useClientMaster';
 import { useItemMasters } from '../../hooks/useItemMaster';
+import { useVendors } from '../../hooks/useVendorMaster';
 import { useCreateRequest } from '../../hooks/useOperations';
+import { generateUniqueCVNumber } from '../../services/operationsService';
 import { IntakeRequestPresenter } from './IntakeRequestPresenter';
 import type { RequestPriority, RequestAttachment } from '../../types/domain';
 import type { IntakeItemFormState } from './IntakeRequestView';
@@ -16,6 +18,7 @@ export const IntakeRequestContainer: React.FC = () => {
 
   const { data: clients = [], isLoading: isLoadingClients } = useClients();
   const { data: itemMasters = [], isLoading: isLoadingItemMasters } = useItemMasters();
+  const { data: vendors = [], isLoading: isLoadingVendors } = useVendors();
   const createRequestMutation = useCreateRequest();
 
   const [clientId, setClientId] = useState<string>(queryClientId || '');
@@ -25,14 +28,51 @@ export const IntakeRequestContainer: React.FC = () => {
       setClientId(queryClientId);
     }
   }, [queryClientId]);
+
+  const [voucherNo, setVoucherNo] = useState<string>(() => generateUniqueCVNumber(tenantId));
+  const [dcNumber, setDcNumber] = useState<string>('');
+  const [paymentTerms, setPaymentTerms] = useState<string>('');
+  const [dispatchedThrough, setDispatchedThrough] = useState<string>('');
+
+  // Dynamically sync payment terms from Client Master when client is selected
+  useEffect(() => {
+    if (clientId && clients.length > 0) {
+      const selected = clients.find((c) => c.id === clientId);
+      if (selected?.payment_term && !paymentTerms) {
+        const formatted =
+          selected.payment_term === '30_DAYS'
+            ? '30 Days'
+            : selected.payment_term === '60_DAYS'
+            ? '60 Days'
+            : selected.payment_term === 'IMMEDIATE'
+            ? 'Immediate'
+            : String(selected.payment_term);
+        setPaymentTerms(formatted);
+      }
+    }
+  }, [clientId, clients, paymentTerms]);
+
   const [collectionDate, setCollectionDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
   const [priority, setPriority] = useState<RequestPriority>('NORMAL');
+  const [quotationRequired, setQuotationRequired] = useState<boolean>(false);
   const [clientPoRef, setClientPoRef] = useState<string>('');
   const [remarks, setRemarks] = useState<string>('');
   const [items, setItems] = useState<IntakeItemFormState[]>([
-    { itemMasterId: '', quantity: 1, serialNumber: '', accessories: '', itemCondition: 'GOOD', remarks: '' },
+    {
+      itemMasterId: '',
+      itemCode: '',
+      quantity: 1,
+      serialNumber: '',
+      accessories: '',
+      itemCondition: 'GOOD',
+      remarks: '',
+      destination: 'IN_HOUSE',
+      vendorId: '',
+      vendorName: '',
+      unitRate: 0,
+    },
   ]);
   const [attachments, setAttachments] = useState<RequestAttachment[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
@@ -40,7 +80,19 @@ export const IntakeRequestContainer: React.FC = () => {
   const handleAddItem = () => {
     setItems((prev) => [
       ...prev,
-      { itemMasterId: '', quantity: 1, serialNumber: '', accessories: '', itemCondition: 'GOOD', remarks: '' },
+      {
+        itemMasterId: '',
+        itemCode: '',
+        quantity: 1,
+        serialNumber: '',
+        accessories: '',
+        itemCondition: 'GOOD',
+        remarks: '',
+        destination: 'IN_HOUSE',
+        vendorId: '',
+        vendorName: '',
+        unitRate: 0,
+      },
     ]);
   };
 
@@ -104,6 +156,16 @@ export const IntakeRequestContainer: React.FC = () => {
       return;
     }
 
+    const missingVendorItems = items.filter(
+      (it) => it.destination === 'VENDOR_OUTSOURCE' && !it.vendorId
+    );
+    if (missingVendorItems.length > 0) {
+      setErrorMessage(
+        `Please select an external vendor from Vendor Master for all outsource items (${missingVendorItems.length} item(s) unassigned).`
+      );
+      return;
+    }
+
     const selectedClient = clients.find((c) => c.id === clientId);
 
     try {
@@ -111,8 +173,13 @@ export const IntakeRequestContainer: React.FC = () => {
         tenantId,
         organizationId,
         clientId,
+        voucherNo,
+        dcNumber,
+        paymentTerms,
+        dispatchedThrough,
         collectionDate,
         priority,
+        quotationRequired,
         clientPoRef,
         remarks,
         attachments,
@@ -126,18 +193,23 @@ export const IntakeRequestContainer: React.FC = () => {
           return {
             itemMasterId: it.itemMasterId,
             itemMasterData: matchedItem,
+            itemCode: it.itemCode || matchedItem?.item_code,
             quantity: it.quantity,
             serialNumber: it.serialNumber,
             accessories: it.accessories,
             itemCondition: it.itemCondition,
+            destination: it.destination || 'IN_HOUSE',
+            vendorId: it.vendorId,
+            vendorName: it.vendorName,
+            unitRate: typeof it.unitRate === 'number' ? it.unitRate : (matchedItem?.standard_cost || 0),
             remarks: it.remarks,
           };
         }),
       });
 
-      // Seamless flow: Step 1 Intake -> Step 2 Segregation & Routing
+      // Navigate to created CV Voucher details
       if (created?.id) {
-        navigate(`/requests/${created.id}/routing`);
+        navigate(`/requests/${created.id}`);
       } else {
         navigate('/requests');
       }
@@ -150,12 +222,23 @@ export const IntakeRequestContainer: React.FC = () => {
     <IntakeRequestPresenter
       clients={clients}
       itemMasters={itemMasters}
+      vendors={vendors}
+      voucherNo={voucherNo}
+      setVoucherNo={setVoucherNo}
+      dcNumber={dcNumber}
+      setDcNumber={setDcNumber}
+      paymentTerms={paymentTerms}
+      setPaymentTerms={setPaymentTerms}
+      dispatchedThrough={dispatchedThrough}
+      setDispatchedThrough={setDispatchedThrough}
       clientId={clientId}
       setClientId={setClientId}
       collectionDate={collectionDate}
       setCollectionDate={setCollectionDate}
       priority={priority}
       setPriority={setPriority}
+      quotationRequired={quotationRequired}
+      setQuotationRequired={setQuotationRequired}
       clientPoRef={clientPoRef}
       setClientPoRef={setClientPoRef}
       remarks={remarks}
@@ -169,7 +252,7 @@ export const IntakeRequestContainer: React.FC = () => {
       onRemoveAttachment={handleRemoveAttachment}
       onSubmit={handleSubmit}
       isSubmitting={createRequestMutation.isPending}
-      isLoadingData={isLoadingClients || isLoadingItemMasters}
+      isLoadingData={isLoadingClients || isLoadingItemMasters || isLoadingVendors}
       errorMessage={errorMessage}
     />
   );

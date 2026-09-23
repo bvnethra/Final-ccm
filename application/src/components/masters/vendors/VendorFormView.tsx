@@ -81,7 +81,7 @@ export const VendorFormView: React.FC<VendorFormViewProps> = ({
         <div className="flex items-center gap-3">
           <Link to="/masters/vendors">
             <Button variant="secondary" size="sm" type="button">
-              <ArrowLeft className="size-4" /> Back to Vendors
+              <ArrowLeft className="size-4" /> Back
             </Button>
           </Link>
           <div>

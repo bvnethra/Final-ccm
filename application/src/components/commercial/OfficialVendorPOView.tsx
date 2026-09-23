@@ -54,10 +54,10 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
     outsourcePO.vendor_po_number ||
     '';
   const poDate = formatInvoiceDate(outsourcePO.sent_date || outsourcePO.created_at);
-  const paymentTerms = outsourcePO.payment_terms || '30 Days';
+  const paymentTerms = outsourcePO.payment_terms || '';
   const refNo = voucherNo ? `${voucherNo}` : '';
   const otherRef = outsourcePO.remarks || '';
-  const dispatchedThrough = outsourcePO.dispatched_through || 'By Hand';
+  const dispatchedThrough = outsourcePO.dispatched_through || '';
   const destination = outsourcePO.destination || vendor?.city || '';
   const termsOfDelivery = outsourcePO.terms_of_delivery || '';
 
@@ -110,7 +110,7 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
           {isFullPage && (
             <Link to="/masters/vendors">
               <Button variant="secondary" size="sm">
-                <ArrowLeft className="size-4" /> Back to Vendors
+                <ArrowLeft className="size-4" /> Back
               </Button>
             </Link>
           )}

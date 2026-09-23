@@ -50,9 +50,12 @@ import {
   History,
   Layers,
   Building,
+  RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useAuditLogs } from '../../hooks/useAuditLogs';
+import { OfficialSaleOrderCVView } from '../../components/commercial/OfficialSaleOrderCVView';
 
 export const RequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -77,6 +80,7 @@ export const RequestDetailPage: React.FC = () => {
   const relatedDelivery = deliveries.find((del: any) => del.dispatch_id === relatedDispatch?.id);
 
   const [showDirectInvoiceModal, setShowDirectInvoiceModal] = useState<boolean>(false);
+  const [showCVDocument, setShowCVDocument] = useState<boolean>(false);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [itemRatesDirect, setItemRatesDirect] = useState<Record<string, number>>({});
   const [discountTypeDirect, setDiscountTypeDirect] = useState<'PERCENT' | 'FLAT'>('PERCENT');
@@ -96,6 +100,19 @@ export const RequestDetailPage: React.FC = () => {
     return (
       <div className="p-8 bg-[#fef2f2] border border-[#DC2626]/30 text-[#DC2626] rounded-[4px]">
         Failed to load calibration request: {(error as Error)?.message || 'Not found'}
+      </div>
+    );
+  }
+
+  if (showCVDocument) {
+    return (
+      <div className="space-y-4 max-w-5xl mx-auto">
+        <OfficialSaleOrderCVView
+          request={request}
+          client={request.clients}
+          onClose={() => setShowCVDocument(false)}
+          isFullPage={true}
+        />
       </div>
     );
   }
@@ -173,7 +190,14 @@ export const RequestDetailPage: React.FC = () => {
 
   const handleOpenDirectInvoice = () => {
     if (!request) return;
-    setClientPoRefDirect(request.client_po_ref || '');
+    if (request.client_po_ref && request.client_po_ref.trim()) {
+      setClientPoRefDirect(request.client_po_ref.trim());
+    } else {
+      const year = new Date().getFullYear();
+      const code = request.clients?.client_code ? request.clients.client_code.toUpperCase() : 'CLIENT';
+      const num = request.request_number ? request.request_number.replace(/\D/g, '').slice(-3) : String(Math.floor(100 + Math.random() * 900));
+      setClientPoRefDirect(`PO/${year}/${code}-${num || '001'}`);
+    }
     const unbilled = (request.request_items || []).filter((it: any) => !it.invoiced);
     setSelectedItemIds(new Set(unbilled.map((it) => it.id)));
     const rates: Record<string, number> = {};
@@ -276,14 +300,19 @@ export const RequestDetailPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <Link to={backToQueue ? "/lab/queue" : "/requests"}>
             <Button variant="secondary" size="sm">
-              <ArrowLeft className="size-4" /> {backToQueue ? 'Back to Lab Queue' : 'Back to Requests'}
+              <ArrowLeft className="size-4" /> Back
             </Button>
           </Link>
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-2xl font-bold text-[#111827] font-mono">
                 {request.request_number}
               </h1>
+              {request.voucher_no && (
+                <span className="font-mono text-xs font-bold text-[#0274BB] bg-[#EFF6FF] border border-[#BFDBFE] px-2.5 py-0.5 rounded shadow-xs">
+                  CV #{request.voucher_no}
+                </span>
+              )}
               <Badge
                 variant={
                   isCalibratedOrBeyond
@@ -300,14 +329,24 @@ export const RequestDetailPage: React.FC = () => {
               )}
             </div>
             <p className="text-sm text-[#6B7280]">
-              Client: <span className="font-semibold text-[#111827]">{request.clients?.client_name || 'N/A'}</span> • Created on{' '}
-              {new Date(request.created_at).toLocaleDateString()}
+              Client: <span className="font-semibold text-[#111827]">{request.clients?.client_name || 'N/A'}</span> • Inward Date:{' '}
+              {new Date(request.collection_date || request.created_at).toLocaleDateString()}
+              {request.dc_number && <span className="ml-2 font-mono text-xs text-[#0274BB]">({request.dc_number})</span>}
             </p>
           </div>
         </div>
 
         {/* Dynamic Contextual Action */}
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowCVDocument(true)}
+            className="flex items-center gap-1.5"
+            title="View & Print Official SALE ORDER / CV matching physical document"
+          >
+            <FileCheck className="size-4 text-[#0274BB]" /> View / Print Sale Order (CV)
+          </Button>
+
           <Link to={`/requests/${request.id}/routing`}>
             <Button variant="secondary" className="flex items-center gap-1.5 border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100">
               <Layers className="size-3.5" /> Item Routing (Step 2)
@@ -968,17 +1007,32 @@ export const RequestDetailPage: React.FC = () => {
 
                 {/* Group 1: Purchase Order Reference */}
                 <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px] p-4 space-y-1.5">
-                  <label className="text-xs font-semibold text-[#1E293B] block">
-                    Client Purchase Order Reference (Optional)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-[#1E293B]">
+                      Client Purchase Order Reference
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const year = new Date().getFullYear();
+                        const code = request.clients?.client_code ? request.clients.client_code.toUpperCase() : 'CLIENT';
+                        const randomSeq = String(Math.floor(100 + Math.random() * 900));
+                        setClientPoRefDirect(`PO/${year}/${code}-${randomSeq}`);
+                      }}
+                      className="text-[11px] font-semibold text-[#0274BB] hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <RefreshCw className="size-3" /> Auto Generate PO
+                    </button>
+                  </div>
                   <Input
-                    placeholder="e.g. PO-CLIENT-2026-991 (Leave blank if not needed)"
+                    placeholder="e.g. PO/2026/CLIENT-001"
                     value={clientPoRefDirect}
                     onChange={(e) => setClientPoRefDirect(e.target.value)}
                     className="bg-white"
                   />
-                  <p className="text-[11px] text-[#6B7280]">
-                    Appears directly on the official tax invoice header and commercial PDF
+                  <p className="text-[11px] text-[#6B7280] flex items-center gap-1">
+                    <Sparkles className="size-3 text-emerald-600 shrink-0" />
+                    Auto-fetched from inward request or auto-generated. Appears on tax invoice header.
                   </p>
                 </div>
 

@@ -1,17 +1,28 @@
 // application/src/components/operations/IntakeRequestPresenter.tsx
 import React from 'react';
 import { IntakeRequestView, type IntakeItemFormState } from './IntakeRequestView';
-import type { Client, ItemMaster, RequestPriority, RequestAttachment } from '../../types/domain';
+import type { Client, ItemMaster, Vendor, RequestPriority, RequestAttachment } from '../../types/domain';
 
 export interface IntakeRequestPresenterProps {
   clients: Client[];
   itemMasters: ItemMaster[];
+  vendors: Vendor[];
+  voucherNo: string;
+  setVoucherNo: (v: string) => void;
+  dcNumber: string;
+  setDcNumber: (v: string) => void;
+  paymentTerms: string;
+  setPaymentTerms: (v: string) => void;
+  dispatchedThrough: string;
+  setDispatchedThrough: (v: string) => void;
   clientId: string;
   setClientId: (id: string) => void;
   collectionDate: string;
   setCollectionDate: (date: string) => void;
   priority: RequestPriority;
   setPriority: (p: RequestPriority) => void;
+  quotationRequired: boolean;
+  setQuotationRequired: (req: boolean) => void;
   clientPoRef: string;
   setClientPoRef: (ref: string) => void;
   remarks: string;

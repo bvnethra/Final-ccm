@@ -24,6 +24,7 @@ import {
   recordDelivery,
   getDeliveries,
   getCalibrationDueList,
+  getClientPastServicedItems,
 } from '../services/operationsService';
 
 describe('Calibration Operational Lifecycle Workflow Tests', () => {
@@ -903,5 +904,147 @@ describe('Calibration Operational Lifecycle Workflow Tests', () => {
     const overdueIdx = dueList.findIndex((it) => it.serialNumber === 'SN-DUE-002');
     const due7Idx = dueList.findIndex((it) => it.serialNumber === 'SN-DUE-001');
     expect(overdueIdx).toBeLessThan(due7Idx);
+  });
+
+  describe('Process 4: 3 Quotation Modes (Inward Request, Existing Customer, New Client Estimate)', () => {
+    it('Mode 1: Inward Request with quotationRequired flag updates request quotation_status to QUOTED', async () => {
+      // 1. Create inward request with quotationRequired: true
+      const req = await createCalibrationRequest({
+        tenantId,
+        organizationId,
+        clientId: 'client-mode1',
+        collectionDate: new Date().toISOString(),
+        priority: 'NORMAL',
+        quotationRequired: true,
+        items: [
+          {
+            itemMasterId: 'item-micrometer-1',
+            quantity: 2,
+            serialNumber: 'SN-MODE1-01',
+            itemCondition: 'GOOD',
+          },
+        ],
+      });
+
+      expect(req.quotation_required).toBe(true);
+      expect(req.quotation_status).toBe('PENDING_QUOTE');
+
+      // 2. Raise Quotation for this Inward Request
+      const quote = await createQuotation({
+        tenantId,
+        organizationId,
+        requestId: req.id,
+        clientId: 'client-mode1',
+        quotationType: 'INWARD_REQUEST',
+        subtotal: 500,
+        discount: 50,
+        taxAmount: 81,
+        totalAmount: 531,
+        items: [
+          {
+            description: 'Precision Micrometer 0-25mm Calibration',
+            quantity: 2,
+            unitPrice: 250,
+            totalPrice: 500,
+          },
+        ],
+      });
+
+      expect(quote.quotation_type).toBe('INWARD_REQUEST');
+      expect(quote.request_id).toBe(req.id);
+      expect(quote.status).toBe('DRAFT');
+
+      // 3. Verify request status transitioned to QUOTED
+      const updatedReq = await getCalibrationRequestById(req.id, tenantId);
+      expect(updatedReq?.quotation_status).toBe('QUOTED');
+    });
+
+    it('Mode 2: Existing Customer Quotation pre-populates previous calibration service records', async () => {
+      const existingClientId = 'client-existing-mode2';
+
+      // 1. Create previous calibration request for this client to simulate service history
+      await createCalibrationRequest({
+        tenantId,
+        organizationId,
+        clientId: existingClientId,
+        collectionDate: new Date().toISOString(),
+        priority: 'NORMAL',
+        items: [
+          {
+            itemMasterId: 'item-vernier-2',
+            quantity: 3,
+            serialNumber: 'SN-HIST-01',
+            itemCondition: 'GOOD',
+          },
+        ],
+      });
+
+      // 2. Query past serviced items for this client
+      const pastItems = await getClientPastServicedItems(tenantId, existingClientId);
+      expect(pastItems.length).toBeGreaterThanOrEqual(1);
+      expect(pastItems.some((it) => it.item_master_id === 'item-vernier-2')).toBe(true);
+
+      // 3. Create Mode 2 quotation using existing client reference
+      const quote = await createQuotation({
+        tenantId,
+        organizationId,
+        clientId: existingClientId,
+        quotationType: 'EXISTING_CUSTOMER',
+        subtotal: 600,
+        discount: 0,
+        taxAmount: 108,
+        totalAmount: 708,
+        items: [
+          {
+            description: 'Digital Vernier Caliper 150mm Repeat Service',
+            quantity: 3,
+            unitPrice: 200,
+            totalPrice: 600,
+          },
+        ],
+      });
+
+      expect(quote.quotation_type).toBe('EXISTING_CUSTOMER');
+      expect(quote.client_id).toBe(existingClientId);
+      expect(quote.request_id).toBeUndefined();
+      expect(quote.total_amount).toBe(708);
+    });
+
+    it('Mode 3: New Client Estimate allows creating quotation with approximate equipment data before inward', async () => {
+      const newClientId = 'client-new-estimate-mode3';
+
+      // Mode 3 is created with approximate line items without needing an existing inward request
+      const quote = await createQuotation({
+        tenantId,
+        organizationId,
+        clientId: newClientId,
+        quotationType: 'NEW_CLIENT_ESTIMATE',
+        subtotal: 1200,
+        discount: 100,
+        taxAmount: 198,
+        totalAmount: 1298,
+        items: [
+          {
+            description: 'Pressure Gauge 0-100 bar (Approximate Estimate)',
+            quantity: 4,
+            unitPrice: 300,
+            totalPrice: 1200,
+          },
+        ],
+      });
+
+      expect(quote.quotation_type).toBe('NEW_CLIENT_ESTIMATE');
+      expect(quote.client_id).toBe(newClientId);
+      expect(quote.request_id).toBeUndefined();
+      expect(quote.items?.length).toBe(1);
+      expect(quote.items![0].description).toContain('Approximate Estimate');
+      expect(quote.total_amount).toBe(1298);
+
+      // Verify it appears in quotations list
+      const allQuotes = await getQuotations(tenantId);
+      const found = allQuotes.find((q) => q.id === quote.id);
+      expect(found).toBeDefined();
+      expect(found?.quotation_type).toBe('NEW_CLIENT_ESTIMATE');
+    });
   });
 });

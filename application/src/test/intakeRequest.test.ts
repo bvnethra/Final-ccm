@@ -2,11 +2,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   generateRequestNumber,
+  generateUniqueCVNumber,
   createCalibrationRequest,
   getCalibrationRequests,
   getCalibrationRequestById,
   getLabQueueRequests,
   recordVerification,
+  getVendorItemsLog,
 } from '../services/operationsService';
 import type { CreateRequestPayload } from '../services/operationsService';
 
@@ -71,6 +73,18 @@ describe('Calibration Intake Request Domain Logic & Validations', () => {
       expect(firstItem.accessories).toBe('Protective Case, Setting Ring');
       expect(firstItem.item_condition).toBe('GOOD');
       expect(firstItem.status).toBe('ADDED');
+      expect(created.quotation_required).toBe(false);
+      expect(created.quotation_status).toBe('NONE');
+    });
+
+    it('sets quotation_required to true and quotation_status to PENDING_QUOTE when requested', async () => {
+      const created = await createCalibrationRequest({
+        ...validPayload,
+        quotationRequired: true,
+      });
+
+      expect(created.quotation_required).toBe(true);
+      expect(created.quotation_status).toBe('PENDING_QUOTE');
     });
 
     it('rejects creation when client account is missing', async () => {
@@ -397,6 +411,83 @@ describe('Calibration Intake Request Domain Logic & Validations', () => {
       const updatedRequest = await getCalibrationRequestById(created.id, tenantId);
       expect(updatedRequest.status).toBe('DISCREPANCY');
       expect(updatedRequest.request_items![0].status).toBe('DISCREPANCY');
+    });
+  });
+
+  describe('CV Generation & Dual Log Segregation (Lab vs Vendor)', () => {
+    const tenantId = 'tenant-cv-log-01';
+    const orgId = 'org-cv-log-01';
+
+    it('generates unique 6-digit CV Voucher numbers matching physical register format', () => {
+      const voucher1 = generateUniqueCVNumber();
+      const voucher2 = generateUniqueCVNumber();
+
+      expect(voucher1).toMatch(/^\d{6}$/);
+      expect(voucher2).toMatch(/^\d{6}$/);
+    });
+
+    it('creates CV request with voucher number, DC number, and segregates Lab vs Vendor items into respective logs', async () => {
+      const cvRequest = await createCalibrationRequest({
+        tenantId,
+        organizationId: orgId,
+        clientId: 'client-mcc-01',
+        voucherNo: '181299',
+        dcNumber: 'Dc No. 106/2026-27, Dt. 19.09.2026',
+        paymentTerms: '30 Days',
+        dispatchedThrough: 'By Hand',
+        collectionDate: '2026-09-19',
+        priority: 'NORMAL',
+        quotationRequired: true,
+        items: [
+          {
+            itemMasterId: 'item-mic-50-75',
+            itemCode: 'MIC-001',
+            quantity: 1,
+            unitRate: 150,
+            destination: 'IN_HOUSE',
+            itemCondition: 'GOOD',
+            serialNumber: 'SN-MIC-01',
+          },
+          {
+            itemMasterId: 'item-mic-100-125',
+            itemCode: 'MIC-002',
+            quantity: 1,
+            unitRate: 530,
+            destination: 'VENDOR_OUTSOURCE',
+            vendorId: 'vendor-nabl-external',
+            vendorName: 'NABL Certified Metrology Lab',
+            itemCondition: 'GOOD',
+            serialNumber: 'SN-MIC-02',
+          },
+        ],
+      });
+
+      expect(cvRequest.voucher_no).toBe('181299');
+      expect(cvRequest.dc_number).toBe('Dc No. 106/2026-27, Dt. 19.09.2026');
+      expect(cvRequest.payment_terms).toBe('30 Days');
+      expect(cvRequest.dispatched_through).toBe('By Hand');
+      expect(cvRequest.quotation_required).toBe(true);
+      expect(cvRequest.quotation_status).toBe('PENDING_QUOTE');
+
+      // Check Lab Items vs Vendor Items
+      const inHouse = cvRequest.request_items?.filter((i) => i.destination === 'IN_HOUSE');
+      const outsourced = cvRequest.request_items?.filter((i) => i.destination === 'VENDOR_OUTSOURCE');
+
+      expect(inHouse).toHaveLength(1);
+      expect(inHouse![0].item_code).toBe('MIC-001');
+
+      expect(outsourced).toHaveLength(1);
+      expect(outsourced![0].item_code).toBe('MIC-002');
+      expect(outsourced![0].vendor_id).toBe('vendor-nabl-external');
+      expect(outsourced![0].vendor_name).toBe('NABL Certified Metrology Lab');
+
+      // Verify Vendor Items Log retrieval
+      const vendorLog = await getVendorItemsLog(tenantId, orgId);
+      expect(vendorLog).toHaveLength(1);
+      expect(vendorLog[0].voucherNo).toBe('181299');
+      expect(vendorLog[0].itemCode).toBe('MIC-002');
+      expect(vendorLog[0].vendorName).toBe('NABL Certified Metrology Lab');
+      expect(vendorLog[0].unitRate).toBe(530);
     });
   });
 });

@@ -169,6 +169,10 @@ export interface CalibrationRequest {
   tenant_id: string;
   organization_id: string;
   request_number: string;
+  voucher_no?: string;
+  dc_number?: string;
+  payment_terms?: string;
+  dispatched_through?: string;
   client_id: string;
   collection_agent_id?: string;
   collection_agent_name?: string;
@@ -176,6 +180,8 @@ export interface CalibrationRequest {
   priority: RequestPriority;
   client_po_ref?: string;
   status: RequestStatus;
+  quotation_required?: boolean;
+  quotation_status?: 'NONE' | 'PENDING_QUOTE' | 'QUOTED' | 'APPROVED';
   remarks?: string;
   attachments?: RequestAttachment[];
   created_at: string;
@@ -190,6 +196,7 @@ export interface RequestItem {
   organization_id: string;
   request_id: string;
   item_master_id?: string;
+  item_code?: string;
   serial_number?: string;
   accessories?: string;
   quantity: number;
@@ -204,6 +211,7 @@ export interface RequestItem {
   vendor_name?: string;
   expected_return_date?: string;
   estimated_cost?: number;
+  unit_rate?: number;
 }
 
 export interface Verification {
@@ -270,11 +278,15 @@ export interface Certificate {
   created_at: string;
 }
 
+export type QuotationType = 'INWARD_REQUEST' | 'EXISTING_CUSTOMER' | 'NEW_CLIENT_ESTIMATE';
+
 export interface Quotation {
   id: string;
   tenant_id: string;
   organization_id: string;
-  request_id: string;
+  request_id?: string;
+  client_id?: string;
+  quotation_type?: QuotationType;
   quotation_number: string;
   reference_no?: string;
   quotation_date?: string;
@@ -292,6 +304,7 @@ export interface Quotation {
   approved_at?: string;
   created_at: string;
   items?: QuotationItem[];
+  clients?: Client;
   calibration_requests?: CalibrationRequest;
 }
 

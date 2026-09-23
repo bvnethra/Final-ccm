@@ -31,7 +31,7 @@ const operationalItems: NavItem[] = [
   { label: 'Inward Requests', to: '/requests', icon: ClipboardList },
   { label: 'Lab & Calibration', to: '/lab/queue', icon: FlaskConical },
   { label: 'Calibration Due List', to: '/lab/due-list', icon: CalendarClock },
-  { label: 'Commercial Billing', to: '/commercial/quotations', icon: FileText },
+  { label: 'Quotation', to: '/commercial/quotations', icon: FileText },
   { label: 'Tax Invoices', to: '/commercial/invoices', icon: Receipt },
   { label: 'Logistics & Dispatch', to: '/logistics/dispatches', icon: Truck },
 ];

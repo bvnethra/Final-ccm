@@ -44,7 +44,7 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ client }) =>
         <div className="flex items-center gap-3">
           <Link to="/masters/clients">
             <Button variant="secondary" size="sm">
-              <ArrowLeft className="size-4" /> Back to Directory
+              <ArrowLeft className="size-4" /> Back
             </Button>
           </Link>
           <div>

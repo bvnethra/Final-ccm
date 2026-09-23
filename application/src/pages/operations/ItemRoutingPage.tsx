@@ -159,7 +159,7 @@ export const ItemRoutingPage: React.FC = () => {
           to="/requests"
           className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-[#0274BB] hover:underline"
         >
-          <ArrowLeft className="size-3.5" /> Back to Inward Requests
+          <ArrowLeft className="size-3.5" /> Back
         </Link>
       </div>
     );
@@ -179,7 +179,7 @@ export const ItemRoutingPage: React.FC = () => {
             type="button"
             onClick={() => navigate(`/requests/${id}`)}
             className="p-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
-            title="Back to Request Detail"
+            title="Back"
           >
             <ArrowLeft className="size-4" />
           </button>

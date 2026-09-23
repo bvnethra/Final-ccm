@@ -17,6 +17,7 @@ import {
   createOutsourcePO,
   receiveOutsourceReturn,
   getQuotations,
+  getClientPastServicedItems,
   createQuotation,
   approveQuotation,
   getInvoices,
@@ -48,7 +49,21 @@ import {
   type ApproveInvoicePayload,
   approveDispatch,
   type ApproveDispatchPayload,
+  getVendorItemsLog,
+  type VendorItemLogEntry,
 } from '../services/operationsService';
+
+export type { VendorItemLogEntry };
+
+export function useVendorItemsLog() {
+  const { tenantId, organizationId } = useAuthContext();
+
+  return useQuery({
+    queryKey: ['vendorItemsLog', tenantId, organizationId],
+    queryFn: () => getVendorItemsLog(tenantId!, organizationId),
+    enabled: Boolean(tenantId),
+  });
+}
 
 export function useCalibrationRequests(statusFilter?: string) {
   const { tenantId, organizationId } = useAuthContext();
@@ -128,6 +143,16 @@ export function useQuotations() {
   });
 }
 
+export function useClientPastServicedItems(clientId?: string) {
+  const { tenantId } = useAuthContext();
+
+  return useQuery({
+    queryKey: ['clientPastServicedItems', tenantId, clientId],
+    queryFn: () => getClientPastServicedItems(tenantId!, clientId!),
+    enabled: Boolean(tenantId && clientId),
+  });
+}
+
 export function useCreateQuotation() {
   const queryClient = useQueryClient();
   const { tenantId } = useAuthContext();
@@ -137,6 +162,7 @@ export function useCreateQuotation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotations', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['calibrationRequests', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs', tenantId] });
     },
   });
 }

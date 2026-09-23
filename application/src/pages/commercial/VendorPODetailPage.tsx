@@ -35,7 +35,7 @@ export const VendorPODetailPage: React.FC = () => {
         </div>
         <Link to="/masters/vendors">
           <Button variant="secondary" size="sm">
-            <ArrowLeft className="size-4" /> Back to Vendors List
+            <ArrowLeft className="size-4" /> Back
           </Button>
         </Link>
       </div>

@@ -155,7 +155,7 @@ export const VerificationPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <Link to="/lab/queue">
             <Button variant="secondary" size="sm" type="button">
-              <ArrowLeft className="size-4" /> Back to Lab Queue
+              <ArrowLeft className="size-4" /> Back
             </Button>
           </Link>
           <div>
@@ -465,7 +465,7 @@ export const VerificationPage: React.FC = () => {
             <div className="flex items-center gap-3">
               <Link to="/lab/queue">
                 <Button variant="outline" type="button">
-                  Back to Queue
+                  Back
                 </Button>
               </Link>
               {!isViewOnly && (

@@ -1,7 +1,13 @@
 // application/src/pages/commercial/QuotationListPage.tsx
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useQuotations, useApproveQuotation, useCreateInvoice } from '../../hooks/useOperations';
+import {
+  useQuotations,
+  useApproveQuotation,
+  useCreateInvoice,
+  useCalibrationRequests,
+} from '../../hooks/useOperations';
+import { useClients } from '../../hooks/useClientMaster';
 import { useAuthContext } from '../../contexts/AuthContext';
 import {
   Button,
@@ -10,7 +16,7 @@ import {
   Field,
   FieldLabel,
 } from '../../components/ui/UIPrimitives';
-import type { Quotation, QuotationItem } from '../../types/domain';
+import type { Quotation, QuotationItem, CalibrationRequest } from '../../types/domain';
 import {
   Plus,
   FileText,
@@ -23,12 +29,17 @@ import {
   Square,
   Clock,
   Eye,
+<<<<<<< Updated upstream
   Search,
   ChevronRight,
   MoreVertical,
   IndianRupee,
   Building2,
   Layers,
+=======
+  RefreshCw,
+  Sparkles,
+>>>>>>> Stashed changes
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -39,10 +50,45 @@ const AVATAR_PALETTES = [
   { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100' },
 ];
 
+const getOrGenerateClientPoRef = (
+  quote: Quotation,
+  requestsList: CalibrationRequest[],
+  clientsList: any[]
+): string => {
+  // 1. Direct quote PO ref if already stored
+  if (quote.client_po_ref && quote.client_po_ref.trim()) {
+    return quote.client_po_ref.trim();
+  }
+
+  // 2. Auto-fetch from linked Inward Calibration Request
+  const linkedReq = requestsList.find((r) => r.id === quote.request_id) || quote.calibration_requests;
+  if (linkedReq?.client_po_ref && linkedReq.client_po_ref.trim()) {
+    return linkedReq.client_po_ref.trim();
+  }
+
+  // 3. Auto-generate dynamically using Client code + Year + sequence
+  const client =
+    clientsList.find((c) => c.id === quote.client_id || c.id === linkedReq?.client_id) ||
+    linkedReq?.clients;
+  const year = new Date().getFullYear();
+  const clientCode = client?.client_code ? client.client_code.toUpperCase() : 'CLIENT';
+  const numSeq = quote.quotation_number
+    ? quote.quotation_number.replace(/\D/g, '').slice(-3) || '001'
+    : String(Math.floor(100 + Math.random() * 900));
+
+  return `PO/${year}/${clientCode}-${numSeq}`;
+};
+
 export const QuotationListPage: React.FC = () => {
   const navigate = useNavigate();
   const { tenantId, organizationId, isLabApprover, canPerform, getPermissionLevel, isSuperAdmin } = useAuthContext();
+<<<<<<< Updated upstream
   const { data: quotations = [], isLoading } = useQuotations();
+=======
+  const { data: quotations = [], isLoading, error } = useQuotations();
+  const { data: requests = [] } = useCalibrationRequests();
+  const { data: clients = [] } = useClients();
+>>>>>>> Stashed changes
   const approveQuotationMutation = useApproveQuotation();
   const createInvoiceMutation = useCreateInvoice();
 
@@ -63,10 +109,16 @@ export const QuotationListPage: React.FC = () => {
   const [invoiceModalQuote, setInvoiceModalQuote] = useState<Quotation | null>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [clientPoForInvoice, setClientPoForInvoice] = useState<string>('');
+  const [invoiceItemRates, setInvoiceItemRates] = useState<Record<string, number>>({});
+  const [invoiceDiscountPercent, setInvoiceDiscountPercent] = useState<number>(0);
+  const [invoiceDiscountAmount, setInvoiceDiscountAmount] = useState<number>(0);
+  const [editableInvoiceTotal, setEditableInvoiceTotal] = useState<number>(0);
+  const [invoiceLastEdited, setInvoiceLastEdited] = useState<'PERCENT' | 'AMOUNT' | 'TOTAL'>('PERCENT');
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [successMessage, setSuccessMessage] = useState<string | undefined>();
 
+<<<<<<< Updated upstream
   // Dynamic live metrics (zero hardcoding)
   const totalCount = quotations.length;
   const approvedCount = useMemo(
@@ -137,9 +189,13 @@ export const QuotationListPage: React.FC = () => {
   }, []);
 
   // Modal Handlers
+=======
+  // Open Approval Modal - Auto-fetches or auto-generates Client PO Reference
+>>>>>>> Stashed changes
   const handleOpenApprovalModal = (q: Quotation) => {
     setApprovalModalQuote(q);
-    setClientPoRef(q.client_po_ref || '');
+    const po = getOrGenerateClientPoRef(q, requests, clients);
+    setClientPoRef(po);
     setApproverNotes(q.approver_notes || '');
     setErrorMessage(undefined);
   };
@@ -175,10 +231,21 @@ export const QuotationListPage: React.FC = () => {
 
   const handleOpenInvoiceModal = (q: Quotation) => {
     setInvoiceModalQuote(q);
-    setClientPoForInvoice(q.client_po_ref || '');
+    const po = getOrGenerateClientPoRef(q, requests, clients);
+    setClientPoForInvoice(po);
     setErrorMessage(undefined);
     const unbilled = (q.items || []).filter((it) => !it.invoiced);
     setSelectedItemIds(new Set(unbilled.map((it) => it.id)));
+
+    const rates: Record<string, number> = {};
+    unbilled.forEach((it) => {
+      rates[it.id] = it.unit_price;
+    });
+    setInvoiceItemRates(rates);
+    setInvoiceDiscountPercent(0);
+    setInvoiceDiscountAmount(0);
+    setEditableInvoiceTotal(0);
+    setInvoiceLastEdited('PERCENT');
   };
 
   const toggleItemCheck = (itemId: string) => {
@@ -212,14 +279,33 @@ export const QuotationListPage: React.FC = () => {
       return;
     }
 
+<<<<<<< Updated upstream
+=======
+    // Determine Partial vs Actual
+>>>>>>> Stashed changes
     const totalItemsCount = (invoiceModalQuote.items || []).length;
     const previouslyInvoicedCount = (invoiceModalQuote.items || []).filter((it) => it.invoiced).length;
     const isActualInvoice = previouslyInvoicedCount + chosenItems.length >= totalItemsCount;
     const invoiceType = isActualInvoice ? 'ACTUAL' : 'PARTIAL';
 
-    const invoiceSubtotal = chosenItems.reduce((sum, it) => sum + it.total_price, 0);
-    const invoiceTax = (invoiceSubtotal * 18) / 100;
-    const invoiceTotal = invoiceSubtotal + invoiceTax;
+    const invoiceSubtotal = chosenItems.reduce(
+      (sum, it) => sum + it.quantity * (invoiceItemRates[it.id] ?? it.unit_price),
+      0
+    );
+
+    let activeDiscount = 0;
+    if (invoiceLastEdited === 'TOTAL' && editableInvoiceTotal > 0) {
+      const netTaxable = editableInvoiceTotal / 1.18;
+      activeDiscount = Math.max(0, invoiceSubtotal - netTaxable);
+    } else if (invoiceLastEdited === 'AMOUNT') {
+      activeDiscount = Math.min(invoiceSubtotal, Math.max(0, invoiceDiscountAmount));
+    } else {
+      activeDiscount = (invoiceSubtotal * Math.min(100, Math.max(0, invoiceDiscountPercent))) / 100;
+    }
+
+    const taxable = Math.max(0, invoiceSubtotal - activeDiscount);
+    const invoiceTax = (taxable * 18) / 100;
+    const finalTotal = taxable + invoiceTax;
 
     try {
       await createInvoiceMutation.mutateAsync({
@@ -232,16 +318,19 @@ export const QuotationListPage: React.FC = () => {
         invoiceType,
         selectedItemIds: Array.from(selectedItemIds),
         subtotal: invoiceSubtotal,
-        discountAmount: 0,
+        discountAmount: activeDiscount,
         taxAmount: invoiceTax,
-        totalAmount: invoiceTotal,
-        items: chosenItems.map((it) => ({
-          quotationItemId: it.id,
-          description: it.description,
-          quantity: it.quantity,
-          unitPrice: it.unit_price,
-          totalPrice: it.total_price,
-        })),
+        totalAmount: finalTotal,
+        items: chosenItems.map((it) => {
+          const unitRate = invoiceItemRates[it.id] ?? it.unit_price;
+          return {
+            quotationItemId: it.id,
+            description: it.description,
+            quantity: it.quantity,
+            unitPrice: unitRate,
+            totalPrice: it.quantity * unitRate,
+          };
+        }),
       });
 
       setInvoiceModalQuote(null);
@@ -251,6 +340,7 @@ export const QuotationListPage: React.FC = () => {
     }
   };
 
+<<<<<<< Updated upstream
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
@@ -285,11 +375,22 @@ export const QuotationListPage: React.FC = () => {
         );
     }
   };
+=======
+  // Type filter state
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<'ALL' | 'INWARD_REQUEST' | 'EXISTING_CUSTOMER' | 'NEW_CLIENT_ESTIMATE'>('ALL');
+
+  // Filtered quotations
+  const filteredQuotations = quotations.filter((q) => {
+    if (selectedTypeFilter === 'ALL') return true;
+    return (q.quotation_type || 'INWARD_REQUEST') === selectedTypeFilter;
+  });
+>>>>>>> Stashed changes
 
   return (
     <div className="space-y-5">
       {/* Top Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<<<<<<< Updated upstream
         <div className="flex items-center gap-3">
           <div className="size-12 rounded-xl bg-[#0274BB] flex items-center justify-center text-white shadow-sm shrink-0">
             <FileText className="size-6" />
@@ -422,6 +523,24 @@ export const QuotationListPage: React.FC = () => {
             Invoiced
           </button>
 
+=======
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-[#111827]">Quotations</h1>
+            <Badge variant="primary">{quotations.length} Total</Badge>
+          </div>
+          <p className="text-sm text-[#6B7280]">
+            Manage all 3 quotation modes: Inward Collection Requests, Existing Customer repeat quotes, and New Client Estimates.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Link to="/commercial/invoices">
+            <Button variant="outlineInk">
+              <Receipt className="size-4" /> View Invoices
+            </Button>
+          </Link>
+>>>>>>> Stashed changes
           {canCreateQuotation && (
             <Link to="/commercial/quotations/new">
               <Button className="bg-[#0274BB] hover:bg-[#02629e] text-white font-medium px-4 py-2 rounded-lg flex items-center gap-1.5 text-xs shadow-xs transition-all cursor-pointer">
@@ -478,6 +597,7 @@ export const QuotationListPage: React.FC = () => {
           <ChevronRight className="size-5 text-emerald-400" />
         </div>
 
+<<<<<<< Updated upstream
         {/* Card 3: Pending Approvals */}
         <div
           onClick={() => setStatusFilter('PENDING')}
@@ -491,14 +611,119 @@ export const QuotationListPage: React.FC = () => {
           <div className="flex items-center gap-3.5">
             <div className="size-11 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
               <span className="size-3 rounded-full bg-slate-400" />
+=======
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-2 border-b border-[#E5E7EB] pb-2 overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => setSelectedTypeFilter('ALL')}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-t transition-colors ${
+            selectedTypeFilter === 'ALL'
+              ? 'bg-[#0274BB] text-white'
+              : 'bg-[#F3F4F6] text-[#4B5563] hover:bg-[#E5E7EB]'
+          }`}
+        >
+          All ({quotations.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setSelectedTypeFilter('INWARD_REQUEST')}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-t transition-colors ${
+            selectedTypeFilter === 'INWARD_REQUEST'
+              ? 'bg-[#0274BB] text-white'
+              : 'bg-[#F3F4F6] text-[#4B5563] hover:bg-[#E5E7EB]'
+          }`}
+        >
+          Inward Requests ({quotations.filter((q) => (q.quotation_type || 'INWARD_REQUEST') === 'INWARD_REQUEST').length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setSelectedTypeFilter('EXISTING_CUSTOMER')}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-t transition-colors ${
+            selectedTypeFilter === 'EXISTING_CUSTOMER'
+              ? 'bg-[#0274BB] text-white'
+              : 'bg-[#F3F4F6] text-[#4B5563] hover:bg-[#E5E7EB]'
+          }`}
+        >
+          Existing Customer ({quotations.filter((q) => q.quotation_type === 'EXISTING_CUSTOMER').length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setSelectedTypeFilter('NEW_CLIENT_ESTIMATE')}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-t transition-colors ${
+            selectedTypeFilter === 'NEW_CLIENT_ESTIMATE'
+              ? 'bg-[#0274BB] text-white'
+              : 'bg-[#F3F4F6] text-[#4B5563] hover:bg-[#E5E7EB]'
+          }`}
+        >
+          New Client Estimates ({quotations.filter((q) => q.quotation_type === 'NEW_CLIENT_ESTIMATE').length})
+        </button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Quotations Repository</CardTitle>
+          <CardDescription>
+            Quotations can be created directly from Inward Requests, Existing Customer service records, or New Client registration estimates.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="p-8 text-center text-sm text-[#6B7280]">
+              <div className="size-6 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              Loading quotations...
+>>>>>>> Stashed changes
             </div>
             <div>
               <div className="text-2xl font-bold text-slate-900 leading-none">{pendingCount}</div>
               <div className="text-xs text-slate-500 font-medium mt-1">Pending Client Approval</div>
             </div>
+<<<<<<< Updated upstream
           </div>
           <ChevronRight className="size-5 text-slate-400" />
         </div>
+=======
+          ) : filteredQuotations.length === 0 ? (
+            <div className="p-12 text-center text-[#6B7280] space-y-3">
+              <FileText className="size-8 mx-auto text-[#9CA3AF]" />
+              <p className="text-base font-semibold text-[#374151]">No quotations found</p>
+              <p className="text-xs text-[#6B7280]">
+                {selectedTypeFilter === 'ALL'
+                  ? 'Create a new quotation from an inward request, existing customer, or new client estimate.'
+                  : `No quotations found under category: ${selectedTypeFilter.replace(/_/g, ' ')}`}
+              </p>
+              {canCreateQuotation && (
+                <Link to="/commercial/quotations/new">
+                  <Button variant="secondary" size="sm" className="mt-2">
+                    <Plus className="size-4" /> Generate New Quotation
+                  </Button>
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-[#F5F7FA] border-b border-[#E5E7EB] text-[#374151] font-semibold text-xs uppercase">
+                  <tr>
+                    <th className="px-5 py-3">Quotation #</th>
+                    <th className="px-4 py-3">Quotation Type</th>
+                    <th className="px-4 py-3">Client / Organization</th>
+                    <th className="px-4 py-3">Client PO Reference</th>
+                    <th className="px-4 py-3">Subtotal (₹)</th>
+                    <th className="px-4 py-3">Discount (₹)</th>
+                    <th className="px-4 py-3">Tax GST (₹)</th>
+                    <th className="px-4 py-3">Total Amount (₹)</th>
+                    <th className="px-4 py-3">Billing Status</th>
+                    <th className="px-5 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5E7EB]">
+                  {filteredQuotations.map((q) => {
+                    const isApproved = q.status === 'APPROVED';
+                    const isPartiallyInvoiced = q.status === 'PARTIALLY_INVOICED';
+                    const isFullyInvoiced = q.status === 'INVOICED';
+                    const isDraft = q.status === 'DRAFT' || q.status === 'SENT';
+>>>>>>> Stashed changes
 
         {/* Card 4: Total Commercial Value */}
         <div
@@ -519,6 +744,7 @@ export const QuotationListPage: React.FC = () => {
         </div>
       </div>
 
+<<<<<<< Updated upstream
       {/* Table Container */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
@@ -587,6 +813,86 @@ export const QuotationListPage: React.FC = () => {
                               to={`/commercial/quotations/${q.id}`}
                               className="font-semibold text-slate-900 text-sm hover:text-[#0274BB] transition-colors leading-tight line-clamp-1"
                               title={q.quotation_number}
+=======
+                    const quoteType = q.quotation_type || (q.request_id ? 'INWARD_REQUEST' : 'EXISTING_CUSTOMER');
+
+                    return (
+                      <tr key={q.id} className="hover:bg-[#FAFAFA]">
+                        <td className="px-5 py-4 font-mono font-medium text-[#0274BB]">
+                          <Link
+                            to={`/commercial/quotations/${q.id}`}
+                            className="hover:underline flex items-center gap-1 font-semibold"
+                            title="Click to view printable official quotation"
+                          >
+                            {q.quotation_number}
+                          </Link>
+                          <span className="block text-[11px] text-[#6B7280] font-sans">
+                            {new Date(q.created_at).toLocaleDateString()}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          {quoteType === 'INWARD_REQUEST' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                              Inward Request
+                            </span>
+                          )}
+                          {quoteType === 'EXISTING_CUSTOMER' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                              Existing Customer
+                            </span>
+                          )}
+                          {quoteType === 'NEW_CLIENT_ESTIMATE' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                              New Client Estimate
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-xs">
+                          <span className="font-semibold text-[#111827] block">
+                            {q.clients?.client_name || (q.client_id ? `Client: ${q.client_id.slice(0, 8)}...` : 'Standard Client')}
+                          </span>
+                          {q.request_id && (
+                            <span className="text-[10px] text-[#6B7280] font-mono">
+                              Req: {q.request_id.slice(0, 8)}...
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 font-mono text-xs">
+                          {q.client_po_ref ? (
+                            <span className="px-2 py-0.5 bg-[#EFF6FF] text-[#1E40AF] rounded border border-[#BFDBFE] font-semibold">
+                              {q.client_po_ref}
+                            </span>
+                          ) : (
+                            <span className="text-[#9CA3AF] italic text-xs">Awaiting PO</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 font-mono text-[#374151]">
+                          ₹{q.subtotal.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-4 font-mono text-[#6B7280]">
+                          -₹{q.discount.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-4 font-mono text-[#6B7280]">
+                          ₹{q.tax_amount.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-4 font-mono font-bold text-[#111827]">
+                          ₹{q.total_amount.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="space-y-1">
+                            <Badge
+                              variant={
+                                isFullyInvoiced
+                                  ? 'success'
+                                  : isPartiallyInvoiced
+                                  ? 'warning'
+                                  : isApproved
+                                  ? 'primary'
+                                  : q.status === 'REJECTED'
+                                  ? 'error'
+                                  : 'secondary'
+                              }
+>>>>>>> Stashed changes
                             >
                               {q.quotation_number}
                             </Link>
@@ -850,13 +1156,44 @@ export const QuotationListPage: React.FC = () => {
 
             <div className="p-5 space-y-4">
               <Field>
+<<<<<<< Updated upstream
                 <FieldLabel>Client Purchase Order (PO) Number <span className="text-red-500">*</span></FieldLabel>
                 <Input
                   placeholder="e.g. PO-2026-998812"
+=======
+                <div className="flex items-center justify-between mb-1">
+                  <FieldLabel className="mb-0">
+                    Client Purchase Order (PO) Reference # <span className="text-[#DC2626]">*</span>
+                  </FieldLabel>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const year = new Date().getFullYear();
+                      const linkedReq = requests.find((r) => r.id === approvalModalQuote.request_id);
+                      const client = clients.find((c) => c.id === approvalModalQuote.client_id || c.id === linkedReq?.client_id);
+                      const code = client?.client_code ? client.client_code.toUpperCase() : 'CLIENT';
+                      const randomSeq = String(Math.floor(100 + Math.random() * 900));
+                      setClientPoRef(`PO/${year}/${code}-${randomSeq}`);
+                    }}
+                    className="text-[11px] font-semibold text-[#0274BB] hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <RefreshCw className="size-3" /> Auto Generate PO
+                  </button>
+                </div>
+                <Input
+                  placeholder="e.g. PO/2026/CLIENT-001"
+>>>>>>> Stashed changes
                   value={clientPoRef}
                   onChange={(e) => setClientPoRef(e.target.value)}
                   className="mt-1"
                 />
+<<<<<<< Updated upstream
+=======
+                <p className="text-[11px] text-[#6B7280] mt-1 flex items-center gap-1">
+                  <Sparkles className="size-3 text-emerald-600 shrink-0" />
+                  Auto-fetched from inward request or auto-generated. You may edit directly.
+                </p>
+>>>>>>> Stashed changes
               </Field>
 
               <Field>
@@ -901,6 +1238,7 @@ export const QuotationListPage: React.FC = () => {
         </div>
       )}
 
+<<<<<<< Updated upstream
       {/* Invoice Generation Modal */}
       {invoiceModalQuote && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
@@ -913,6 +1251,69 @@ export const QuotationListPage: React.FC = () => {
                 <p className="text-xs text-slate-500 font-mono">
                   Quotation: {invoiceModalQuote.quotation_number}
                 </p>
+=======
+      {/* 2. Generate Invoice Modal: Partial vs Actual Invoicing with Checkboxes */}
+      {invoiceModalQuote && (() => {
+        const quoteItems = invoiceModalQuote.items || [];
+        const unbilledItems = quoteItems.filter((it) => !it.invoiced);
+        const previouslyInvoicedCount = quoteItems.filter((it) => it.invoiced).length;
+        const selectedCount = selectedItemIds.size;
+
+        const isActualInvoice =
+          unbilledItems.length > 0 && previouslyInvoicedCount + selectedCount >= quoteItems.length;
+
+        const selectedUnbilledItems = unbilledItems.filter((it) => selectedItemIds.has(it.id));
+        const subtotalCalc = selectedUnbilledItems.reduce(
+          (sum, it) => sum + it.quantity * (invoiceItemRates[it.id] ?? it.unit_price),
+          0
+        );
+
+        let activeDiscount = 0;
+        let activePercent = 0;
+        let grandTotalCalc = 0;
+
+        if (invoiceLastEdited === 'TOTAL' && editableInvoiceTotal > 0) {
+          const netTaxable = editableInvoiceTotal / 1.18;
+          activeDiscount = Math.max(0, subtotalCalc - netTaxable);
+          activePercent = subtotalCalc > 0 ? (activeDiscount / subtotalCalc) * 100 : 0;
+          grandTotalCalc = editableInvoiceTotal;
+        } else if (invoiceLastEdited === 'AMOUNT') {
+          activeDiscount = Math.min(subtotalCalc, Math.max(0, invoiceDiscountAmount));
+          activePercent = subtotalCalc > 0 ? (activeDiscount / subtotalCalc) * 100 : 0;
+          const taxable = Math.max(0, subtotalCalc - activeDiscount);
+          const taxCalc = (taxable * 18) / 100;
+          grandTotalCalc = taxable + taxCalc;
+        } else {
+          activePercent = Math.min(100, Math.max(0, invoiceDiscountPercent));
+          activeDiscount = (subtotalCalc * activePercent) / 100;
+          const taxable = Math.max(0, subtotalCalc - activeDiscount);
+          const taxCalc = (taxable * 18) / 100;
+          grandTotalCalc = taxable + taxCalc;
+        }
+
+        const taxCalc = ((Math.max(0, subtotalCalc - activeDiscount)) * 18) / 100;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
+            <div className="bg-white rounded-[4px] shadow-2xl max-w-2xl w-full overflow-hidden border border-[#E5E7EB]">
+              <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB] bg-[#F8FAFC]">
+                <div className="flex items-center gap-2">
+                  <Receipt className="size-5 text-[#0274BB]" />
+                  <div>
+                    <h3 className="font-bold text-[#111827] text-base">Generate Commercial Tax Invoice</h3>
+                    <p className="text-xs text-[#6B7280]">
+                      Quotation: <span className="font-mono text-[#0274BB]">{invoiceModalQuote.quotation_number}</span> (Editable pricing &amp; client discount)
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInvoiceModalQuote(null)}
+                  className="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded hover:bg-[#E2E8F0]"
+                >
+                  <X className="size-4" />
+                </button>
+>>>>>>> Stashed changes
               </div>
               <button
                 type="button"
@@ -923,6 +1324,7 @@ export const QuotationListPage: React.FC = () => {
               </button>
             </div>
 
+<<<<<<< Updated upstream
             <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
               <Field>
                 <FieldLabel>Confirmed Client Purchase Order (PO)</FieldLabel>
@@ -981,6 +1383,226 @@ export const QuotationListPage: React.FC = () => {
                         </div>
                       </div>
                     ))}
+=======
+              <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+                {/* Client PO Field */}
+                <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[4px] space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-[#1E293B]">Client Purchase Order Reference</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const year = new Date().getFullYear();
+                        const linkedReq = requests.find((r) => r.id === invoiceModalQuote.request_id);
+                        const client = clients.find((c) => c.id === invoiceModalQuote.client_id || c.id === linkedReq?.client_id);
+                        const code = client?.client_code ? client.client_code.toUpperCase() : 'CLIENT';
+                        const randomSeq = String(Math.floor(100 + Math.random() * 900));
+                        setClientPoForInvoice(`PO/${year}/${code}-${randomSeq}`);
+                      }}
+                      className="text-[11px] font-semibold text-[#0274BB] hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <RefreshCw className="size-3" /> Auto Generate PO
+                    </button>
+                  </div>
+                  <Input
+                    placeholder="e.g. PO/2026/CLIENT-001"
+                    value={clientPoForInvoice}
+                    onChange={(e) => setClientPoForInvoice(e.target.value)}
+                  />
+                  <p className="text-[11px] text-[#6B7280] flex items-center gap-1">
+                    <Sparkles className="size-3 text-emerald-600 shrink-0" />
+                    Auto-fetched from quotation/request or auto-generated.
+                  </p>
+                </div>
+
+                {/* Items Checklist with Editable Unit Rates */}
+                <div className="border border-[#E5E7EB] rounded-[4px] overflow-hidden">
+                  <div className="p-3 bg-[#F8FAFC] border-b border-[#E5E7EB] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleSelectAllUnbilled(unbilledItems)}
+                        className="text-xs font-semibold text-[#0274BB] hover:underline flex items-center gap-1.5"
+                      >
+                        {selectedItemIds.size === unbilledItems.length && unbilledItems.length > 0 ? (
+                          <CheckSquare className="size-4 text-[#0274BB]" />
+                        ) : (
+                          <Square className="size-4 text-[#6B7280]" />
+                        )}
+                        <span>{selectedItemIds.size === unbilledItems.length ? 'Deselect All' : 'Select All Ready Items'}</span>
+                      </button>
+                    </div>
+                    <span className="text-xs text-[#6B7280]">
+                      {unbilledItems.length} unbilled item(s) available
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-[#E5E7EB] max-h-60 overflow-y-auto">
+                    {quoteItems.map((it) => {
+                      const isAlreadyInvoiced = Boolean(it.invoiced);
+                      const isChecked = selectedItemIds.has(it.id);
+                      const currentUnitRate = invoiceItemRates[it.id] ?? it.unit_price;
+                      const lineTotal = it.quantity * currentUnitRate;
+
+                      return (
+                        <div
+                          key={it.id}
+                          className={`p-3 flex items-center justify-between text-xs transition-colors ${
+                            isAlreadyInvoiced
+                              ? 'bg-[#F9FAFB] opacity-75'
+                              : isChecked
+                              ? 'bg-[#F0FDF4]'
+                              : 'hover:bg-[#FAFAFA]'
+                          }`}
+                        >
+                          <label className="flex items-center gap-3 cursor-pointer min-w-0 flex-1">
+                            <input
+                              type="checkbox"
+                              disabled={isAlreadyInvoiced}
+                              checked={isAlreadyInvoiced || isChecked}
+                              onChange={() => toggleItemCheck(it.id)}
+                              className="size-4 text-[#0274BB] rounded border-[#CBD5E1] cursor-pointer"
+                            />
+                            <div className="min-w-0">
+                              <span
+                                className={`font-semibold block truncate ${
+                                  isAlreadyInvoiced ? 'text-[#64748B] line-through' : 'text-[#1E293B]'
+                                }`}
+                              >
+                                {it.description}
+                              </span>
+                              <span className="text-[#64748B]">
+                                Qty: {it.quantity}
+                              </span>
+                            </div>
+                          </label>
+
+                          <div className="flex items-center gap-3 shrink-0 ml-3">
+                            {!isAlreadyInvoiced && isChecked && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-[11px] text-slate-400">Rate: ₹</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={currentUnitRate}
+                                  onChange={(e) => {
+                                    const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                    setInvoiceItemRates((prev) => ({ ...prev, [it.id]: val }));
+                                  }}
+                                  className="w-20 px-1.5 py-0.5 border border-slate-300 rounded text-right font-mono font-semibold text-xs"
+                                  title="Editable item rate for invoice"
+                                />
+                              </div>
+                            )}
+
+                            <div className="text-right w-24">
+                              <span className="font-mono font-bold text-[#111827] block text-sm">
+                                ₹{lineTotal.toFixed(2)}
+                              </span>
+                              {isAlreadyInvoiced ? (
+                                <Badge variant="success">
+                                  Invoiced: {it.invoice_number || 'INV-PARTIAL'}
+                                </Badge>
+                              ) : isChecked ? (
+                                <Badge variant="primary">To Invoice</Badge>
+                              ) : (
+                                <span className="text-[10px] text-[#EA580C] italic">Pending</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Calculation & Editable Discount Controls */}
+                <div className="p-4 bg-[#F8FAFC] rounded-[4px] border border-[#E5E7EB] flex flex-col items-end gap-2 text-xs">
+                  <div className="flex justify-between w-80 text-[#64748B]">
+                    <span>Selected Items Subtotal:</span>
+                    <span className="font-mono text-[#1E293B] font-semibold">₹{subtotalCalc.toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex justify-between w-80 items-center">
+                    <span className="text-[#64748B]">Special Discount (%):</span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={invoiceDiscountPercent}
+                        onChange={(e) => {
+                          setInvoiceLastEdited('PERCENT');
+                          const pct = Math.min(100, Math.max(0, parseFloat(e.target.value) || 0));
+                          setInvoiceDiscountPercent(pct);
+                          setInvoiceDiscountAmount((subtotalCalc * pct) / 100);
+                        }}
+                        className="w-20 px-1.5 py-0.5 border border-slate-300 rounded text-right font-mono text-xs"
+                      />
+                      <span className="text-slate-400 font-bold">%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between w-80 items-center">
+                    <span className="text-[#64748B]">Discount Amount (₹):</span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={invoiceDiscountAmount}
+                        onChange={(e) => {
+                          setInvoiceLastEdited('AMOUNT');
+                          const amt = Math.min(subtotalCalc, Math.max(0, parseFloat(e.target.value) || 0));
+                          setInvoiceDiscountAmount(amt);
+                          setInvoiceDiscountPercent(subtotalCalc > 0 ? (amt / subtotalCalc) * 100 : 0);
+                        }}
+                        className="w-24 px-1.5 py-0.5 border border-slate-300 rounded text-right font-mono text-xs"
+                      />
+                      <span className="text-slate-400 font-bold">₹</span>
+                    </div>
+                  </div>
+
+                  {activeDiscount > 0 && (
+                    <div className="w-80 flex justify-end">
+                      <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                        CV / Voucher Adjustment: {activePercent.toFixed(2)}% (-₹{activeDiscount.toFixed(2)})
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between w-80 text-[#64748B]">
+                    <span>GST (18%):</span>
+                    <span className="font-mono text-[#1E293B] font-semibold">₹{taxCalc.toFixed(2)}</span>
+                  </div>
+
+                  {/* Editable Invoice Total */}
+                  <div className="flex justify-between w-80 items-center border-t border-[#CBD5E1] pt-2 mt-1">
+                    <div>
+                      <span className="text-sm font-bold text-[#111827] block">Amount Paid (₹):</span>
+                      <span className="text-[10px] text-[#0274BB]">Editable — discount recorded in CV</span>
+                    </div>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={grandTotalCalc > 0 ? grandTotalCalc.toFixed(2) : ''}
+                      placeholder={grandTotalCalc.toFixed(2)}
+                      onChange={(e) => {
+                        setInvoiceLastEdited('TOTAL');
+                        const target = Math.max(0, parseFloat(e.target.value) || 0);
+                        setEditableInvoiceTotal(target);
+                        const netTaxable = target / 1.18;
+                        const disc = Math.max(0, subtotalCalc - netTaxable);
+                        setInvoiceDiscountAmount(disc);
+                        setInvoiceDiscountPercent(subtotalCalc > 0 ? (disc / subtotalCalc) * 100 : 0);
+                      }}
+                      className="w-32 px-2 py-1 border border-[#0274BB]/60 rounded text-right font-mono font-bold text-sm text-[#0274BB] bg-white focus:outline-none focus:ring-1 focus:ring-[#0274BB]"
+                    />
+                  </div>
+>>>>>>> Stashed changes
                 </div>
               </div>
             </div>

@@ -123,7 +123,7 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
           {isFullPage && (
             <Link to="/commercial/quotations">
               <Button variant="secondary" size="sm">
-                <ArrowLeft className="size-4" /> Back to Quotations
+                <ArrowLeft className="size-4" /> Back
               </Button>
             </Link>
           )}

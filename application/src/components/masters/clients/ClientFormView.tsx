@@ -65,7 +65,7 @@ export const ClientFormView: React.FC<ClientFormViewProps> = ({
         <div className="flex items-center gap-3">
           <Link to={returnUrl || "/masters/clients"}>
             <Button variant="secondary" size="sm" type="button">
-              <ArrowLeft className="size-4" /> {returnUrl ? 'Back' : 'Back to Clients'}
+              <ArrowLeft className="size-4" /> Back
             </Button>
           </Link>
           <div>

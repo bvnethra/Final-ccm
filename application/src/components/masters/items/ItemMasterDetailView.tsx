@@ -41,7 +41,7 @@ export const ItemMasterDetailView: React.FC<ItemMasterDetailViewProps> = ({ item
         <div className="flex items-center gap-3">
           <Link to="/masters/items">
             <Button variant="secondary" size="sm">
-              <ArrowLeft className="size-4" /> Back to Catalog
+              <ArrowLeft className="size-4" /> Back
             </Button>
           </Link>
           <div>

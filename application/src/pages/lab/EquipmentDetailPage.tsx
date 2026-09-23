@@ -72,7 +72,7 @@ export const EquipmentDetailPage: React.FC = () => {
         <p className="font-semibold">Instrument not found in this calibration batch.</p>
         <Link to={`/lab/calibration/${requestId}`}>
           <Button variant="secondary" size="sm">
-            <ArrowLeft className="size-4 mr-1" /> Back to Calibration Bench
+            <ArrowLeft className="size-4 mr-1" /> Back
           </Button>
         </Link>
       </div>
@@ -162,7 +162,7 @@ export const EquipmentDetailPage: React.FC = () => {
             size="sm"
             onClick={() => navigate(`/lab/calibration/${requestId}?itemIndex=${selectedIndexParam}`)}
           >
-            <ArrowLeft className="size-4 mr-1.5" /> Back to Bench
+            <ArrowLeft className="size-4 mr-1.5" /> Back
           </Button>
           <div>
             <div className="flex items-center gap-3">

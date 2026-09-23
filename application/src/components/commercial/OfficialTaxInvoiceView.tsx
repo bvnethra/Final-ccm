@@ -129,18 +129,23 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
       : [];
 
   const totalQuantity = items.reduce((sum, it) => sum + (Number(it.quantity) || 1), 0);
-  const taxableSubtotal = items.reduce((sum, it) => sum + (Number(it.total_price) || 0), 0);
+  const itemsSubtotal = items.reduce((sum, it) => sum + (Number(it.total_price) || 0), 0);
 
   // Tax calculation (Intrastate: 9% CGST + 9% SGST; Interstate: 18% IGST)
+  // Ensure amount paid is strictly honored and no discount is visible on invoice
   const isIntraState = buyerStateCode === supplier.state_code;
+  const rawTotal = invoice.total_amount > 0 ? Number(invoice.total_amount) : itemsSubtotal * 1.18;
+  const roundedTotal = Math.round(rawTotal);
+  const taxableSubtotal =
+    invoice.total_amount > 0
+      ? Math.round((rawTotal / 1.18) * 100) / 100
+      : itemsSubtotal;
+
   const cgstAmount = isIntraState ? Math.round(taxableSubtotal * 0.09 * 100) / 100 : 0;
   const sgstAmount = isIntraState ? Math.round(taxableSubtotal * 0.09 * 100) / 100 : 0;
   const igstAmount = !isIntraState ? Math.round(taxableSubtotal * 0.18 * 100) / 100 : 0;
   const totalTax = isIntraState ? cgstAmount + sgstAmount : igstAmount;
-
-  const rawTotal = taxableSubtotal + totalTax;
-  const roundedTotal = Math.round(rawTotal);
-  const roundOff = Math.round((roundedTotal - rawTotal) * 100) / 100;
+  const roundOff = Math.round((roundedTotal - (taxableSubtotal + totalTax)) * 100) / 100;
 
   const amountInWords = numberToIndianWords(roundedTotal);
   const taxInWords = numberToIndianWords(totalTax);
@@ -157,7 +162,7 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
           {isFullPage && (
             <Link to="/commercial/invoices">
               <Button variant="secondary" size="sm">
-                <ArrowLeft className="size-4" /> Back to Invoices
+                <ArrowLeft className="size-4" /> Back
               </Button>
             </Link>
           )}
@@ -483,8 +488,8 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-b-2 border-black font-bold bg-[#F9FAFB]">
-                  <td className="border-r border-black p-1.5 text-right" colSpan={3}>
-                    Total
+                  <td className="border-r border-black p-1.5 text-right uppercase tracking-wider font-bold" colSpan={3}>
+                    Amount Paid
                   </td>
                   <td className="border-r border-black p-1.5 text-center font-mono font-bold">
                     {totalQuantity} NOS
@@ -497,9 +502,9 @@ export const OfficialTaxInvoiceView: React.FC<OfficialTaxInvoiceViewProps> = ({
               </tfoot>
             </table>
 
-            {/* Amount Chargeable (in words) */}
+            {/* Amount Paid (in words) */}
             <div className="p-2 border-b border-black text-[10px]">
-              <div className="text-gray-600 text-[9px]">Amount Chargeable (in words)</div>
+              <div className="text-gray-600 text-[9px] font-semibold">Amount Paid (in words)</div>
               <div className="flex justify-between items-center">
                 <span className="font-bold text-xs text-black">{amountInWords}</span>
                 <span className="font-mono text-[9px] text-gray-500">E. &amp; O.E</span>

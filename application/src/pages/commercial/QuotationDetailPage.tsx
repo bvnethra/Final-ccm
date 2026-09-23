@@ -42,7 +42,7 @@ export const QuotationDetailPage: React.FC = () => {
         </div>
         <Link to="/commercial/quotations">
           <Button variant="secondary" size="sm">
-            <ArrowLeft className="size-4" /> Back to Quotations
+            <ArrowLeft className="size-4" /> Back
           </Button>
         </Link>
       </div>

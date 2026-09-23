@@ -122,7 +122,7 @@ export const DispatchBuilderPage: React.FC = () => {
       <div className="flex items-center gap-3">
         <Link to="/logistics/dispatches">
           <Button variant="outlineInk" size="sm">
-            <ArrowLeft className="size-4" /> Back to Dispatches
+            <ArrowLeft className="size-4" /> Back
           </Button>
         </Link>
         <div>
