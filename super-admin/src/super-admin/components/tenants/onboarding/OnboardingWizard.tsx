@@ -8,7 +8,6 @@ import { generateTenantCodeFromName } from '../../../services/tenantManagementSe
 import { 
   Building2, 
   MapPin, 
-  Layers, 
   UserCheck, 
   ChevronRight, 
   ChevronLeft, 
@@ -50,9 +49,7 @@ export const OnboardingWizard: React.FC = () => {
     pincode: '',
     timezone: '',
     currency: '',
-    // Step 3: Branch / Lab Infrastructure
-    branchesCount: 1,
-    // Step 4: Administrator Account
+    // Step 3: Administrator Account
     adminName: '',
     adminEmail: '',
     adminPassword: '',
@@ -144,7 +141,7 @@ export const OnboardingWizard: React.FC = () => {
         return false;
       }
     }
-    if (currentStep === 4) {
+    if (currentStep === 3) {
       if (!formData.adminName.trim()) {
         setErrorMessage('Primary Administrator Name is required.');
         return false;
@@ -170,7 +167,7 @@ export const OnboardingWizard: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateStep(4)) return;
+    if (!validateStep(3)) return;
 
     const effectiveTenantType =
       formData.tenantType === 'OTHER' ? customTenantType.trim() : formData.tenantType;
@@ -191,7 +188,7 @@ export const OnboardingWizard: React.FC = () => {
         pincode: formData.pincode,
         timezone: formData.timezone,
         currency: formData.currency,
-        branchesCount: Number(formData.branchesCount || 1),
+        branchesCount: 1,
         adminName: formData.adminName,
         adminEmail: formData.adminEmail,
         adminPassword: formData.adminPassword,
@@ -210,8 +207,7 @@ export const OnboardingWizard: React.FC = () => {
   const stepIndicators = [
     { num: 1, label: 'Tenant Info', icon: Building2 },
     { num: 2, label: 'Address & Regional', icon: MapPin },
-    { num: 3, label: 'Infrastructure', icon: Layers },
-    { num: 4, label: 'Initial Admin', icon: UserCheck },
+    { num: 3, label: 'Initial Admin', icon: UserCheck },
   ];
 
   return (
@@ -501,36 +497,11 @@ export const OnboardingWizard: React.FC = () => {
               </div>
             )}
 
-            {/* STEP 3: Branch / Lab Infrastructure */}
+            {/* STEP 3: Initial Administrator Account */}
             {step === 3 && (
               <div className="space-y-5 animate-fadeIn">
                 <div className="border-b border-slate-200 pb-3">
-                  <h3 className="text-base font-semibold text-slate-900">Step 3: Branch & Calibration Facilities Setup</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Configure initial organization tier capacity</p>
-                </div>
-
-                <div className="max-w-md">
-                  <Input
-                    type="number"
-                    min="1"
-                    max="100"
-                    label="Initial Branch Count / Facilities *"
-                    value={formData.branchesCount}
-                    onChange={(e) => handleChange('branchesCount', parseInt(e.target.value, 10) || 1)}
-                    required
-                  />
-                  <p className="text-xs text-slate-500 mt-2">
-                    The tenant will be marked as <strong className="text-slate-800">ACTIVE</strong> or <strong className="text-slate-800">PENDING_ORG</strong> until the tenant administrator configures their first laboratory branch.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 4: Initial Administrator Account */}
-            {step === 4 && (
-              <div className="space-y-5 animate-fadeIn">
-                <div className="border-b border-slate-200 pb-3">
-                  <h3 className="text-base font-semibold text-slate-900">Step 4: Initial Tenant Administrator</h3>
+                  <h3 className="text-base font-semibold text-slate-900">Step 3: Initial Tenant Administrator</h3>
                   <p className="text-xs text-slate-500 mt-0.5">Primary administrative account credentials and invite mechanism</p>
                 </div>
 
@@ -579,7 +550,7 @@ export const OnboardingWizard: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                {step < 4 ? (
+                {step < 3 ? (
                   <Button variant="default" type="button" onClick={handleNext}>
                     Continue <ChevronRight className="w-4 h-4 ml-1.5" />
                   </Button>
