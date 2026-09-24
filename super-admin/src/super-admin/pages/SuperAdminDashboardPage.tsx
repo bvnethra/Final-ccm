@@ -16,6 +16,7 @@ import {
   ArrowRight,
   LayoutDashboard,
   Mail,
+  ShieldCheck,
 } from 'lucide-react';
 import { openOperationalAppForTenant } from '../../services/crossAppNav';
 import { cn } from '../../lib/utils';
@@ -84,27 +85,27 @@ export default function SuperAdminDashboardPage() {
       case 'ACTIVE':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#E8F8F0] text-[#16A34A] border border-[#D1F2E0] whitespace-nowrap">
-            <span className="size-1.5 rounded-full bg-[#16A34A]" /> ACTIVE
+            <ShieldCheck className="size-3.5" /> ACTIVE
           </span>
         );
       case 'ONBOARDING':
       case 'PENDING':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-[#0274BB] border border-blue-200 whitespace-nowrap">
-            <span className="size-1.5 rounded-full bg-[#0274BB]" /> ONBOARDING
+            <Clock className="size-3.5" /> PENDING SETUP
           </span>
         );
       case 'DEACTIVATED':
       case 'SUSPENDED':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">
-            <span className="size-1.5 rounded-full bg-rose-600" /> DEACTIVATED
+            <Zap className="size-3.5" /> DEACTIVATED
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
-            <span className="size-1.5 rounded-full bg-slate-400" /> {status}
+            <Clock className="size-3.5 text-slate-400" /> {status}
           </span>
         );
     }
@@ -195,10 +196,10 @@ export default function SuperAdminDashboardPage() {
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             )}
           >
-            <span
+            <ShieldCheck
               className={cn(
-                'size-2 rounded-full',
-                statusFilter === 'ACTIVE' ? 'bg-white' : 'bg-emerald-500'
+                'size-4',
+                statusFilter === 'ACTIVE' ? 'text-white' : 'text-emerald-500'
               )}
             />
             Active
@@ -214,10 +215,10 @@ export default function SuperAdminDashboardPage() {
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             )}
           >
-            <span
+            <Clock
               className={cn(
-                'size-2 rounded-full',
-                statusFilter === 'ONBOARDING' ? 'bg-white' : 'bg-blue-500'
+                'size-4',
+                statusFilter === 'ONBOARDING' ? 'text-white' : 'text-blue-500'
               )}
             />
             Pending Setup
@@ -282,7 +283,7 @@ export default function SuperAdminDashboardPage() {
         >
           <div className="flex items-center gap-3.5">
             <div className="size-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-              <span className="size-3 rounded-full bg-emerald-500" />
+              <ShieldCheck className="size-5" />
             </div>
             <div>
               <div className="text-2xl font-bold text-slate-900 leading-none">
@@ -298,15 +299,15 @@ export default function SuperAdminDashboardPage() {
         <div
           onClick={() => setStatusFilter('ONBOARDING')}
           className={cn(
-            'bg-[#F8FAFC] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
+            'bg-[#F0F7FF] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
             statusFilter === 'ONBOARDING'
-              ? 'border-slate-300 ring-2 ring-slate-400/20'
-              : 'border-slate-200 hover:border-slate-300'
+              ? 'border-blue-300 ring-2 ring-blue-400/20'
+              : 'border-blue-100 hover:border-blue-200'
           )}
         >
           <div className="flex items-center gap-3.5">
-            <div className="size-11 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
-              <span className="size-3 rounded-full bg-slate-400" />
+            <div className="size-11 rounded-xl bg-blue-100 text-[#0274BB] flex items-center justify-center shrink-0">
+              <Clock className="size-5" />
             </div>
             <div>
               <div className="text-2xl font-bold text-slate-900 leading-none">
@@ -315,7 +316,7 @@ export default function SuperAdminDashboardPage() {
               <div className="text-xs text-slate-500 font-medium mt-1">Pending Setup</div>
             </div>
           </div>
-          <ChevronRight className="size-5 text-slate-400" />
+          <ChevronRight className="size-5 text-[#0274BB]/60" />
         </div>
 
         {/* Card 4: Suspended / Inactive */}

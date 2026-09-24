@@ -21,6 +21,9 @@ import {
   ExternalLink,
   Layers,
   CheckCircle2,
+  ShieldCheck,
+  Clock,
+  Calendar,
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
@@ -171,10 +174,10 @@ export const TenantTable: React.FC = () => {
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             )}
           >
-            <span
+            <ShieldCheck
               className={cn(
-                'size-2 rounded-full',
-                statusFilter === 'ACTIVE' ? 'bg-white' : 'bg-emerald-500'
+                'size-4',
+                statusFilter === 'ACTIVE' ? 'text-white' : 'text-emerald-500'
               )}
             />
             Active
@@ -350,24 +353,21 @@ export const TenantTable: React.FC = () => {
                               : 'bg-rose-50 text-rose-700 border-rose-200'
                           )}
                         >
-                          <span
-                            className={cn(
-                              'size-1.5 rounded-full',
-                              t.status === 'ACTIVE'
-                                ? 'bg-[#16A34A]'
-                                : t.status === 'ONBOARDING'
-                                ? 'bg-[#0274BB]'
-                                : 'bg-rose-600'
-                            )}
-                          />
-                          {t.status}
+                          {t.status === 'ACTIVE' ? (
+                            <ShieldCheck className="size-3.5" />
+                          ) : t.status === 'ONBOARDING' ? (
+                            <Clock className="size-3.5" />
+                          ) : (
+                            <span className="size-1.5 rounded-full bg-rose-600" />
+                          )}
+                          {t.status === 'ONBOARDING' ? 'PENDING SETUP' : t.status}
                         </span>
                       </td>
 
                       {/* SYSTEM AUDIT */}
                       <td className="px-5 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <span className="text-slate-400">🕒</span>
+                          <Clock className="size-3.5 text-slate-400" />
                           <span>Updated: {new Date(t.updatedAt || t.createdAt).toLocaleDateString()}</span>
                         </div>
                       </td>
