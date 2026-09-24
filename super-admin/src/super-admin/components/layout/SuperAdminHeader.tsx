@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePlatformAuth } from '../../hooks/usePlatformAuth';
 import { usePlatformConfig } from '../../hooks/usePlatformConfig';
 import { useAuthContext } from '../../../contexts/AuthContext';
-import { Button } from '../../../components/ui/UIPrimitives';
-import { ShieldCheck, LogOut, Shield } from 'lucide-react';
+import { Building2, ChevronDown, User, LogOut, Bell } from 'lucide-react';
 
 export const SuperAdminHeader: React.FC = () => {
   const { data: platformSession } = usePlatformAuth();
@@ -14,19 +13,9 @@ export const SuperAdminHeader: React.FC = () => {
   const navigate = useNavigate();
 
   const platformName =
-    brandingConfigs?.find((c) => c.code === 'PLATFORM_NAME')?.label || 'NETHRA CCM';
-  const platformTagline =
-    brandingConfigs?.find((c) => c.code === 'PLATFORM_TAGLINE')?.label ||
-    'Calibration & Commercial Module Governance';
+    brandingConfigs?.find((c) => c.code === 'PLATFORM_NAME')?.label || 'Nethra CCM';
 
-  const getInitials = (name?: string) => {
-    if (!name) return 'SA';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    return name.slice(0, 2).toUpperCase();
-  };
-
-  const displayName = platformSession?.user?.fullName || user?.fullName || 'Platform Administrator';
+  const displayName = platformSession?.user?.fullName || user?.fullName || 'Nethra Super Admin';
   const displayRole = platformSession?.user?.role || user?.role || 'SUPER_ADMIN';
 
   return (
@@ -35,55 +24,54 @@ export const SuperAdminHeader: React.FC = () => {
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="size-9 rounded-lg bg-[#0274BB] flex items-center justify-center text-white font-bold text-lg shadow-xs">
-            <ShieldCheck className="size-5" />
+            C
           </div>
           <div>
             <h1 className="text-sm font-bold text-slate-900 leading-none tracking-tight">
               {platformName}
             </h1>
-            <span className="text-[11px] text-slate-500 font-medium">
-              {platformTagline}
-            </span>
+            <span className="text-[11px] text-slate-500">Super Admin Governance</span>
           </div>
         </div>
 
         <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-slate-200">
-          <Shield className="size-3.5 text-[#0274BB]" />
+          <Building2 className="size-4 text-slate-500" />
           <span className="text-xs text-slate-500">
-            Console:{' '}
-            <span className="font-semibold text-xs text-[#0274BB]">Super Admin Governance</span>
+            Scope:{' '}
+            <span className="font-semibold text-xs text-[#0274BB]">Global Platform Governance</span>
           </span>
+          <ChevronDown className="size-3.5 text-[#0274BB]" />
         </div>
       </div>
 
       {/* Right User Actions & Profile */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-3">
-          <div className="size-8 rounded-full bg-[#003B8C] text-white flex items-center justify-center font-semibold text-xs shadow-xs">
-            {getInitials(displayName)}
+        {/* User Info & Avatar matching 5174 */}
+        <div className="hidden sm:flex items-center gap-2.5 pl-2">
+          <div className="size-8 rounded-full bg-[#EBF5FF] text-[#0274BB] flex items-center justify-center border border-blue-200/60 font-semibold text-xs shrink-0">
+            <User className="size-4" />
           </div>
-          <div className="text-left hidden sm:block">
-            <div className="text-xs font-semibold text-slate-900 leading-tight">
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold text-slate-800 leading-tight">
               {displayName}
-            </div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="size-1.5 rounded-full bg-[#16A34A]" />
-              <span className="text-[10px] font-mono text-slate-500 uppercase">
-                {displayRole}
-              </span>
-            </div>
+            </span>
+            <span className="text-[10px] font-mono text-emerald-600 font-semibold uppercase leading-tight">
+              • {displayRole}
+            </span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-slate-600 hover:text-slate-900 gap-1.5 px-2.5 h-8 text-xs font-medium border-slate-200 ml-2"
-            onClick={() => logout().then(() => navigate('/login'))}
-            title="Sign out of platform"
-          >
-            <LogOut className="size-3.5" />
-            <span className="hidden sm:inline">Logout</span>
-          </Button>
+          <ChevronDown className="size-3.5 text-slate-400" />
         </div>
+
+        {/* Sign Out Button matching 5174 */}
+        <button
+          type="button"
+          onClick={() => logout().then(() => navigate('/login'))}
+          className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors ml-1 cursor-pointer"
+          title="Sign out of platform"
+        >
+          <LogOut className="size-4 text-slate-500" />
+          <span className="hidden sm:inline">Sign Out</span>
+        </button>
       </div>
     </header>
   );

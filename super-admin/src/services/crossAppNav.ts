@@ -24,3 +24,11 @@ export async function openOperationalApp(path = '', tenantId?: string): Promise<
 
   window.open(url.toString(), '_blank');
 }
+
+/**
+ * Convenience helper to launch the operational app directly focused on a specific tenant.
+ */
+export async function openOperationalAppForTenant(tenantId: string, path = ''): Promise<void> {
+  return openOperationalApp(path, tenantId);
+}
+
