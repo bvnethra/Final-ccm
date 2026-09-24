@@ -46,13 +46,20 @@ import {
   ShieldCheck,
   Search,
   MoreVertical,
-  ChevronLeft,
   ChevronRight,
   Building2,
 } from 'lucide-react';
 import { useVendorReminders } from '../../hooks/useVendorReminders';
 import { SignaturePad } from '../../components/ui/SignaturePad';
 import type { Dispatch, Delivery } from '../../types/domain';
+import { cn } from '../../lib/utils';
+
+const AVATAR_PALETTES = [
+  { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100' },
+  { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100' },
+  { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-100' },
+  { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100' },
+];
 
 export const DispatchListPage: React.FC = () => {
   const { tenantId, organizationId, user, isSuperAdmin, canPerform } = useAuthContext();
@@ -242,9 +249,9 @@ export const DispatchListPage: React.FC = () => {
 
       {/* 5-Day Vendor Collection Alert Banner */}
       {vendorRemindersCount > 0 && (
-        <div className="p-4 bg-amber-50 border border-amber-300 rounded-lg shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+        <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-amber-200/70 text-amber-900 rounded-md shrink-0 mt-0.5">
+            <div className="p-2 bg-amber-200/70 text-amber-900 rounded-lg shrink-0 mt-0.5">
               <Clock className="size-5" />
             </div>
             <div>
@@ -252,9 +259,9 @@ export const DispatchListPage: React.FC = () => {
                 <span className="font-bold text-sm text-amber-900">
                   Collection Agent Reminder: {vendorRemindersCount} Vendor Outsource Return(s) Due
                 </span>
-                <Badge variant="warning" pill>
-                  $\le$ 5 Days Alert
-                </Badge>
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-200 text-amber-900">
+                  ≤ 5 Days Alert
+                </span>
               </div>
               <p className="text-xs text-amber-800 mt-1">
                 Outsource instruments sent to third-party calibration vendors are due within 5 days (or overdue). Collect these instruments to complete calibration and raise commercial invoices.
@@ -263,127 +270,68 @@ export const DispatchListPage: React.FC = () => {
           </div>
           <div className="shrink-0">
             <Link to={`/requests/${reminders[0].requestId}`}>
-              <Button variant="primary" size="sm" className="bg-amber-800 hover:bg-amber-900 text-white text-xs">
-                View Due Items ({reminders[0].poNumber}) <ArrowRight className="size-3.5" />
+              <Button variant="primary" size="sm" className="bg-amber-800 hover:bg-amber-900 text-white text-xs rounded-lg">
+                View Due Items ({reminders[0].poNumber}) <ArrowRight className="size-3.5 ml-1" />
               </Button>
             </Link>
           </div>
         </div>
       )}
 
-      {/* Header Banner */}
+      {/* Top Header Banner matching Inward Request UI Command Center */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0274BB] shrink-0">
-            <Truck className="size-5" />
+          <div className="size-12 rounded-xl bg-[#0274BB] flex items-center justify-center text-white shadow-sm shrink-0">
+            <Truck className="size-6" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-xl font-bold text-[#111827]">Logistics &amp; Dispatch Registry</h1>
-              <Badge variant="success" pill>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight">
+                Logistics &amp; Dispatch Registry
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-[#16A34A] border border-[#D1F2E0]">
                 {dispatches.length} Gate Passes
-              </Badge>
+              </span>
             </div>
-            <p className="text-xs text-[#6B7280] mt-0.5">
-              Pack • Ship • Deliver — Outward material dispatches, courier consignment tracking, and client digital POD
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Lifecycle Process 5: Outward Material Dispatches, Courier Tracking &amp; Digital POD ({dispatches.length} Registered)
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Link to="/logistics/dispatch/new">
-            <Button variant="primary" size="sm" className="h-9">
-              <Plus className="size-4 mr-1.5" /> Issue Gate Pass
-            </Button>
-          </Link>
+        <div className="hidden md:flex flex-col items-end">
+          <span className="text-xs font-semibold text-[#0274BB] tracking-wide">
+            Pack • Ship • Deliver
+          </span>
+          <div className="h-0.5 w-7 bg-[#0274BB] mt-1 rounded-full" />
         </div>
       </div>
 
-      {/* 4 Interactive KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card
-          className={`cursor-pointer transition-all border ${
-            filterType === 'ALL' ? 'border-[#0274BB] ring-1 ring-[#0274BB]/20 shadow-xs' : 'hover:border-slate-300'
-          }`}
-          onClick={() => {
-            setFilterType('ALL');
-            setCurrentPage(1);
-          }}
+      {/* Logistics & Material Movement Category Switcher */}
+      <div className="flex items-center gap-2 border-b border-slate-200">
+        <div className="px-4 py-2.5 text-sm font-bold text-[#0274BB] border-b-2 border-[#0274BB] flex items-center gap-2 cursor-pointer">
+          <Truck className="size-4" />
+          Outward Dispatches (Gate Passes)
+          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-[#0274BB] border border-blue-200">
+            {dispatches.length}
+          </span>
+        </div>
+        <Link
+          to="/requests"
+          className="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 flex items-center gap-2 transition-colors cursor-pointer"
         >
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#0274BB] flex items-center justify-center shrink-0 border border-blue-100">
-              <Truck className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-medium text-[#6B7280] block">Total Gate Passes</span>
-              <span className="text-xl font-bold text-[#111827]">{dispatches.length}</span>
-              <span className="text-[11px] text-[#6B7280] block truncate">Outward material passes</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={`cursor-pointer transition-all border ${
-            filterType === 'DELIVERED' ? 'border-emerald-500 ring-1 ring-emerald-500/20 shadow-xs' : 'hover:border-slate-300'
-          }`}
-          onClick={() => {
-            setFilterType('DELIVERED');
-            setCurrentPage(1);
-          }}
-        >
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
-              <CheckCircle2 className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-medium text-[#6B7280] block">Delivered &amp; Completed</span>
-              <span className="text-xl font-bold text-emerald-700">{deliveredDispatches.length}</span>
-              <span className="text-[11px] text-[#6B7280] block truncate">Client verified POD signed</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={`cursor-pointer transition-all border ${
-            filterType === 'IN_TRANSIT' ? 'border-amber-500 ring-1 ring-amber-500/20 shadow-xs' : 'hover:border-slate-300'
-          }`}
-          onClick={() => {
-            setFilterType('IN_TRANSIT');
-            setCurrentPage(1);
-          }}
-        >
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
-              <Send className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-medium text-[#6B7280] block">In Transit / Active</span>
-              <span className="text-xl font-bold text-amber-700">{activeMovementCount}</span>
-              <span className="text-[11px] text-[#6B7280] block truncate">
-                {inTransitDispatches.length} in transit, {dispatchedOnly.length} dispatched
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border hover:border-slate-300">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
-              <Clock className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-medium text-[#6B7280] block">Vendor Returns Due</span>
-              <span className="text-xl font-bold text-purple-700">{vendorRemindersCount}</span>
-              <span className="text-[11px] text-[#6B7280] block truncate">$\le$ 5 days outsource alert</span>
-            </div>
-          </CardContent>
-        </Card>
+          <Package className="size-4 text-slate-400" />
+          Equipment Inward Requests
+          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+            {requests.length}
+          </span>
+        </Link>
       </div>
 
-      {/* Search and Filters Toolbar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-[#E5E7EB] shadow-xs">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#9CA3AF]" />
+      {/* Filter and Search Bar matching Inward Request UI */}
+      <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="relative flex-1">
+          <Search className="size-4.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Search by gate pass #, AWB, recipient, courier, client..."
@@ -392,174 +340,327 @@ export const DispatchListPage: React.FC = () => {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#F8FAFC] border border-[#E2E8F0] rounded-md focus:outline-none focus:ring-1 focus:ring-[#0274BB] focus:bg-white text-[#111827] placeholder-[#9CA3AF]"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0274BB]/20 focus:border-[#0274BB] transition-all shadow-xs"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+        {/* Filter Buttons & Primary Action matching Inward Request UI */}
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => {
               setFilterType('ALL');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+            className={cn(
+              'px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
               filterType === 'ALL'
                 ? 'bg-[#0274BB] text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            )}
           >
-            All ({dispatches.length})
+            All
           </button>
+
           <button
             type="button"
             onClick={() => {
               setFilterType('DELIVERED');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
               filterType === 'DELIVERED'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            )}
           >
-            • Delivered ({deliveredDispatches.length})
+            <ShieldCheck
+              className={cn(
+                'size-4',
+                filterType === 'DELIVERED' ? 'text-white' : 'text-emerald-500'
+              )}
+            />
+            Delivered
           </button>
+
           <button
             type="button"
             onClick={() => {
               setFilterType('IN_TRANSIT');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
               filterType === 'IN_TRANSIT'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            )}
           >
-            • In Transit ({inTransitDispatches.length})
+            <Send
+              className={cn(
+                'size-4',
+                filterType === 'IN_TRANSIT' ? 'text-white' : 'text-amber-500'
+              )}
+            />
+            In Transit
           </button>
+
           <button
             type="button"
             onClick={() => {
               setFilterType('DISPATCHED');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
               filterType === 'DISPATCHED'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            )}
           >
-            • Dispatched ({dispatchedOnly.length})
+            <Truck
+              className={cn(
+                'size-4',
+                filterType === 'DISPATCHED' ? 'text-white' : 'text-blue-500'
+              )}
+            />
+            Dispatched
           </button>
+
           <button
             type="button"
             onClick={() => {
               setFilterType('APPROVED');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
               filterType === 'APPROVED'
-                ? 'bg-teal-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            )}
           >
-            • DC Approved ({dcApprovedDispatches.length})
+            <CheckCircle2
+              className={cn(
+                'size-4',
+                filterType === 'APPROVED' ? 'text-white' : 'text-teal-500'
+              )}
+            />
+            DC Approved
           </button>
+
           <button
             type="button"
             onClick={() => {
               setFilterType('PENDING');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap cursor-pointer ${
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
               filterType === 'PENDING'
-                ? 'bg-slate-700 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            )}
           >
-            • Pending ({dcPendingDispatches.length})
+            <Clock
+              className={cn(
+                'size-4',
+                filterType === 'PENDING' ? 'text-white' : 'text-slate-400'
+              )}
+            />
+            Pending
           </button>
 
-          <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
-
-          <select
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            className="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700 cursor-pointer"
-          >
-            <option value={10}>10 / page</option>
-            <option value={25}>25 / page</option>
-            <option value={50}>50 / page</option>
-            <option value={100}>100 / page</option>
-          </select>
+          {(isSuperAdmin || canPerform('CREATE_REQUEST', 'CREATE')) && (
+            <Link to="/logistics/dispatch/new">
+              <Button className="bg-[#0274BB] hover:bg-[#02629e] text-white font-medium px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm shadow-xs transition-all cursor-pointer ml-1">
+                <Plus className="size-4" /> Issue Gate Pass
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* Dispatches Directory Table */}
-      <Card className="border border-[#E5E7EB] overflow-hidden">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-12 text-center text-sm text-[#6B7280]">
-              <div className="size-6 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              Loading dispatches...
+      {/* 4 Stat Metric Cards matching Inward Request UI */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Gate Passes */}
+        <div
+          onClick={() => {
+            setFilterType('ALL');
+            setCurrentPage(1);
+          }}
+          className={cn(
+            'bg-[#F8F6FF] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
+            filterType === 'ALL'
+              ? 'border-purple-300 ring-2 ring-purple-400/20'
+              : 'border-purple-100 hover:border-purple-200'
+          )}
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+              <Truck className="size-5" />
             </div>
-          ) : error ? (
-            <div className="p-12 text-center text-sm text-[#DC2626]">
-              <AlertCircle className="size-6 mx-auto mb-2" />
-              {(error as Error).message}
+            <div>
+              <div className="text-2xl font-bold text-slate-900 leading-none">
+                {isLoading ? '—' : dispatches.length}
+              </div>
+              <div className="text-xs text-slate-500 font-medium mt-1">Total Gate Passes</div>
             </div>
-          ) : filteredDispatches.length === 0 ? (
-            <div className="p-12 text-center text-[#6B7280] space-y-3">
-              <Truck className="size-8 mx-auto text-[#9CA3AF]" />
-              <p className="text-base font-semibold text-[#374151]">No gate passes found</p>
-              <p className="text-xs text-[#6B7280] max-w-md mx-auto">
-                {searchQuery
-                  ? `No dispatches match "${searchQuery}". Try adjusting your search query.`
-                  : 'Issue a gate pass to dispatch calibrated equipment or commercial invoices to clients.'}
-              </p>
-              <Link to="/logistics/dispatch/new">
-                <Button variant="secondary" size="sm" className="mt-2">
-                  <Plus className="size-4 mr-1" /> Generate Gate Pass
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#F8FAFC] border-b border-[#E5E7EB] text-[#475569] font-semibold text-[11px] uppercase tracking-wider">
-                  <tr>
-                    <th className="px-5 py-3 whitespace-nowrap">Gate Pass &amp; Order #</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Dispatch Mode</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Package Content</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Logistics / Agent</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Recipient &amp; Client</th>
-                    <th className="px-4 py-3 whitespace-nowrap">DC Approval</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Client Digital POD</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Tracking Status</th>
-                    <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E5E7EB]">
-                  {paginatedDispatches.map((d, idx) => {
-                    const req = getRequestInfo(d.request_id);
-                    const delivery = getDeliveryInfo(d.id);
-                    const isCollectionAgent = d.dispatch_type === 'COLLECTION_AGENT' || (!d.dispatch_type && !d.courier_partner);
-                    const isInvoiceOnly = d.package_type === 'INVOICE_ONLY';
-                    const hasSignature = Boolean(d.client_signature || delivery?.signature_data_url);
-                    const avatarStyle = avatarStyles[idx % avatarStyles.length];
+          </div>
+          <ChevronRight className="size-5 text-purple-400" />
+        </div>
 
-                    return (
-                      <tr key={d.id} className="hover:bg-[#F8FAFC] transition-colors">
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${avatarStyle}`}>
-                              <Truck className="size-4" />
-                            </div>
+        {/* Card 2: Delivered & Completed */}
+        <div
+          onClick={() => {
+            setFilterType('DELIVERED');
+            setCurrentPage(1);
+          }}
+          className={cn(
+            'bg-[#F0FDF4] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
+            filterType === 'DELIVERED'
+              ? 'border-emerald-300 ring-2 ring-emerald-400/20'
+              : 'border-emerald-100 hover:border-emerald-200'
+          )}
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <ShieldCheck className="size-5" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 leading-none">
+                {isLoading ? '—' : deliveredDispatches.length}
+              </div>
+              <div className="text-xs text-slate-500 font-medium mt-1">Delivered &amp; Completed</div>
+            </div>
+          </div>
+          <ChevronRight className="size-5 text-emerald-400" />
+        </div>
+
+        {/* Card 3: In Transit / Active */}
+        <div
+          onClick={() => {
+            setFilterType('IN_TRANSIT');
+            setCurrentPage(1);
+          }}
+          className={cn(
+            'bg-[#FFFBEB] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
+            filterType === 'IN_TRANSIT'
+              ? 'border-amber-300 ring-2 ring-amber-400/20'
+              : 'border-amber-100 hover:border-amber-200'
+          )}
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+              <Send className="size-5" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 leading-none">
+                {isLoading ? '—' : activeMovementCount}
+              </div>
+              <div className="text-xs text-slate-500 font-medium mt-1">In Transit / Active</div>
+            </div>
+          </div>
+          <ChevronRight className="size-5 text-amber-500/60" />
+        </div>
+
+        {/* Card 4: Vendor Returns Due */}
+        <div
+          onClick={() => {
+            setFilterType('ALL');
+            setCurrentPage(1);
+          }}
+          className={cn(
+            'bg-[#F0F7FF] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
+            'border-blue-100 hover:border-blue-200'
+          )}
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-blue-100 text-[#0274BB] flex items-center justify-center shrink-0">
+              <Clock className="size-5" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 leading-none">
+                {isLoading ? '—' : vendorRemindersCount}
+              </div>
+              <div className="text-xs text-slate-500 font-medium mt-1">Vendor Returns Due</div>
+            </div>
+          </div>
+          <ChevronRight className="size-5 text-[#0274BB]/60" />
+        </div>
+      </div>
+      {/* Dispatches Directory Table */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-[#F8FAFC] border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
+              <tr>
+                <th className="px-5 py-3.5 whitespace-nowrap">Gate Pass &amp; Order #</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Dispatch Mode</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Package Content</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Logistics / Agent</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Recipient &amp; Client</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">DC Approval</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Client Digital POD</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Tracking Status</th>
+                <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={9} className="px-5 py-16 text-center text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-2.5">
+                      <div className="size-7 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm font-medium">Loading dispatches...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={9} className="px-5 py-16 text-center text-rose-600">
+                    <AlertCircle className="size-6 mx-auto mb-2" />
+                    {(error as Error).message}
+                  </td>
+                </tr>
+              ) : filteredDispatches.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-5 py-16 text-center text-slate-500">
+                    <div className="max-w-md mx-auto space-y-3">
+                      <div className="size-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                        <Truck className="size-6" />
+                      </div>
+                      <h3 className="font-semibold text-base text-slate-900">No Gate Passes Found</h3>
+                      <p className="text-xs text-slate-500">
+                        {searchQuery
+                          ? `No dispatches match "${searchQuery}". Try adjusting your search query.`
+                          : 'Issue a gate pass to dispatch calibrated equipment or commercial invoices to clients.'}
+                      </p>
+                      <Link to="/logistics/dispatch/new">
+                        <Button variant="secondary" size="sm" className="mt-2">
+                          <Plus className="size-3.5 mr-1" /> Issue Gate Pass
+                        </Button>
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                paginatedDispatches.map((d, idx) => {
+                  const req = getRequestInfo(d.request_id);
+                  const delivery = getDeliveryInfo(d.id);
+                  const isCollectionAgent = d.dispatch_type === 'COLLECTION_AGENT' || (!d.dispatch_type && !d.courier_partner);
+                  const isInvoiceOnly = d.package_type === 'INVOICE_ONLY';
+                  const hasSignature = Boolean(d.client_signature || delivery?.signature_data_url);
+                  const palette = AVATAR_PALETTES[idx % AVATAR_PALETTES.length];
+
+                  return (
+                    <tr key={d.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className={cn('size-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border', palette.bg, palette.text, palette.border)}>
+                            <Truck className="size-4" />
+                          </div>
                             <div className="min-w-0">
                               <span
                                 className="font-mono font-bold text-[#0274BB] block text-xs hover:underline cursor-pointer"
@@ -800,15 +901,15 @@ export const DispatchListPage: React.FC = () => {
                         </td>
                       </tr>
                     );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {/* Numbered Pagination */}
           {!isLoading && filteredDispatches.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-slate-200 bg-[#F8FAFC] text-xs text-slate-500">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3.5 border-t border-slate-200 bg-[#F8FAFC] text-xs text-slate-500">
               <div>
                 Showing <span className="font-semibold text-slate-800">{startIndex + 1}</span> to{' '}
                 <span className="font-semibold text-slate-800">
@@ -861,8 +962,7 @@ export const DispatchListPage: React.FC = () => {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
       {/* ==================================================================== */}
       {/* 1. Client Receipt & Delivery Signature Modal */}
