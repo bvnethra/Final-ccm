@@ -37,7 +37,7 @@ export const SuperAdminHeader: React.FC = () => {
         <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-slate-200">
           <Building2 className="size-4 text-slate-500" />
           <span className="text-xs text-slate-500">
-            Enterprise:{' '}
+            Tenant:{' '}
             <span className="font-semibold text-xs text-[#0274BB]">Nethra Metrology Services Ltd</span>
           </span>
           <ChevronDown className="size-3.5 text-[#0274BB]" />

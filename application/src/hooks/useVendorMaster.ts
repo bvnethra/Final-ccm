@@ -7,6 +7,7 @@ import {
   createVendor,
   updateVendor,
   toggleVendorStatus,
+  fetchVendorOutsourcedItems,
 } from '../services/vendorMasterService';
 import type { VendorFormData } from '../types/domain';
 
@@ -82,3 +83,15 @@ export function useToggleVendorStatus() {
     },
   });
 }
+
+export function useVendorOutsourcedItems() {
+  const { tenantId } = useAuthContext();
+
+  return useQuery({
+    queryKey: ['vendorOutsourcedItems', tenantId],
+    queryFn: () => (tenantId ? fetchVendorOutsourcedItems(tenantId) : Promise.resolve([])),
+    enabled: Boolean(tenantId),
+    refetchInterval: 30000,
+  });
+}
+

@@ -16,7 +16,6 @@ import {
   ArrowRight,
   LayoutDashboard,
   Mail,
-  Shield,
 } from 'lucide-react';
 import { openOperationalAppForTenant } from '../../services/crossAppNav';
 import { cn } from '../../lib/utils';
@@ -36,7 +35,7 @@ export default function SuperAdminDashboardPage() {
 
   // 100% Dynamic database query - no hardcoded tenants
   const { data: tenantsData, isLoading, error } = useTenants({ pageSize: 100 });
-  const allTenants: PlatformTenant[] = tenantsData?.tenants || [];
+  const allTenants: PlatformTenant[] = tenantsData?.data || [];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -116,7 +115,7 @@ export default function SuperAdminDashboardPage() {
   if (error) {
     return (
       <div className="p-6 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
-        Failed to load enterprise tenants: {(error as Error).message}
+        Failed to load tenants: {(error as Error).message}
       </div>
     );
   }
@@ -131,10 +130,10 @@ export default function SuperAdminDashboardPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight">
-              Enterprise Platform Governance
+              Tenant Platform Governance
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Global Multi-Tenant Roster &amp; Operational Launchpad • Welcome, {operatorName}
+              Global Tenant Roster &amp; Operational Launchpad • Welcome, {operatorName}
             </p>
           </div>
         </div>
@@ -143,7 +142,7 @@ export default function SuperAdminDashboardPage() {
           {!isSupport && (
             <Link to="/tenants/new">
               <Button className="bg-[#0274BB] hover:bg-[#02629e] text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 text-sm shadow-xs transition-all cursor-pointer">
-                <Plus className="size-4" /> Onboard Enterprise
+                <Plus className="size-4" /> Onboard Tenant
               </Button>
             </Link>
           )}
@@ -164,7 +163,7 @@ export default function SuperAdminDashboardPage() {
           <Search className="size-4.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by enterprise name, tenant code, admin email, status..."
+            placeholder="Search by tenant name, code, admin email, status..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0274BB]/20 focus:border-[#0274BB] transition-all shadow-xs"
@@ -183,7 +182,7 @@ export default function SuperAdminDashboardPage() {
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             )}
           >
-            All
+            All Tenants
           </button>
 
           <button
@@ -247,7 +246,7 @@ export default function SuperAdminDashboardPage() {
 
       {/* 3. 4 Stat Metric Cards matching localhost:5174 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Enterprises */}
+        {/* Card 1: Total Tenants */}
         <div
           onClick={() => setStatusFilter('ALL')}
           className={cn(
@@ -265,13 +264,13 @@ export default function SuperAdminDashboardPage() {
               <div className="text-2xl font-bold text-slate-900 leading-none">
                 {isLoading ? '—' : totalCount}
               </div>
-              <div className="text-xs text-slate-500 font-medium mt-1">Total Enterprises</div>
+              <div className="text-xs text-slate-500 font-medium mt-1">Total Tenants</div>
             </div>
           </div>
           <ChevronRight className="size-5 text-purple-400" />
         </div>
 
-        {/* Card 2: Active Enterprises */}
+        {/* Card 2: Active Tenants */}
         <div
           onClick={() => setStatusFilter('ACTIVE')}
           className={cn(
@@ -289,7 +288,7 @@ export default function SuperAdminDashboardPage() {
               <div className="text-2xl font-bold text-slate-900 leading-none">
                 {isLoading ? '—' : activeCount}
               </div>
-              <div className="text-xs text-slate-500 font-medium mt-1">Active Enterprises</div>
+              <div className="text-xs text-slate-500 font-medium mt-1">Active Tenants</div>
             </div>
           </div>
           <ChevronRight className="size-5 text-emerald-400" />
@@ -344,15 +343,15 @@ export default function SuperAdminDashboardPage() {
         </div>
       </div>
 
-      {/* 4. Active Enterprise Pipeline Table matching localhost:5174 */}
+      {/* 4. Active Tenant Pipeline Table matching localhost:5174 */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-slate-900">
-              Active Enterprise Pipeline
+              Active Tenant Pipeline
             </h2>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">
-              {filteredTenants.length} Enterprises
+              {filteredTenants.length} Tenants
             </span>
           </div>
           <Link
@@ -367,7 +366,7 @@ export default function SuperAdminDashboardPage() {
           <table className="w-full text-left text-sm border-collapse">
             <thead className="bg-[#F8FAFC] border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-semibold">
               <tr>
-                <th className="px-5 py-3.5 whitespace-nowrap">Enterprise Info</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Tenant Info</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Admin Account</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Onboarded Date</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Scope &amp; Facilities</th>
@@ -383,7 +382,7 @@ export default function SuperAdminDashboardPage() {
                   <td colSpan={8} className="px-5 py-16 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-2.5">
                       <div className="size-7 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm font-medium">Loading enterprise roster...</span>
+                      <span className="text-sm font-medium">Loading tenant roster...</span>
                     </div>
                   </td>
                 </tr>
@@ -394,16 +393,16 @@ export default function SuperAdminDashboardPage() {
                       <div className="size-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
                         <Building2 className="size-6" />
                       </div>
-                      <h3 className="font-semibold text-base text-slate-900">No Enterprise Tenants Found</h3>
+                      <h3 className="font-semibold text-base text-slate-900">No Tenants Found</h3>
                       <p className="text-xs text-slate-500">
                         {searchQuery
-                          ? 'No matching enterprises found for your search/filter criteria.'
-                          : 'No enterprise accounts onboarded to platform yet.'}
+                          ? 'No matching tenants found for your search/filter criteria.'
+                          : 'No tenant accounts onboarded to platform yet.'}
                       </p>
                       {!isSupport && (
                         <Link to="/tenants/new">
                           <Button variant="secondary" size="sm" className="mt-2">
-                            <Plus className="size-3.5" /> Onboard Enterprise
+                            <Plus className="size-3.5" /> Onboard Tenant
                           </Button>
                         </Link>
                       )}
@@ -418,7 +417,7 @@ export default function SuperAdminDashboardPage() {
                       key={t.id}
                       className="hover:bg-slate-50/70 transition-colors group"
                     >
-                      {/* ENTERPRISE INFO */}
+                      {/* TENANT INFO */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div

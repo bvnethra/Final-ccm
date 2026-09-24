@@ -1,6 +1,7 @@
 // application/src/components/masters/vendors/VendorListPresenter.tsx
 import React from 'react';
 import type { Vendor } from '../../../types/domain';
+import type { VendorOutsourcedItem } from '../../../services/vendorMasterService';
 import { VendorListView } from './VendorListView';
 
 interface VendorListPresenterProps {
@@ -9,6 +10,8 @@ interface VendorListPresenterProps {
   activeCount: number;
   inactiveCount: number;
   labCount: number;
+  outsourcedCount?: number;
+  outsourcedItems?: VendorOutsourcedItem[];
   isLoading: boolean;
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -32,6 +35,8 @@ export const VendorListPresenter: React.FC<VendorListPresenterProps> = ({
   activeCount,
   inactiveCount,
   labCount,
+  outsourcedCount = 0,
+  outsourcedItems = [],
   isLoading,
   searchQuery,
   onSearchChange,
@@ -62,6 +67,8 @@ export const VendorListPresenter: React.FC<VendorListPresenterProps> = ({
         activeCount={activeCount}
         inactiveCount={inactiveCount}
         labCount={labCount}
+        outsourcedCount={outsourcedCount}
+        outsourcedItems={outsourcedItems}
         isLoading={isLoading}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}

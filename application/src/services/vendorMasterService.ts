@@ -583,3 +583,82 @@ export async function createVendorsBulk(
   saveLocalVendors(tenantId, [...dbRows, ...local]);
   return { count: dbRows.length };
 }
+
+// ============================================================================
+// Vendor Outsourcing Tracking (Live DB Query - Zero Hardcoding)
+// ============================================================================
+
+export interface VendorOutsourcedItem {
+  id: string;
+  requestId: string;
+  requestNumber: string;
+  vendorId?: string;
+  vendorName?: string;
+  itemMasterId: string;
+  itemName: string;
+  itemCode: string;
+  serialNumber?: string;
+  quantity: number;
+  expectedReturnDate?: string;
+  estimatedCost?: number;
+  outsourcePoNumber?: string;
+  remarks?: string;
+  status: string;
+  clientName?: string;
+  createdAt: string;
+}
+
+export async function fetchVendorOutsourcedItems(tenantId: string): Promise<VendorOutsourcedItem[]> {
+  if (!tenantId) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('request_items')
+      .select(`
+        id,
+        request_id,
+        item_master_id,
+        vendor_id,
+        vendor_name,
+        quantity,
+        status,
+        destination,
+        serial_number,
+        expected_return_date,
+        estimated_cost,
+        remarks,
+        outsource_po_number,
+        created_at,
+        item_masters(id, item_name, item_code, serial_number),
+        calibration_requests(id, request_number, status, clients(client_name))
+      `)
+      .eq('tenant_id', tenantId)
+      .or('destination.eq.VENDOR_OUTSOURCE,vendor_id.not.is.null');
+
+    if (error) throw error;
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      requestId: row.request_id,
+      requestNumber: row.calibration_requests?.request_number || 'N/A',
+      vendorId: row.vendor_id || undefined,
+      vendorName: row.vendor_name || undefined,
+      itemMasterId: row.item_master_id,
+      itemName: row.item_masters?.item_name || 'Calibrated Instrument',
+      itemCode: row.item_masters?.item_code || 'ITEM',
+      serialNumber: row.serial_number || row.item_masters?.serial_number || '—',
+      quantity: row.quantity || 1,
+      expectedReturnDate: row.expected_return_date || undefined,
+      estimatedCost: row.estimated_cost || undefined,
+      outsourcePoNumber: row.outsource_po_number || undefined,
+      remarks: row.remarks || undefined,
+      status: row.status || 'OUTSOURCED',
+      clientName: row.calibration_requests?.clients?.client_name || 'Direct Client',
+      createdAt: row.created_at,
+    }));
+  } catch (err) {
+    console.error('Failed to fetch outsourced items from Supabase:', err);
+    return [];
+  }
+}
+

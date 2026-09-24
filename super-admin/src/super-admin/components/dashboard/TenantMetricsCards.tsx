@@ -25,7 +25,7 @@ export const TenantMetricsCards: React.FC<Props> = ({
   const cards = [
     {
       id: 'ALL',
-      title: 'Total Enterprises',
+      title: 'Total Tenants',
       value: isLoading ? '—' : metrics.totalTenants,
       sublabel: `${metrics.activeTenants} active • ${metrics.deactivatedTenants} inactive`,
       icon: Building2,
@@ -57,7 +57,7 @@ export const TenantMetricsCards: React.FC<Props> = ({
     },
     {
       id: 'DEACTIVATED',
-      title: 'Inactive Enterprises',
+      title: 'Inactive Tenants',
       value: isLoading ? '—' : metrics.deactivatedTenants,
       sublabel: metrics.deactivatedTenants > 0 ? 'Requires administrative review' : 'Zero inactive accounts',
       icon: AlertTriangle,

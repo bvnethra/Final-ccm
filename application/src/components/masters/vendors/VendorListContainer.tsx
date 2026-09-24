@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthContext } from '../../../contexts/AuthContext';
-import { useVendors, useToggleVendorStatus } from '../../../hooks/useVendorMaster';
+import { useVendors, useToggleVendorStatus, useVendorOutsourcedItems } from '../../../hooks/useVendorMaster';
 import { createVendorsBulk } from '../../../services/vendorMasterService';
 import { VendorListPresenter } from './VendorListPresenter';
 
@@ -16,6 +16,7 @@ export const VendorListContainer: React.FC = () => {
   const queryClient = useQueryClient();
   const { tenantId, organizationId } = useAuthContext();
   const { data: allVendors = [], isLoading, error } = useVendors();
+  const { data: outsourcedItems = [] } = useVendorOutsourcedItems();
   const toggleMutation = useToggleVendorStatus();
 
   // Dynamic metric counts directly from database state (zero hardcoding)
@@ -39,6 +40,7 @@ export const VendorListContainer: React.FC = () => {
       ).length,
     [allVendors]
   );
+  const outsourcedCount = outsourcedItems.length;
 
   // Client-side instant filtering across search, status, and category
   const filteredVendors = useMemo(() => {
@@ -46,6 +48,12 @@ export const VendorListContainer: React.FC = () => {
       // Status filter
       if (statusFilter === 'ACTIVE' && vendor.status !== 'ACTIVE') return false;
       if (statusFilter === 'INACTIVE' && vendor.status !== 'INACTIVE') return false;
+      if (statusFilter === 'OUTSOURCED') {
+        const hasOutsourced = outsourcedItems.some(
+          (i) => i.vendorId === vendor.id || (i.vendorName && i.vendorName.toLowerCase() === vendor.vendor_name.toLowerCase())
+        );
+        if (!hasOutsourced) return false;
+      }
       if (statusFilter === 'LABS') {
         const isLab =
           vendor.serviced_categories?.some((c) => {
@@ -77,7 +85,7 @@ export const VendorListContainer: React.FC = () => {
 
       return true;
     });
-  }, [allVendors, searchQuery, statusFilter, categoryFilter]);
+  }, [allVendors, searchQuery, statusFilter, categoryFilter, outsourcedItems]);
 
   const handleToggleStatus = async (id: string) => {
     setTogglingId(id);
@@ -106,6 +114,8 @@ export const VendorListContainer: React.FC = () => {
       activeCount={activeCount}
       inactiveCount={inactiveCount}
       labCount={labCount}
+      outsourcedCount={outsourcedCount}
+      outsourcedItems={outsourcedItems}
       isLoading={isLoading}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
@@ -124,3 +134,4 @@ export const VendorListContainer: React.FC = () => {
     />
   );
 };
+

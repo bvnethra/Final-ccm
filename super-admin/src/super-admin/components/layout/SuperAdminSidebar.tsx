@@ -22,7 +22,7 @@ interface NavItem {
 
 const governanceItems: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard },
-  { label: 'Enterprise Tenants', to: '/tenants', icon: Building2 },
+  { label: 'Tenants', to: '/tenants', icon: Building2 },
   { label: 'Onboard Tenant', to: '/tenants/new', icon: PlusCircle },
 ];
 

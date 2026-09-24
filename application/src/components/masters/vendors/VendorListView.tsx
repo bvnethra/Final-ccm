@@ -21,8 +21,15 @@ import {
   ToggleRight,
   Handshake,
   FlaskConical,
+  Truck,
+  Package,
+  ExternalLink,
+  X,
+  Calendar,
+  ShieldCheck,
+  ShieldX,
 } from 'lucide-react';
-import { METROLOGY_SERVICE_CATEGORIES } from '../../../services/vendorMasterService';
+import { METROLOGY_SERVICE_CATEGORIES, type VendorOutsourcedItem } from '../../../services/vendorMasterService';
 import { ExcelBulkImportPanel, type FieldMapping } from '../../ui/ExcelBulkImportPanel';
 import { cn } from '../../../lib/utils';
 
@@ -82,6 +89,8 @@ interface VendorListViewProps {
   activeCount: number;
   inactiveCount: number;
   labCount: number;
+  outsourcedCount?: number;
+  outsourcedItems?: VendorOutsourcedItem[];
   isLoading: boolean;
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -104,6 +113,8 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
   activeCount,
   inactiveCount,
   labCount,
+  outsourcedCount = 0,
+  outsourcedItems = [],
   isLoading,
   searchQuery,
   onSearchChange,
@@ -139,6 +150,13 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
   // Active Dropdown Row for Actions
   const [openActionId, setOpenActionId] = useState<string | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Active Outsource Items Slide-over Drawer
+  const [selectedOutsourceVendor, setSelectedOutsourceVendor] = useState<{
+    vendorName: string;
+    vendorCode?: string;
+    items: VendorOutsourcedItem[];
+  } | null>(null);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -231,10 +249,10 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             )}
           >
-            <span
+            <ShieldCheck
               className={cn(
-                'size-2 rounded-full',
-                statusFilter === 'ACTIVE' ? 'bg-white' : 'bg-emerald-500'
+                'size-4',
+                statusFilter === 'ACTIVE' ? 'text-white' : 'text-emerald-500'
               )}
             />
             Active
@@ -250,13 +268,32 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             )}
           >
-            <span
+            <ShieldX
               className={cn(
-                'size-2 rounded-full',
-                statusFilter === 'INACTIVE' ? 'bg-white' : 'bg-slate-400'
+                'size-4',
+                statusFilter === 'INACTIVE' ? 'text-white' : 'text-slate-400'
               )}
             />
             Inactive
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange(statusFilter === 'OUTSOURCED' ? 'ALL' : 'OUTSOURCED')}
+            className={cn(
+              'inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
+              statusFilter === 'OUTSOURCED'
+                ? 'bg-[#0274BB] text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            )}
+          >
+            <span
+              className={cn(
+                'size-2 rounded-full',
+                statusFilter === 'OUTSOURCED' ? 'bg-white' : 'bg-amber-500'
+              )}
+            />
+            Outsourced
           </button>
 
           {canCreateMaster && (
@@ -294,8 +331,8 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
         onSuccess={onImportSuccess}
       />
 
-      {/* 4 Stat Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 5 Stat Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Card 1: Total Vendors */}
         <div
           onClick={() => onStatusFilterChange('ALL')}
@@ -330,7 +367,7 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
         >
           <div className="flex items-center gap-3.5">
             <div className="size-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-              <span className="size-3 rounded-full bg-emerald-500" />
+              <ShieldCheck className="size-5" />
             </div>
             <div>
               <div className="text-2xl font-bold text-slate-900 leading-none">{activeCount}</div>
@@ -352,7 +389,7 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
         >
           <div className="flex items-center gap-3.5">
             <div className="size-11 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
-              <span className="size-3 rounded-full bg-slate-400" />
+              <ShieldX className="size-5" />
             </div>
             <div>
               <div className="text-2xl font-bold text-slate-900 leading-none">{inactiveCount}</div>
@@ -383,6 +420,37 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
           </div>
           <ChevronRight className="size-5 text-[#0274BB]/60" />
         </div>
+
+        {/* Card 5: Vendor Outsourcing */}
+        <div
+          onClick={() => {
+            if (outsourcedItems.length > 0) {
+              setSelectedOutsourceVendor({
+                vendorName: 'All Outsourced Equipment',
+                items: outsourcedItems,
+              });
+            } else {
+              onStatusFilterChange(statusFilter === 'OUTSOURCED' ? 'ALL' : 'OUTSOURCED');
+            }
+          }}
+          className={cn(
+            'bg-[#FFFBEB] border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm',
+            statusFilter === 'OUTSOURCED'
+              ? 'border-amber-300 ring-2 ring-amber-400/20'
+              : 'border-amber-100 hover:border-amber-200'
+          )}
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+              <Truck className="size-5" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 leading-none">{outsourcedCount}</div>
+              <div className="text-xs text-slate-500 font-medium mt-1">Vendor Outsourcing</div>
+            </div>
+          </div>
+          <ChevronRight className="size-5 text-amber-500/60" />
+        </div>
       </div>
 
       {/* Vendor Table Container */}
@@ -396,6 +464,7 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                 <th className="px-5 py-3.5 whitespace-nowrap">Location</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">GST / Tax ID</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Disciplines Serviced</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Vendor Outsourcing</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Status</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">System Audit</th>
                 <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
@@ -404,7 +473,7 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-16 text-center text-slate-500">
+                  <td colSpan={9} className="px-5 py-16 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-2.5">
                       <div className="size-7 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin" />
                       <span className="text-sm font-medium">Loading vendor directory...</span>
@@ -413,7 +482,7 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                 </tr>
               ) : pagedVendors.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-16 text-center text-slate-500">
+                  <td colSpan={9} className="px-5 py-16 text-center text-slate-500">
                     <div className="max-w-sm mx-auto space-y-3">
                       <div className="size-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
                         <Handshake className="size-6" />
@@ -536,15 +605,55 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
                         </div>
                       </td>
 
+                      {/* VENDOR OUTSOURCING */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {(() => {
+                          const vendorOutsourced = outsourcedItems.filter(
+                            (item) =>
+                              item.vendorId === vendor.id ||
+                              (item.vendorName &&
+                                item.vendorName.toLowerCase() === vendor.vendor_name.toLowerCase())
+                          );
+                          if (vendorOutsourced.length > 0) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedOutsourceVendor({
+                                    vendorName: vendor.vendor_name,
+                                    vendorCode: vendor.vendor_code,
+                                    items: vendorOutsourced,
+                                  })
+                                }
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 transition-all cursor-pointer shadow-2xs group"
+                                title="Click to view outsourced instruments"
+                              >
+                                <Truck className="size-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
+                                <span>
+                                  {vendorOutsourced.length}{' '}
+                                  {vendorOutsourced.length === 1 ? 'Item' : 'Items'} Outsourced
+                                </span>
+                                <ExternalLink className="size-3 text-amber-500 opacity-60 group-hover:opacity-100 ml-0.5" />
+                              </button>
+                            );
+                          }
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs text-slate-400 bg-slate-50 border border-slate-200/60 font-mono">
+                              0 Items
+                            </span>
+                          );
+                        })()}
+                      </td>
+
                       {/* STATUS */}
                       <td className="px-5 py-4 whitespace-nowrap">
                         {vendor.status === 'ACTIVE' ? (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#E8F8F0] text-[#16A34A] border border-[#D1F2E0] whitespace-nowrap">
-                            <span className="size-1.5 rounded-full bg-[#16A34A]" /> ACTIVE
+                            <ShieldCheck className="size-3.5" /> ACTIVE
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
-                            <span className="size-1.5 rounded-full bg-slate-400" /> INACTIVE
+                            <ShieldX className="size-3.5 text-slate-400" /> INACTIVE
                           </span>
                         )}
                       </td>
@@ -708,6 +817,156 @@ export const VendorListView: React.FC<VendorListViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Outsourced Items Slide-Over Drawer */}
+      {selectedOutsourceVendor && (
+        <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+            onClick={() => setSelectedOutsourceVendor(null)}
+          />
+
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-2xl bg-white shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-300">
+              {/* Drawer Header */}
+              <div className="px-6 py-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="size-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Truck className="size-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-bold text-slate-900 leading-tight">
+                        Outsourced Items & Instruments
+                      </h2>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                        {selectedOutsourceVendor.items.length}{' '}
+                        {selectedOutsourceVendor.items.length === 1 ? 'Item' : 'Items'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Vendor:{' '}
+                      <span className="font-semibold text-slate-800">
+                        {selectedOutsourceVendor.vendorName}
+                      </span>
+                      {selectedOutsourceVendor.vendorCode && (
+                        <span className="ml-1.5 font-mono text-[11px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+                          {selectedOutsourceVendor.vendorCode}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedOutsourceVendor(null)}
+                  className="size-8 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-white flex items-center justify-center transition-colors cursor-pointer"
+                  title="Close Drawer"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              {/* Drawer Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 flex items-start gap-3">
+                  <Package className="size-4 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="text-xs text-amber-900 leading-relaxed">
+                    These calibration items have been routed to{' '}
+                    <strong className="font-semibold">Vendor Outsource</strong>. Track real-time
+                    calibration progress, inward request links, and expected return schedules directly
+                    from live database records.
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {selectedOutsourceVendor.items.map((item, idx) => (
+                    <div
+                      key={item.id || idx}
+                      className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-shadow space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-sm">{item.itemName}</h4>
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            {item.itemCode && (
+                              <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-[#0274BB] border border-blue-200">
+                                {item.itemCode}
+                              </span>
+                            )}
+                            {item.serialNumber && (
+                              <span className="font-mono text-[11px] text-slate-600 px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
+                                SN: {item.serialNumber}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          {item.status || 'OUTSOURCED'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5 pt-2.5 border-t border-slate-100 text-xs text-slate-600">
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Request / Inward #</span>
+                          <span className="font-semibold text-slate-800 font-mono">
+                            {item.requestNumber || '—'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Client / Organization</span>
+                          <span className="font-medium text-slate-800 truncate block">
+                            {item.clientName || '—'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Expected Return</span>
+                          <span className="font-medium text-slate-800 flex items-center gap-1 font-mono">
+                            <Calendar className="size-3 text-slate-400" />
+                            {item.expectedReturnDate
+                              ? new Date(item.expectedReturnDate).toLocaleDateString()
+                              : 'Pending schedule'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Assigned Vendor</span>
+                          <span className="font-medium text-slate-800 truncate block">
+                            {item.vendorName || selectedOutsourceVendor.vendorName}
+                          </span>
+                        </div>
+                      </div>
+
+                      {item.remarks && (
+                        <div className="text-[11px] text-slate-600 bg-slate-50 rounded-lg p-2.5 border border-slate-100">
+                          <span className="font-semibold text-slate-700">Remarks: </span>
+                          {item.remarks}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                <span className="text-xs text-slate-500">
+                  Total {selectedOutsourceVendor.items.length} outsourced{' '}
+                  {selectedOutsourceVendor.items.length === 1 ? 'item' : 'items'}
+                </span>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSelectedOutsourceVendor(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
