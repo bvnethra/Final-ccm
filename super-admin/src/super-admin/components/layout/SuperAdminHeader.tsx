@@ -1,10 +1,11 @@
 // src/super-admin/components/layout/SuperAdminHeader.tsx
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { usePlatformAuth } from '../../hooks/usePlatformAuth';
 import { usePlatformConfig } from '../../hooks/usePlatformConfig';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { Building2, ChevronDown, User, LogOut, Bell } from 'lucide-react';
+import tespaLogo from '../../../assets/tespa-logo.jpg';
 
 export const SuperAdminHeader: React.FC = () => {
   const { data: platformSession } = usePlatformAuth();
@@ -22,17 +23,13 @@ export const SuperAdminHeader: React.FC = () => {
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
       {/* Brand & Platform Context */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="size-9 rounded-lg bg-[#0274BB] flex items-center justify-center text-white font-bold text-lg shadow-xs">
-            C
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-slate-900 leading-none tracking-tight">
-              {platformName}
-            </h1>
-            <span className="text-[11px] text-slate-500">Super Admin Governance</span>
-          </div>
-        </div>
+        <Link to="/dashboard" className="flex items-center hover:opacity-90 transition-opacity">
+          <img
+            src={tespaLogo}
+            alt="Tespa"
+            className="h-10 w-auto max-h-10 object-contain"
+          />
+        </Link>
 
         <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-slate-200">
           <Building2 className="size-4 text-slate-500" />

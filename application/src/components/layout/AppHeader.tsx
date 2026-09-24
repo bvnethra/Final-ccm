@@ -6,6 +6,7 @@ import { Badge } from '../ui/UIPrimitives';
 import { LogOut, User, Building2, Bell, Clock, ArrowRight, ChevronDown, FileText } from 'lucide-react';
 import { useVendorReminders } from '../../hooks/useVendorReminders';
 import { useCalibrationRequests } from '../../hooks/useOperations';
+import tespaLogo from '../../assets/tespa-logo.jpg';
 
 export const AppHeader: React.FC = () => {
   const { user, logout } = useAuthContext();
@@ -54,22 +55,18 @@ export const AppHeader: React.FC = () => {
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
       {/* Brand & Enterprise Context */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="size-9 rounded-lg bg-[#0274BB] flex items-center justify-center text-white font-bold text-lg shadow-xs">
-            C
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-slate-900 leading-none tracking-tight">
-              Nethra CCM
-            </h1>
-            <span className="text-[11px] text-slate-500">Calibration Operations</span>
-          </div>
-        </div>
+        <Link to="/dashboard" className="flex items-center hover:opacity-90 transition-opacity">
+          <img
+            src={tespaLogo}
+            alt="Tespa"
+            className="h-10 w-auto max-h-10 object-contain"
+          />
+        </Link>
 
         <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-slate-200">
           <Building2 className="size-4 text-slate-500" />
           <span className="text-xs text-slate-500">
-            Enterprise:{' '}
+            Tenant:{' '}
             <span className="font-semibold text-xs text-[#0274BB]">{enterpriseName}</span>
           </span>
           <ChevronDown className="size-3.5 text-[#0274BB]" />

@@ -31,8 +31,28 @@ token = env_vars.get('SUPABASE_ACCESS_TOKEN') or os.environ.get('SUPABASE_ACCESS
 if not project_ref or not token:
     raise ValueError("Missing SUPABASE_PROJECT_REF or SUPABASE_ACCESS_TOKEN in .env.local or environment.")
 
-tenant_id = 'ea7dd1f0-7307-4a6f-acee-210acb4efefc'
-organization_id = 'a860b55a-8e4f-428b-a6b6-0766c08153e9'
+def run_sql(query):
+    url = f"https://api.supabase.com/v1/projects/{project_ref}/database/query"
+    req = urllib.request.Request(
+        url,
+        data=json.dumps({"query": query}).encode('utf-8'),
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        },
+        method="POST"
+    )
+    with urllib.request.urlopen(req) as resp:
+        return json.loads(resp.read().decode('utf-8'))
+
+# Dynamically fetch active tenant and organization from DB
+tenants_data = run_sql("SELECT id FROM tenants ORDER BY created_at ASC LIMIT 1;")
+if not tenants_data:
+    raise ValueError("No active tenant found in database.")
+tenant_id = tenants_data[0]['id']
+
+orgs_data = run_sql(f"SELECT id FROM organizations WHERE tenant_id = '{tenant_id}' ORDER BY created_at ASC LIMIT 1;")
+organization_id = orgs_data[0]['id'] if orgs_data else None
 
 excel_path = os.path.join(os.path.dirname(__file__), '..', 'excel', 'CUSTOMER LIST.xlsx')
 
@@ -62,21 +82,6 @@ with zipfile.ZipFile(excel_path, 'r') as z:
                                 clients.append(name)
 
 print(f"Extracted {len(clients)} customers.")
-
-# Construct SQL insert statements in batches of 50
-def run_sql(query):
-    url = f"https://api.supabase.com/v1/projects/{project_ref}/database/query"
-    req = urllib.request.Request(
-        url,
-        data=json.dumps({"query": query}).encode('utf-8'),
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        },
-        method="POST"
-    )
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read().decode('utf-8'))
 
 existing_rows = run_sql(f"SELECT client_name FROM clients WHERE tenant_id = '{tenant_id}';")
 existing_names = set(r['client_name'] for r in existing_rows)

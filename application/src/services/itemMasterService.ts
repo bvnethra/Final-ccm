@@ -76,8 +76,14 @@ export function deriveItemCode(
     const targets = [rangeStr, name].filter(Boolean);
     for (const target of targets) {
       if (target === 'ALL RANGE' || target === 'Standard Range') continue;
+      // Dimensions like 2000*1000mm or 630*630mm
+      const dimMatch = target.match(/(\d+)\s*\*\s*(\d+)/);
+      if (dimMatch) {
+        rangeSuffix = dimMatch[1];
+        break;
+      }
       const rangeMatch = target.match(
-        /(?:(?:\d+(?:\.\d+)?)\s*(?:-|–|to|\*)\s*(\d+(?:\.\d+)?)|(?:upto\s*[-–]?\s*(\d+(?:\.\d+)?)))/i
+        /(?:(?:\d+(?:\.\d+)?)\s*(?:-|–|to)\s*(\d+(?:\.\d+)?)|(?:upto\s*[-–]?\s*(\d+(?:\.\d+)?)))/i
       );
       if (rangeMatch) {
         rangeSuffix = String(Number(rangeMatch[1] || rangeMatch[2]));
@@ -110,17 +116,25 @@ export function deriveItemCode(
   // Normalize compound phrases
   cleanedName = cleanedName.replace(/MEASURINGTAPE/gi, 'MEASURING TAPE');
   cleanedName = cleanedName.replace(/BOREDIAL/gi, 'BORE DIAL');
+  cleanedName = cleanedName.replace(/WITHOUT\s+DIAL/gi, 'WOD');
+  cleanedName = cleanedName.replace(/WITH\s+DIAL/gi, 'WD');
+  cleanedName = cleanedName.replace(/PIN\s+GAUGES?/gi, 'PIN GAUGE');
+  cleanedName = cleanedName.replace(/PITCH\s+GAUGES?/gi, 'PITCH GAUGE');
   // Strip non-alphanumeric
   cleanedName = cleanedName.replace(/[^a-zA-Z0-9\s]/g, ' ');
 
   const allWords = cleanedName.split(/\s+/).filter((w) => w.length > 0);
 
-  const STOP_WORDS = new Set(['and', 'with', 'without', 'or', 'for', 'of', 'the', 'in', 'all', 'range', 'go', 'nogo', 'upto']);
+  const STOP_WORDS = new Set(['and', 'or', 'for', 'of', 'the', 'in', 'all', 'range', 'go', 'nogo', 'upto']);
   const filteredWords: string[] = [];
   for (let i = 0; i < allWords.length; i++) {
     const w = allWords[i];
     if (STOP_WORDS.has(w.toLowerCase())) continue;
-    if (/^\d+$/.test(w)) {
+    if (w.toUpperCase() === 'PIN') {
+      filteredWords.push('PIN');
+    } else if (w.toUpperCase() === 'PITCH') {
+      filteredWords.push('PT');
+    } else if (/^\d+$/.test(w)) {
       if (i + 1 < allWords.length && /^[a-zA-Z]/.test(allWords[i + 1])) {
         filteredWords.push(w);
       }
@@ -142,11 +156,11 @@ export function deriveItemCode(
 
   let acronym = '';
   if (targetWords.length >= 2) {
-    // Take digit or first letter of each word
-    acronym = targetWords.map((w) => (/^\d+$/.test(w) ? w : w[0].toUpperCase())).join('');
+    // Take digit or first letter of each word (or special token like PIN/PT/WD/WOD)
+    acronym = targetWords.map((w) => (/^\d+$/.test(w) || (w.length > 1 && (w === 'PIN' || w === 'PT' || w === 'WD' || w === 'WOD')) ? w.toUpperCase() : w[0].toUpperCase())).join('');
   } else if (targetWords.length === 1) {
     const w = targetWords[0].toUpperCase();
-    if (w.length <= 3) {
+    if (w.length <= 4) {
       acronym = w;
     } else {
       acronym = w.slice(0, 3);
@@ -155,7 +169,17 @@ export function deriveItemCode(
     acronym = 'ITM';
   }
 
-  // 3. Combine Acronym with Range Suffix
+  // Check explicit LC like 0.001mm in measurement range
+  let lcSuffix = '';
+  const lcMatch = rangeStr.match(/lease?\s*-\s*([0-9.]+)\s*mm/i);
+  if (lcMatch) {
+    lcSuffix = `-${lcMatch[1]}`;
+  }
+
+  // 3. Combine Acronym with Range Suffix & LC Suffix
+  if (rangeSuffix && lcSuffix) {
+    return `${acronym}-${rangeSuffix}${lcSuffix}`;
+  }
   if (rangeSuffix) {
     return `${acronym}-${rangeSuffix}`;
   }
