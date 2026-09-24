@@ -23,6 +23,10 @@
 5. **Excel Template Downloads Naming Rule:**
    - Whenever downloading template spreadsheets (e.g. `Download Template` in `ExcelBulkImportPanel`), the downloaded file name MUST ALWAYS include the enterprise name or active organization name (e.g. `${Enterprise_Or_Org_Name}_Client_Master_Template.xlsx`). Never download generic names without the enterprise or organization name.
 
+6. **Mandatory Documentation Review Before Execution:**
+   - Always inspect and review the relevant documentation in `/docs` (`docs/ARCHITECTURE.md`, `docs/GMS_Design_System.md`, `docs/DATABASE_MIGRATION_GUIDE.md`, `docs/RULE.md`, `docs/PROCESS.md`, `docs/POLICY.md`, `docs/TESTING_GUIDE.md`, `docs/WORKFLOW_DIAGRAMS.md`) at the start of every task before writing code or making architectural decisions.
+   - Absolutely zero hardcoding: All values, options, and status configurations must be loaded dynamically from the database or verified schema constraints.
+
 ---
 
 ## 2. Verification Protocol Checklist
