@@ -1,21 +1,35 @@
 // application/src/components/masters/clients/ClientDetailPresenter.tsx
 import React from 'react';
-import type { Client } from '../../../types/domain';
+import type { Client, Invoice } from '../../../types/domain';
 import { ClientDetailView } from './ClientDetailView';
 import { Button } from '../../ui/UIPrimitives';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
+interface PastServicedItem {
+  description: string;
+  range?: string;
+  unitPrice: number;
+}
+
 interface ClientDetailPresenterProps {
   client?: Client;
   isLoading: boolean;
   errorMessage?: string | null;
+  clientInvoices: Quotation[];
+  isLoadingInvoices: boolean;
+  pastServicedItems: PastServicedItem[];
+  isLoadingItems: boolean;
 }
 
 export const ClientDetailPresenter: React.FC<ClientDetailPresenterProps> = ({
   client,
   isLoading,
   errorMessage,
+  clientInvoices,
+  isLoadingInvoices,
+  pastServicedItems,
+  isLoadingItems,
 }) => {
   if (isLoading) {
     return (
@@ -43,5 +57,13 @@ export const ClientDetailPresenter: React.FC<ClientDetailPresenterProps> = ({
     );
   }
 
-  return <ClientDetailView client={client} />;
+  return (
+    <ClientDetailView
+      client={client}
+      clientInvoices={clientInvoices}
+      isLoadingInvoices={isLoadingInvoices}
+      pastServicedItems={pastServicedItems}
+      isLoadingItems={isLoadingItems}
+    />
+  );
 };

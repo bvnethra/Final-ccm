@@ -31,11 +31,9 @@ import {
   CheckCircle2,
   Building2,
   ClipboardList,
-  FileSpreadsheet,
   History,
   AlertCircle,
   Check,
-  Sparkles,
   Search,
   ChevronDown,
 } from 'lucide-react';
@@ -206,7 +204,7 @@ export const QuotationBuilderPage: React.FC = () => {
     initialRequestId || initialSource === 'inward'
       ? 'INWARD_REQUEST'
       : initialClientId
-      ? 'EXISTING_CUSTOMER'
+      ? 'CLIENT_ESTIMATE'
       : 'INWARD_REQUEST'
   );
 
@@ -305,12 +303,12 @@ export const QuotationBuilderPage: React.FC = () => {
     setDiscountPercent(Math.min(100, Math.max(0, pct)));
   };
 
-  // Fetch past serviced items if Existing Customer mode is active
+  // Fetch past serviced items for CLIENT_ESTIMATE mode when a client is selected
   const { data: pastServicedItems = [], isLoading: isLoadingPastItems } = useClientPastServicedItems(
-    quotationType === 'EXISTING_CUSTOMER' && selectedClientId ? selectedClientId : undefined
+    quotationType === 'CLIENT_ESTIMATE' && selectedClientId ? selectedClientId : undefined
   );
 
-  // Auto-sync when selectedRequestId changes (Mode 1)
+  // Auto-sync when selectedRequestId changes (Inward Request mode)
   useEffect(() => {
     if (quotationType === 'INWARD_REQUEST' && selectedRequestId && requests.length > 0) {
       const found = requests.find((r) => r.id === selectedRequestId);
@@ -343,16 +341,16 @@ export const QuotationBuilderPage: React.FC = () => {
     }
   }, [selectedRequestId, requests, quotationType]);
 
-  // Auto-sync when selectedClientId changes (Mode 2 or Mode 3)
+  // Auto-sync contact details when a client is selected from master
   useEffect(() => {
-    if (quotationType !== 'INWARD_REQUEST' && selectedClientId && clients.length > 0) {
+    if (selectedClientId && clients.length > 0) {
       const client = clients.find((c) => c.id === selectedClientId);
       if (client) {
         if (client.contact_person) setKindAttn(client.contact_person);
         if (client.phone) setPhoneNo(client.phone);
       }
     }
-  }, [selectedClientId, clients, quotationType]);
+  }, [selectedClientId, clients]);
 
   const handleItemMasterSelect = (index: number, description: string, im?: ItemMaster) => {
     setItems((prev) => {
@@ -522,7 +520,7 @@ export const QuotationBuilderPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-[#111827]">New Quotation</h1>
           <p className="text-sm text-[#6B7280]">
-            Generate quotations across 3 channels: Inward work orders, Existing customers, or New client estimates.
+            Generate quotations via Inward Request or directly from the Client Master.
           </p>
         </div>
       </div>
@@ -534,8 +532,8 @@ export const QuotationBuilderPage: React.FC = () => {
         </div>
       )}
 
-      {/* Mode / Quotation Type Selector: 3 Prominent User-Friendly Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Quotation Type Selector: 2 Cards — Inward Request or Client Estimate */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Type 1: Inward Request */}
         <button
           type="button"
@@ -561,57 +559,32 @@ export const QuotationBuilderPage: React.FC = () => {
             <span className="font-bold text-sm text-[#0F172A]">1. Inward Request</span>
           </div>
           <p className="text-xs text-[#64748B] leading-relaxed">
-            Generate quote directly for physical instruments inwarded into the laboratory queue.
+            Generate a quote linked to physical instruments already inwarded into the laboratory queue.
           </p>
         </button>
 
-        {/* Type 2: Existing Customer */}
+        {/* Type 2: Client Estimate (from Client Master) */}
         <button
           type="button"
           onClick={() => {
-            setQuotationType('EXISTING_CUSTOMER');
+            setQuotationType('CLIENT_ESTIMATE');
             setSelectedRequestId('');
             setErrorMessage(undefined);
           }}
           className={`p-4 rounded-lg border text-left transition-all cursor-pointer ${
-            quotationType === 'EXISTING_CUSTOMER'
+            quotationType === 'CLIENT_ESTIMATE'
               ? 'bg-[#EFF6FF] border-[#0274BB] ring-2 ring-[#0274BB] shadow-sm'
               : 'bg-white border-[#E2E8F0] hover:border-slate-300'
           }`}
         >
           <div className="flex items-center gap-2.5 mb-2">
-            <div className={`p-2 rounded-md ${quotationType === 'EXISTING_CUSTOMER' ? 'bg-[#0274BB] text-white' : 'bg-slate-100 text-slate-700'}`}>
+            <div className={`p-2 rounded-md ${quotationType === 'CLIENT_ESTIMATE' ? 'bg-[#0274BB] text-white' : 'bg-slate-100 text-slate-700'}`}>
               <Building2 className="size-4" />
             </div>
-            <span className="font-bold text-sm text-[#0F172A]">2. Existing Customer</span>
+            <span className="font-bold text-sm text-[#0F172A]">2. Client Estimate</span>
           </div>
           <p className="text-xs text-[#64748B] leading-relaxed">
-            Quote for repeat customer with 1-click past calibration history and custom equipment lines.
-          </p>
-        </button>
-
-        {/* Type 3: New Client Estimate */}
-        <button
-          type="button"
-          onClick={() => {
-            setQuotationType('NEW_CLIENT_ESTIMATE');
-            setSelectedRequestId('');
-            setErrorMessage(undefined);
-          }}
-          className={`p-4 rounded-lg border text-left transition-all cursor-pointer ${
-            quotationType === 'NEW_CLIENT_ESTIMATE'
-              ? 'bg-[#EFF6FF] border-[#0274BB] ring-2 ring-[#0274BB] shadow-sm'
-              : 'bg-white border-[#E2E8F0] hover:border-slate-300'
-          }`}
-        >
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className={`p-2 rounded-md ${quotationType === 'NEW_CLIENT_ESTIMATE' ? 'bg-[#0274BB] text-white' : 'bg-slate-100 text-slate-700'}`}>
-              <FileSpreadsheet className="size-4" />
-            </div>
-            <span className="font-bold text-sm text-[#0F172A]">3. New Client Estimate</span>
-          </div>
-          <p className="text-xs text-[#64748B] leading-relaxed">
-            Approximate pre-inward estimate for a newly registered client before equipment arrival.
+            Quote directly from the Client Master — for existing customers with service history or new clients before equipment arrival.
           </p>
         </button>
       </div>
@@ -623,16 +596,12 @@ export const QuotationBuilderPage: React.FC = () => {
             <CardTitle className="text-sm font-bold text-[#111827]">
               {quotationType === 'INWARD_REQUEST'
                 ? 'Target Inward Request & Account Details'
-                : quotationType === 'EXISTING_CUSTOMER'
-                ? 'Existing Customer Selection & Account Details'
-                : 'New Client Selection & Pre-Inward Details'}
+                : 'Client Estimate — Client Master Selection'}
             </CardTitle>
             <CardDescription className="text-xs text-[#6B7280]">
               {quotationType === 'INWARD_REQUEST'
-                ? 'Select an active calibration request inwarded by a collection agent.'
-                : quotationType === 'EXISTING_CUSTOMER'
-                ? 'Select registered client from client master to retrieve contact & service history.'
-                : 'Select new client to generate an approximate quotation estimate.'}
+                ? 'Select an active calibration request inwarded by a collection agent. Client will be auto-filled.'
+                : 'Select the client from the master. Past service history will load automatically if available.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 space-y-4">
@@ -668,34 +637,37 @@ export const QuotationBuilderPage: React.FC = () => {
               </Field>
             )}
 
-            {/* Mode 2 & Mode 3: Client Selector from Client Master */}
-            {quotationType !== 'INWARD_REQUEST' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <FieldLabel>
-                    Client / Organization Name <span className="text-[#DC2626]">*</span>
-                  </FieldLabel>
-                  <Link
-                    to="/masters/clients/new?returnUrl=/commercial/quotations/new"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#0274BB] hover:underline"
-                  >
-                    <Plus className="size-3.5" /> + Register New Client in Master
-                  </Link>
-                </div>
-                <Select
-                  value={selectedClientId}
-                  onChange={(e) => setSelectedClientId(e.target.value)}
-                  required
+            {/* Unified Client Selector — always shown for all 3 quotation types */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <FieldLabel>
+                  Client / Organization Name <span className="text-[#DC2626]">*</span>
+                  {quotationType === 'INWARD_REQUEST' && (
+                    <span className="ml-2 text-[10px] font-normal text-slate-500 italic">
+                      (auto-filled from selected request)
+                    </span>
+                  )}
+                </FieldLabel>
+                <Link
+                  to="/masters/clients/new?returnUrl=/commercial/quotations/new"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#0274BB] hover:underline"
                 >
-                  <option value="">Select Client from Master...</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.client_code} — {c.client_name} ({c.city || 'No City'})
-                    </option>
-                  ))}
-                </Select>
+                  <Plus className="size-3.5" /> + Register New Client in Master
+                </Link>
               </div>
-            )}
+              <Select
+                value={selectedClientId}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+                required
+              >
+                <option value="">Select Client from Master...</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.client_code} — {c.client_name} ({c.city || 'No City'})
+                  </option>
+                ))}
+              </Select>
+            </div>
 
             {/* Selected Client Card Display */}
             {selectedClient && (
@@ -723,14 +695,14 @@ export const QuotationBuilderPage: React.FC = () => {
               </div>
             )}
 
-            {/* Mode 2: Existing Customer Past Service History Quick Selector */}
-            {quotationType === 'EXISTING_CUSTOMER' && selectedClientId && (
+            {/* Client Estimate: Past Service History — shown when client is selected */}
+            {quotationType === 'CLIENT_ESTIMATE' && selectedClientId && (
               <div className="border border-slate-200 rounded-md p-3.5 bg-slate-50/70 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <History className="size-4 text-[#0274BB]" />
                     <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                      Previous Service History for this Customer
+                      Previous Service History for this Client
                     </span>
                   </div>
                   <span className="text-[11px] text-slate-500">
@@ -742,7 +714,7 @@ export const QuotationBuilderPage: React.FC = () => {
                   <p className="text-xs text-slate-500 italic">Loading past serviced items...</p>
                 ) : pastServicedItems.length === 0 ? (
                   <p className="text-xs text-slate-500">
-                    No prior calibration service records found for this client. You can enter line items directly below.
+                    No prior calibration records for this client. Enter line items directly below.
                   </p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
@@ -775,16 +747,6 @@ export const QuotationBuilderPage: React.FC = () => {
                     ))}
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Mode 3: Informational Banner for New Client Estimate */}
-            {quotationType === 'NEW_CLIENT_ESTIMATE' && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 flex items-center gap-2">
-                <Sparkles className="size-4 text-amber-600 shrink-0" />
-                <span>
-                  <strong>New Client Approximate Estimate:</strong> Enter estimated equipment types, ranges, and commercial rates. An official quotation will be issued prior to equipment collection.
-                </span>
               </div>
             )}
 

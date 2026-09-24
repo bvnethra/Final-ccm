@@ -135,6 +135,45 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          {/* Quick Demo Credentials */}
+          <div className="mt-6 pt-5 border-t border-slate-800/80 space-y-2.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
+              Quick Sign-in (Demo Accounts)
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('superadmin@nethra.com');
+                  setPassword('SuperAdmin@2026!');
+                  setError('');
+                }}
+                className="text-left p-2 rounded-[6px] bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 transition text-[11px] cursor-pointer"
+              >
+                <div className="font-semibold text-sky-400">Super Admin</div>
+                <div className="text-slate-400 truncate">superadmin@nethra.com</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@nethra.com');
+                  setPassword('SuperAdmin@2026!');
+                  setError('');
+                }}
+                className="text-left p-2 rounded-[6px] bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 transition text-[11px] cursor-pointer"
+              >
+                <div className="font-semibold text-emerald-400">Admin (Alt)</div>
+                <div className="text-slate-400 truncate">admin@nethra.com</div>
+              </button>
+            </div>
+            <div className="text-[11px] text-slate-400 bg-slate-950/40 p-2.5 rounded border border-slate-800/50 mt-2">
+              💡 <strong>Operational Staff</strong> (Lab Entry, Approver, Inward): Please sign in at{' '}
+              <a href="http://localhost:5174/login" className="text-sky-400 hover:underline font-semibold">
+                localhost:5174
+              </a>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

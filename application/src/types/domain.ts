@@ -283,7 +283,7 @@ export interface Certificate {
   created_at: string;
 }
 
-export type QuotationType = 'INWARD_REQUEST' | 'EXISTING_CUSTOMER' | 'NEW_CLIENT_ESTIMATE';
+export type QuotationType = 'INWARD_REQUEST' | 'CLIENT_ESTIMATE';
 
 export interface Quotation {
   id: string;

@@ -1123,7 +1123,7 @@ export async function createQuotation(payload: CreateQuotationPayload): Promise<
     resolvedClientId = 'CLIENT-ACTIVE';
   }
 
-  const qType: QuotationType = payload.quotationType || (payload.requestId ? 'INWARD_REQUEST' : 'EXISTING_CUSTOMER');
+  const qType: QuotationType = payload.quotationType || (payload.requestId ? 'INWARD_REQUEST' : 'CLIENT_ESTIMATE');
   const quoteNumber = `QT-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
   const now = new Date().toISOString();
   const quoteId = crypto.randomUUID();

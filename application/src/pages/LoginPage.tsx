@@ -129,6 +129,63 @@ export const LoginPage: React.FC = () => {
               </Button>
             </CardFooter>
           </form>
+
+          {/* Quick Role Fill Buttons */}
+          <div className="p-4 bg-[#F8FAFC] border-t border-[#E2E8F0] rounded-b-lg space-y-2.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B] block">
+              Quick Role Sign-in (Demo Accounts)
+            </span>
+            <div className="grid grid-cols-2 gap-1.5 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('labentry@nethra.com');
+                  setPassword('LabEntry@2026!');
+                  setError(null);
+                }}
+                className="text-left p-2 rounded bg-white hover:bg-[#F0F9FF] border border-[#E2E8F0] hover:border-[#0274BB] transition cursor-pointer"
+              >
+                <div className="font-semibold text-[#0F172A]">Lab Entry Person</div>
+                <div className="text-[10px] text-[#64748B] truncate">labentry@nethra.com</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('labapprover@nethra.com');
+                  setPassword('LabApprover@2026!');
+                  setError(null);
+                }}
+                className="text-left p-2 rounded bg-white hover:bg-[#F0F9FF] border border-[#E2E8F0] hover:border-[#0274BB] transition cursor-pointer"
+              >
+                <div className="font-semibold text-[#0F172A]">Lab Approver</div>
+                <div className="text-[10px] text-[#64748B] truncate">labapprover@nethra.com</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('backoffice@nethra.com');
+                  setPassword('BackOffice@2026!');
+                  setError(null);
+                }}
+                className="text-left p-2 rounded bg-white hover:bg-[#F0F9FF] border border-[#E2E8F0] hover:border-[#0274BB] transition cursor-pointer"
+              >
+                <div className="font-semibold text-[#0F172A]">Back Office Admin</div>
+                <div className="text-[10px] text-[#64748B] truncate">backoffice@nethra.com</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('superadmin@nethra.com');
+                  setPassword('SuperAdmin@2026!');
+                  setError(null);
+                }}
+                className="text-left p-2 rounded bg-white hover:bg-[#F0F9FF] border border-[#E2E8F0] hover:border-[#0274BB] transition cursor-pointer"
+              >
+                <div className="font-semibold text-[#0274BB]">Super Admin</div>
+                <div className="text-[10px] text-[#64748B] truncate">superadmin@nethra.com</div>
+              </button>
+            </div>
+          </div>
         </Card>
 
         {/* Security & Access Info */}
