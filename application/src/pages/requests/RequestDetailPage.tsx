@@ -441,20 +441,7 @@ export const RequestDetailPage: React.FC = () => {
             </Button>
           </Link>
 
-          {request.status === 'CREATED' && (
-            <Link to={`/lab/verification/${request.id}`}>
-              <Button variant="primary" className="text-xs font-semibold shadow-xs">
-                Proceed to Lab Verification <ArrowRight className="size-4" />
-              </Button>
-            </Link>
-          )}
-          {request.status === 'VERIFIED' && (
-            <Link to={`/lab/calibration/${request.id}`}>
-              <Button variant="primary" className="text-xs font-semibold shadow-xs">
-                Perform Calibration <ArrowRight className="size-4" />
-              </Button>
-            </Link>
-          )}
+          {/* Contextual Secondary Actions (Primary action is highlighted in workflow tracker below) */}
           {(request.status === 'FAULTY' || request.status === 'REPAIR_IN_PROGRESS') && (
             <Link to={`/lab/calibration/${request.id}`}>
               <Button variant="outlineInk" className="text-xs font-semibold">
@@ -605,6 +592,99 @@ export const RequestDetailPage: React.FC = () => {
             })}
           </div>
         </div>
+
+        {/* Integrated Contextual Next Action Bar */}
+        {request.status === 'CREATED' && (
+          <div className="bg-blue-50/90 border-t border-blue-200/80 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex size-7 items-center justify-center rounded-full bg-[#0274BB] text-white text-xs font-bold shrink-0 shadow-2xs">
+                2
+              </span>
+              <div>
+                <span className="font-bold text-slate-900 text-sm">
+                  Next Step: Lab Physical Verification
+                </span>
+                <span className="text-xs text-slate-600 ml-2 hidden md:inline">
+                  Instruments received at lab. Confirm serial numbers and condition to start calibration.
+                </span>
+              </div>
+            </div>
+            <Link to={`/lab/verification/${request.id}`} className="shrink-0">
+              <Button variant="primary" className="text-xs font-semibold py-2 px-4 shadow-sm w-full sm:w-auto">
+                Start Lab Verification <ArrowRight className="size-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {request.status === 'VERIFIED' && (
+          <div className="bg-emerald-50/90 border-t border-emerald-200/80 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex size-7 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-bold shrink-0 shadow-2xs">
+                3
+              </span>
+              <div>
+                <span className="font-bold text-slate-900 text-sm">
+                  Next Step: Metrology Calibration Testing
+                </span>
+                <span className="text-xs text-slate-600 ml-2 hidden md:inline">
+                  Instruments verified. Mount on benches and record precision measurement readings.
+                </span>
+              </div>
+            </div>
+            <Link to={`/lab/calibration/${request.id}`} className="shrink-0">
+              <Button variant="primary" className="text-xs font-semibold py-2 px-4 shadow-sm w-full sm:w-auto">
+                Perform Calibration Test <ArrowRight className="size-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {request.status === 'INVOICED' && (
+          <div className="bg-amber-50/90 border-t border-amber-200/80 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex size-7 items-center justify-center rounded-full bg-amber-600 text-white text-xs font-bold shrink-0 shadow-2xs">
+                7
+              </span>
+              <div>
+                <span className="font-bold text-slate-900 text-sm">
+                  Next Step: Gate Pass Dispatch
+                </span>
+                <span className="text-xs text-slate-600 ml-2 hidden md:inline">
+                  Invoice generated. Package instruments and issue dispatch gate pass.
+                </span>
+              </div>
+            </div>
+            <Link to="/logistics/dispatch/new" className="shrink-0">
+              <Button variant="primary" className="text-xs font-semibold py-2 px-4 shadow-sm w-full sm:w-auto">
+                Create Gate Pass Dispatch <ArrowRight className="size-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {request.status === 'DISPATCHED' && (
+          <div className="bg-purple-50/90 border-t border-purple-200/80 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex size-7 items-center justify-center rounded-full bg-purple-600 text-white text-xs font-bold shrink-0 shadow-2xs">
+                8
+              </span>
+              <div>
+                <span className="font-bold text-slate-900 text-sm">
+                  Next Step: Capture Client Delivery Signature (POD)
+                </span>
+                <span className="text-xs text-slate-600 ml-2 hidden md:inline">
+                  Shipment is out for handover. Capture digital signature upon delivery.
+                </span>
+              </div>
+            </div>
+            <Link to="/logistics/dispatch" className="shrink-0">
+              <Button variant="primary" className="text-xs font-semibold py-2 px-4 shadow-sm w-full sm:w-auto">
+                Record Delivery Signature <ArrowRight className="size-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
       </Card>
 
       {/* Delivery & Lifecycle Completed Banner */}
@@ -752,114 +832,80 @@ export const RequestDetailPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Section 1: Inward & Client Account Details */}
+      {/* Section 1: Inward Intake & Client Overview - Streamlined & Compact */}
       <Card className="border border-slate-200/80 shadow-xs overflow-hidden">
-        <CardHeader className="bg-slate-50/60 border-b border-slate-100 py-3.5 px-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <div>
-              <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Building className="size-4 text-[#0274BB]" />
-                Inward Intake &amp; Client Overview
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-500 mt-0.5">
-                Collection metadata, client account details, and inward handling instructions
-              </CardDescription>
-            </div>
-            {request.clients?.client_code && (
-              <span className="self-start sm:self-auto font-mono text-xs font-semibold px-2.5 py-1 rounded bg-white border border-slate-200 text-slate-700 shadow-2xs">
-                Client Code: <strong className="text-[#0274BB]">{request.clients.client_code}</strong>
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
+          {/* Left: Client info */}
+          <div className="space-y-1 min-w-[240px]">
+            <div className="flex items-center gap-2">
+              <Building className="size-4 text-[#0274BB]" />
+              <span className="font-bold text-slate-900 text-base">
+                {request.clients?.client_name || 'N/A'}
               </span>
-            )}
+              {request.clients?.client_code && (
+                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-blue-50 text-[#0274BB] border border-blue-200 shadow-2xs">
+                  {request.clients.client_code}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500">
+              {[request.clients?.city, request.clients?.state].filter(Boolean).join(', ') || 'Client Facility'}
+              {request.clients?.contact_person && ` • Contact: ${request.clients.contact_person}`}
+              {request.clients?.phone && ` (${request.clients.phone})`}
+            </p>
           </div>
-        </CardHeader>
-        <CardContent className="p-5 space-y-4">
-          {/* Key Metadata 4-Card Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/70 flex items-start gap-3">
-              <div className={`p-2 rounded-md ${request.priority === 'URGENT' ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'} shrink-0`}>
-                <Clock className="size-4" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">Priority SLA</span>
-                <span className={`font-bold text-sm mt-0.5 block ${request.priority === 'URGENT' ? 'text-rose-700' : 'text-slate-800'}`}>
-                  {request.priority === 'URGENT' ? 'Urgent (24h Turnaround)' : 'Standard (5-7 Days)'}
+
+          {/* Right: Key Metadata Chips in 1 row */}
+          <div className="flex flex-wrap items-center gap-2.5 text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200/80">
+              <Clock className="size-3.5 text-slate-400" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">Turnaround</span>
+                <span className={`font-semibold ${request.priority === 'URGENT' ? 'text-rose-600' : 'text-slate-800'}`}>
+                  {request.priority === 'URGENT' ? 'Urgent 24h' : 'Standard 5-7d'}
                 </span>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/70 flex items-start gap-3">
-              <div className="p-2 rounded-md bg-emerald-100 text-emerald-700 shrink-0">
-                <Calendar className="size-4" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">Collection Date</span>
-                <span className="font-bold text-sm text-slate-800 mt-0.5 block">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200/80">
+              <Calendar className="size-3.5 text-emerald-500" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">Collected</span>
+                <span className="font-semibold text-slate-800">
                   {new Date(request.collection_date).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/70 flex items-start gap-3">
-              <div className="p-2 rounded-md bg-purple-100 text-purple-700 shrink-0">
-                <User className="size-4" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">Collection Agent</span>
-                <span className="font-bold text-sm text-slate-800 mt-0.5 block truncate">
-                  {request.collection_agent_name || 'Designated Agent'}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200/80">
+              <User className="size-3.5 text-purple-500" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">Agent</span>
+                <span className="font-semibold text-slate-800 truncate max-w-[120px]">
+                  {request.collection_agent_name || 'Designated'}
                 </span>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/70 flex items-start gap-3">
-              <div className="p-2 rounded-md bg-sky-100 text-sky-700 shrink-0">
-                <FileText className="size-4" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">Client PO / DC Ref</span>
-                <span className="font-mono font-bold text-sm text-[#0274BB] mt-0.5 block truncate">
-                  {request.client_po_ref || request.dc_number || 'None Specified'}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200/80">
+              <FileText className="size-3.5 text-sky-500" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">Client PO Ref</span>
+                <span className="font-mono font-semibold text-[#0274BB] truncate max-w-[120px]">
+                  {request.client_po_ref || request.dc_number || 'None'}
                 </span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Client Info & Special Instructions Split View */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-            <div className="p-4 rounded-lg bg-white border border-slate-200/80 flex flex-col justify-between">
-              <div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">Client Account</span>
-                <div className="font-bold text-slate-900 text-base mt-1">
-                  {request.clients?.client_name || 'N/A'}
-                </div>
-                {(request.clients?.city || request.clients?.address) && (
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                    {[request.clients?.address, request.clients?.city, request.clients?.state].filter(Boolean).join(', ')}
-                  </p>
-                )}
-              </div>
-              {request.clients?.phone && (
-                <div className="text-xs text-slate-500 mt-2 pt-2 border-t border-slate-100 flex items-center gap-1.5">
-                  <span className="font-medium text-slate-600">Contact:</span> {request.clients.contact_person || 'Representative'} ({request.clients.phone})
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 rounded-lg bg-amber-50/40 border border-amber-200/60 flex flex-col justify-between">
-              <div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-800/90 block flex items-center gap-1.5">
-                  <FileCheck className="size-3.5 text-amber-600" /> Inward Handling Instructions &amp; Remarks
-                </span>
-                <p className="text-xs text-slate-700 mt-1.5 leading-relaxed italic">
-                  "{request.remarks || 'No special handling instructions provided by customer.'}"
-                </p>
-              </div>
-              <div className="text-[11px] text-amber-700/80 mt-2 font-medium">
-                Verified at intake gate by logistics team
-              </div>
-            </div>
+        {/* Handling Remarks Strip (if any) */}
+        {request.remarks && (
+          <div className="px-5 py-2.5 bg-amber-50/60 border-t border-amber-200/60 text-xs flex items-center gap-2 text-slate-700">
+            <span className="font-bold text-amber-800 uppercase text-[10px] shrink-0">Customer Instructions:</span>
+            <span className="italic truncate">{request.remarks}</span>
           </div>
-        </CardContent>
+        )}
       </Card>
 
       {/* Section 2: Attached Proof Documents (if any) */}
