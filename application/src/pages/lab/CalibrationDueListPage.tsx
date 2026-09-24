@@ -143,7 +143,7 @@ export const CalibrationDueListPage: React.FC = () => {
       `"${it.requestNumber}"`,
     ]);
 
-    const enterprisePrefix = (tenantName || organizationName || 'Nethra').replace(/\s+/g, '_');
+    const enterprisePrefix = (tenantName || organizationName || 'Enterprise').replace(/\s+/g, '_');
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

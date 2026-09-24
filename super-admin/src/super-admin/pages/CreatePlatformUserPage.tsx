@@ -3,12 +3,15 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Input, FieldGroup, Field, FieldLabel, FieldDescription } from '../../components/ui/UIPrimitives';
 import { useCreatePlatformUser } from '../hooks/usePlatformUsers';
+import { useRolesWithPermissions } from '../hooks/useRolePermissions';
 import type { PlatformRole } from '../types/superAdmin';
 import { ArrowLeft, Shield, User, Mail, Lock, ShieldAlert } from 'lucide-react';
 
 export default function CreatePlatformUserPage() {
   const navigate = useNavigate();
   const createMutation = useCreatePlatformUser();
+  const { data: rolesData, isLoading: isRolesLoading } = useRolesWithPermissions();
+  const availableRoles = rolesData?.roles || [];
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -120,11 +123,17 @@ export default function CreatePlatformUserPage() {
                 onChange={(e) => setRole(e.target.value as PlatformRole)}
                 className="flex h-9 w-full rounded-[4px] border border-[#E5E7EB] bg-white px-3 py-1 text-sm text-[#111827] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
               >
-                <option value="SUPER_ADMIN">SUPER_ADMIN — Full platform authority, tenant mutations</option>
-                <option value="ADMIN">ADMIN — Comprehensive operational administrator</option>
-                <option value="LAB_APPROVER">LAB_APPROVER — Senior laboratory technical manager &amp; test report approver</option>
-                <option value="LAB_ENTRY_PERSON">LAB_ENTRY_PERSON — Laboratory testing technician &amp; data entry</option>
-                <option value="COLLECTION_AGENT">COLLECTION_AGENT — Logistics &amp; sample collection field agent</option>
+                {isRolesLoading ? (
+                  <option value="">Loading dynamic roles from database...</option>
+                ) : availableRoles.length === 0 ? (
+                  <option value="SUPER_ADMIN">SUPER_ADMIN — Full platform authority</option>
+                ) : (
+                  availableRoles.map((r) => (
+                    <option key={r.code} value={r.code}>
+                      {r.name} ({r.code}) {r.description ? `— ${r.description}` : ''}
+                    </option>
+                  ))
+                )}
               </select>
             </Field>
 

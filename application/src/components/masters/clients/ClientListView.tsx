@@ -142,7 +142,7 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  const enterprisePrefix = (tenantName || organizationName || 'Nethra').replace(/\s+/g, '_');
+  const enterprisePrefix = (tenantName || organizationName || 'Enterprise').replace(/\s+/g, '_');
   const templateFileName = `${enterprisePrefix}_Client_Master_Template.xlsx`;
 
   return (

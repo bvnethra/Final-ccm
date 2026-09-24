@@ -48,7 +48,7 @@ export const AppHeader: React.FC = () => {
   }, []);
 
   const enterpriseName =
-    user?.tenantName || user?.organizationName || (user?.tenantId ? `Tenant ${user.tenantId.slice(0, 8)}` : 'Nethra Metrology Services Ltd');
+    user?.tenantName || user?.organizationName || (user?.tenantId ? `Tenant ${user.tenantId.slice(0, 8)}` : '');
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">

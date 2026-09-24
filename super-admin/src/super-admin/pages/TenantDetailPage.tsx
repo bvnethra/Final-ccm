@@ -492,11 +492,7 @@ export default function TenantDetailPage() {
                           <option key={t.code} value={t.code}>{t.label}</option>
                         ))
                       ) : (
-                        <>
-                          <option value="COMMERCIAL_LAB">Commercial Testing & Calibration Lab</option>
-                          <option value="MANUFACTURING_INHOUSE">Manufacturing In-house Calibration</option>
-                          <option value="GOVERNMENT_DEFENSE">Government / Defense Metrology</option>
-                        </>
+                        <option value="">Loading classifications...</option>
                       )}
                       {enterpriseForm.tenantType && !tenantTypes.some(t => t.code === enterpriseForm.tenantType) && (
                         <option value={enterpriseForm.tenantType}>{enterpriseForm.tenantType}</option>
@@ -646,12 +642,7 @@ export default function TenantDetailPage() {
                           <option key={c.code} value={c.label}>{c.label}</option>
                         ))
                       ) : (
-                        <>
-                          <option value="India">India</option>
-                          <option value="United States">United States</option>
-                          <option value="Germany">Germany</option>
-                          <option value="United Kingdom">United Kingdom</option>
-                        </>
+                        <option value="">Loading countries...</option>
                       )}
                     </select>
                   </div>
@@ -704,12 +695,7 @@ export default function TenantDetailPage() {
                           <option key={tz.code} value={tz.code}>{tz.label}</option>
                         ))
                       ) : (
-                        <>
-                          <option value="Asia/Kolkata">Asia/Kolkata (IST +5:30)</option>
-                          <option value="UTC">UTC (+0:00)</option>
-                          <option value="America/New_York">America/New_York (EST -5:00)</option>
-                          <option value="Europe/London">Europe/London (GMT +0:00)</option>
-                        </>
+                        <option value="">Loading timezones...</option>
                       )}
                     </select>
                   </div>
@@ -727,12 +713,7 @@ export default function TenantDetailPage() {
                           <option key={curr.code} value={curr.code}>{curr.label}</option>
                         ))
                       ) : (
-                        <>
-                          <option value="INR">INR — Indian Rupee (₹)</option>
-                          <option value="USD">USD — US Dollar ($)</option>
-                          <option value="EUR">EUR — Euro (€)</option>
-                          <option value="GBP">GBP — British Pound (£)</option>
-                        </>
+                        <option value="">Loading currencies...</option>
                       )}
                     </select>
                   </div>

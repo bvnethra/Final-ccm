@@ -46,9 +46,9 @@ export const DispatchBuilderPage: React.FC = () => {
 
   // Collection Agent state
   const [collectionAgentName, setCollectionAgentName] = useState<string>(
-    user?.fullName || user?.email || 'Collection Agent'
+    user?.fullName || user?.email || ''
   );
-  const [collectionAgentPhone, setCollectionAgentPhone] = useState<string>('+91 98765 43210');
+  const [collectionAgentPhone, setCollectionAgentPhone] = useState<string>(user?.phone || '');
   const [clientSignature, setClientSignature] = useState<string | undefined>();
 
   // Recipient info

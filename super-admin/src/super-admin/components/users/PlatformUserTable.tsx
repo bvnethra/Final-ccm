@@ -8,6 +8,7 @@ import {
   useUpdatePlatformUserRole,
   useDeletePlatformUser,
 } from '../../hooks/usePlatformUsers';
+import { useRolesWithPermissions } from '../../hooks/useRolePermissions';
 import { usePlatformAuth } from '../../hooks/usePlatformAuth';
 import type { PlatformUser, PlatformRole, PlatformUserStatus } from '../../types/superAdmin';
 import { Users, Plus, Shield, UserCheck, UserX, Trash2, AlertTriangle, X } from 'lucide-react';
@@ -19,6 +20,7 @@ export const PlatformUserTable: React.FC = () => {
   const currentUserId = platformSession?.user?.id;
 
   const { data: users = [], isLoading, error } = usePlatformUsers();
+  const { data: rolesData = [] } = useRolesWithPermissions();
   const updateStatusMutation = useUpdatePlatformUserStatus();
   const updateRoleMutation = useUpdatePlatformUserRole();
   const deleteUserMutation = useDeletePlatformUser();
@@ -323,11 +325,15 @@ export const PlatformUserTable: React.FC = () => {
                 }}
                 className="w-full bg-white border border-[#E5E7EB] rounded-[4px] px-3 py-2 text-xs text-[#111827] font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0274BB] focus-visible:border-[#0274BB]"
               >
-                <option value="SUPER_ADMIN">SUPER_ADMIN — Full platform authority, tenant mutations</option>
-                <option value="ADMIN">ADMIN — Comprehensive operational administrator</option>
-                <option value="LAB_APPROVER">LAB_APPROVER — Senior laboratory technical manager &amp; test report approver</option>
-                <option value="LAB_ENTRY_PERSON">LAB_ENTRY_PERSON — Laboratory testing technician &amp; data entry</option>
-                <option value="COLLECTION_AGENT">COLLECTION_AGENT — Logistics &amp; sample collection field agent</option>
+                {rolesData.length === 0 ? (
+                  <option value={roleChangeTarget.targetRole}>{roleChangeTarget.targetRole}</option>
+                ) : (
+                  rolesData.map((r) => (
+                    <option key={r.code} value={r.code}>
+                      {r.code} — {r.name || r.description || r.code}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
