@@ -6,7 +6,7 @@ import { SuperAdminSidebar } from './SuperAdminSidebar';
 
 export const SuperAdminLayout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col text-slate-900 font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col text-slate-900 font-sans">
       <SuperAdminHeader />
       <div className="flex flex-1 min-h-[calc(100vh-4rem)]">
         <SuperAdminSidebar />

@@ -130,52 +130,51 @@ export const SuperAdminSidebar: React.FC = () => {
   return (
     <aside
       className={cn(
-        'sticky top-16 h-[calc(100vh-4rem)] border-r border-slate-200 bg-white flex flex-col justify-between shrink-0 select-none transition-all duration-300 z-20',
-        isCollapsed ? 'w-20' : 'w-64'
+        'sticky top-16 h-[calc(100vh-4rem)] bg-white border-r border-slate-200 flex flex-col shrink-0 z-20 select-none transition-all duration-300 ease-in-out',
+        isCollapsed ? 'w-[72px]' : 'w-60'
       )}
     >
-      {/* Scrollable Navigation Sections */}
-      <div className="p-3 space-y-6 overflow-y-auto">
+      {/* Floating Edge Arrow Button matching localhost:5174 */}
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        className="absolute -right-3 top-4 z-30 size-6 bg-white border border-slate-200 rounded-full shadow-xs flex items-center justify-center text-slate-500 hover:text-[#0274BB] hover:border-[#0274BB] hover:scale-110 transition-all cursor-pointer focus:outline-none"
+        title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar (show symbols only)'}
+        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {isCollapsed ? <ChevronRight className="size-3.5" /> : <ChevronLeft className="size-3.5" />}
+      </button>
+
+      {/* Top Navigation Header matching localhost:5174 */}
+      {!isCollapsed ? (
+        <div className="flex items-center pb-3 pt-4 border-b border-slate-100 px-4">
+          <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+            Navigation
+          </span>
+        </div>
+      ) : (
+        <div className="pt-3 pb-2 border-b border-slate-100" />
+      )}
+
+      {/* Nav List with Independent Scroll */}
+      <div className={cn('flex-1 overflow-y-auto overflow-x-hidden space-y-6 py-4', isCollapsed ? 'px-2' : 'px-2')}>
         <NavSection
-          label="Platform Governance"
+          label="PLATFORM GOVERNANCE"
           items={visibleGovernanceItems}
           isCollapsed={isCollapsed}
         />
         <NavSection
-          label="Administration"
+          label="ADMINISTRATION"
           items={administrationItems}
           isCollapsed={isCollapsed}
         />
         <NavSection
-          label="Compliance & Audit"
+          label="COMPLIANCE & AUDIT"
           items={complianceItems}
           isCollapsed={isCollapsed}
         />
       </div>
-
-      {/* Collapse / Expand Toggle at Bottom */}
-      <div className="p-3 border-t border-slate-200 bg-white">
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-          className={cn(
-            'flex items-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer',
-            isCollapsed
-              ? 'size-11 mx-auto justify-center'
-              : 'w-full gap-3 px-3 py-2 text-xs font-semibold'
-          )}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="size-5 shrink-0 text-slate-600" />
-          ) : (
-            <>
-              <ChevronLeft className="size-4 shrink-0 text-slate-600" />
-              <span>Collapse Sidebar</span>
-            </>
-          )}
-        </button>
-      </div>
     </aside>
   );
 };
+

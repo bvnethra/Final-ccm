@@ -37,28 +37,32 @@ export const SuperAdminHeader: React.FC = () => {
         <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-slate-200">
           <Building2 className="size-4 text-slate-500" />
           <span className="text-xs text-slate-500">
-            Scope:{' '}
-            <span className="font-semibold text-xs text-[#0274BB]">Global Platform Governance</span>
+            Enterprise:{' '}
+            <span className="font-semibold text-xs text-[#0274BB]">Nethra Metrology Services Ltd</span>
           </span>
           <ChevronDown className="size-3.5 text-[#0274BB]" />
         </div>
       </div>
 
-      {/* Right User Actions & Profile */}
+      {/* Right User Actions & Profile matching 5174 */}
       <div className="flex items-center gap-3">
+        {/* Notification Bell */}
+        <button
+          type="button"
+          className="relative p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0274BB]/30 cursor-pointer"
+          title="Platform Alerts & Telemetry"
+        >
+          <Bell className="size-5" />
+        </button>
+
         {/* User Info & Avatar matching 5174 */}
         <div className="hidden sm:flex items-center gap-2.5 pl-2">
           <div className="size-8 rounded-full bg-[#EBF5FF] text-[#0274BB] flex items-center justify-center border border-blue-200/60 font-semibold text-xs shrink-0">
             <User className="size-4" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold text-slate-800 leading-tight">
-              {displayName}
-            </span>
-            <span className="text-[10px] font-mono text-emerald-600 font-semibold uppercase leading-tight">
-              • {displayRole}
-            </span>
-          </div>
+          <span className="text-xs font-semibold text-slate-800 leading-tight">
+            {displayName}
+          </span>
           <ChevronDown className="size-3.5 text-slate-400" />
         </div>
 
@@ -76,3 +80,4 @@ export const SuperAdminHeader: React.FC = () => {
     </header>
   );
 };
+

@@ -259,100 +259,135 @@ export const TenantTable: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
-                  <th className="py-3 px-4">Enterprise Name</th>
-                  <th className="py-3 px-4">Tenant Code</th>
-                  <th className="py-3 px-4">Classification</th>
-                  <th className="py-3 px-4">Primary Administrator</th>
-                  <th className="py-3 px-4">Facilities</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                <tr className="bg-[#F8FAFC] border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-semibold">
+                  <th className="px-5 py-3.5 whitespace-nowrap">Enterprise Info</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Admin Account</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Onboarded Date</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Scope &amp; Facilities</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Classification</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Lifecycle Status</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">System Audit</th>
+                  <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
+              <tbody className="divide-y divide-slate-100 text-sm">
                 {paginatedData.data.map((t, idx) => {
                   const palette = AVATAR_PALETTES[idx % AVATAR_PALETTES.length];
                   return (
-                    <tr key={t.id} className="hover:bg-slate-50/80 transition-colors duration-150">
-                      <td className="py-3.5 px-4">
+                    <tr key={t.id} className="hover:bg-slate-50/70 transition-colors group">
+                      {/* ENTERPRISE INFO */}
+                      <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div
                             className={cn(
-                              'size-9 rounded-lg border flex items-center justify-center font-bold text-xs shrink-0',
+                              'size-10 rounded-lg flex items-center justify-center border shrink-0',
                               palette.bg,
                               palette.text,
                               palette.border
                             )}
                           >
-                            {t.name.charAt(0).toUpperCase()}
+                            <Building2 className="size-5" />
                           </div>
                           <div>
                             <Link
                               to={`/tenants/${t.id}`}
-                              className="font-semibold text-slate-900 hover:text-[#0274BB] transition-colors"
+                              className="font-semibold text-slate-900 text-sm hover:text-[#0274BB] transition-colors leading-tight line-clamp-1"
                             >
                               {t.name}
                             </Link>
-                            <div className="text-[11px] text-slate-400">
-                              Registered enterprise
-                            </div>
+                            <span className="inline-block font-mono text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-[#0274BB] border border-blue-200 mt-1 whitespace-nowrap">
+                              {t.code}
+                            </span>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-mono text-xs font-semibold text-[#0274BB] bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200">
-                          {t.code}
-                        </span>
+
+                      {/* ADMIN ACCOUNT */}
+                      <td className="px-5 py-4">
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                            <Mail className="size-3.5 text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[190px]">{t.adminEmail}</span>
+                          </div>
+                          <div className="text-xs text-slate-500 ml-5">
+                            {t.adminName || 'Root Administrator'}
+                          </div>
+                        </div>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-700">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+
+                      {/* ONBOARDED DATE */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                          <span className="text-slate-400">📅</span>
+                          <span>{new Date(t.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </td>
+
+                      {/* SCOPE & FACILITIES */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium border border-slate-200">
                           <Layers className="size-3 text-slate-500" />
-                          {t.tenantType || 'Commercial Lab'}
+                          <span>{t.branchesCount || 1} {t.branchesCount === 1 ? 'Facility' : 'Facilities'}</span>
                         </span>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="text-slate-900 font-semibold">{t.adminName || 'Administrator'}</div>
-                        <div className="text-slate-500 font-mono text-[11px]">{t.adminEmail}</div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1 text-xs text-slate-600">
-                          <Building2 className="size-3.5 text-slate-400" />
-                          {t.branchesCount || 1} Lab Facility
+
+                      {/* CLASSIFICATION */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-[#0274BB] border border-blue-200 whitespace-nowrap">
+                          {t.tenantType || 'ENTERPRISE'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4">
+
+                      {/* LIFECYCLE STATUS */}
+                      <td className="px-5 py-4 whitespace-nowrap">
                         <span
                           className={cn(
-                            'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border',
+                            'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border whitespace-nowrap',
                             t.status === 'ACTIVE'
                               ? 'bg-[#E8F8F0] text-[#16A34A] border-[#D1F2E0]'
+                              : t.status === 'ONBOARDING'
+                              ? 'bg-blue-50 text-[#0274BB] border-blue-200'
                               : 'bg-rose-50 text-rose-700 border-rose-200'
                           )}
                         >
                           <span
                             className={cn(
                               'size-1.5 rounded-full',
-                              t.status === 'ACTIVE' ? 'bg-[#16A34A]' : 'bg-rose-600'
+                              t.status === 'ACTIVE'
+                                ? 'bg-[#16A34A]'
+                                : t.status === 'ONBOARDING'
+                                ? 'bg-[#0274BB]'
+                                : 'bg-rose-600'
                             )}
                           />
                           {t.status}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right">
+
+                      {/* SYSTEM AUDIT */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <span className="text-slate-400">🕒</span>
+                          <span>Updated: {new Date(t.updatedAt || t.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </td>
+
+                      {/* ACTIONS */}
+                      <td className="px-5 py-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
+                          <Button
+                            variant="primary"
+                            size="sm"
                             onClick={() => openOperationalAppForTenant(t.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-[#0274BB] hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-colors cursor-pointer"
+                            className="text-xs h-8 px-3 rounded-lg bg-[#0274BB] hover:bg-[#003B8C] text-white font-medium cursor-pointer"
                             title="Launch this Tenant in Operational App on localhost:5174"
                           >
-                            <ExternalLink className="size-3.5" />
-                            <span>Launch App</span>
-                          </button>
+                            Launch App
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-xs h-7 px-2.5 gap-1 border-slate-200 text-slate-700 hover:bg-slate-50"
+                            className="text-xs h-8 px-2.5 gap-1 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg font-medium cursor-pointer"
                             onClick={() => navigate(`/tenants/${t.id}`)}
                             title="View Tenant Profile"
                           >
@@ -360,30 +395,14 @@ export const TenantTable: React.FC = () => {
                             <ArrowUpRight className="size-3" />
                           </Button>
                           {!isSupport && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-xs h-7 px-2 text-slate-400 hover:text-slate-800"
-                                onClick={() => handleTriggerInvite(t)}
-                                title="Dispatch Admin Invite"
-                              >
-                                <Mail className="size-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-xs h-7 px-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                                onClick={() => {
-                                  setTenantToDelete(t);
-                                  setDeleteReason('Removed by Super Admin');
-                                  setDeleteError('');
-                                }}
-                                title="Delete Tenant"
-                              >
-                                <Trash2 className="size-3.5" />
-                              </Button>
-                            </>
+                            <button
+                              type="button"
+                              onClick={() => { setTenantToDelete(t); setDeleteReason(''); setDeleteError(''); }}
+                              className="size-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors cursor-pointer"
+                              title="Delete Tenant"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
                           )}
                         </div>
                       </td>
