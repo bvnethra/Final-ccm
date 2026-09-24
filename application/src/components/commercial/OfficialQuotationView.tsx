@@ -307,7 +307,7 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
             <thead>
               <tr className="border-b border-black text-center font-bold bg-[#F9FAFB]">
                 <th className="border-r border-black p-1.5 w-[6%]">Sl. No.</th>
-                <th className="border-r border-black p-1.5 w-[28%] text-left">Description</th>
+                <th className="border-r border-black p-1.5 w-[28%] text-left">Description of Calibration Service</th>
                 <th className="border-r border-black p-1.5 w-[16%]">Range</th>
                 <th className="border-r border-black p-1.5 w-[8%]">Qty</th>
                 <th className="border-r border-black p-1.5 w-[16%] text-right">
@@ -340,7 +340,7 @@ export const OfficialQuotationView: React.FC<OfficialQuotationViewProps> = ({
                         {idx + 1}
                       </td>
                       <td className="border-r border-black p-1.5 text-left font-medium text-black">
-                        {it.description}
+                        {it.description.replace(/^Calibration Charges\s*[-–:]?\s*/i, '') || it.description}
                       </td>
                       <td className="border-r border-black p-1.5 text-center text-gray-800">
                         {it.range || '-'}

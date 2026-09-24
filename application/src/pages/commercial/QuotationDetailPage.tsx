@@ -55,7 +55,7 @@ export const QuotationDetailPage: React.FC = () => {
     quote.calibration_requests?.clients;
 
   const handleGenerateInvoice = () => {
-    navigate('/commercial/quotations');
+    navigate('/commercial/invoices');
   };
 
   return (

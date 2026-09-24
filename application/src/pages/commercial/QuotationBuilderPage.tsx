@@ -809,7 +809,7 @@ export const QuotationBuilderPage: React.FC = () => {
                 Quotation Line Items ({items.length})
               </CardTitle>
               <CardDescription className="text-xs text-[#6B7280]">
-                {quotationType === 'NEW_CLIENT_ESTIMATE'
+                {quotationType === 'CLIENT_ESTIMATE'
                   ? 'Approximate equipment descriptions, operating range, estimated quantities, and rates'
                   : 'Itemized instruments, operating range, unit calibration rates, and line totals'}
               </CardDescription>
@@ -823,7 +823,7 @@ export const QuotationBuilderPage: React.FC = () => {
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#475569] font-semibold uppercase">
                   <tr>
-                    <th className="py-2.5 px-3 w-[30%]">Equipment Description *</th>
+                    <th className="py-2.5 px-3 w-[30%]">Description of Calibration Service *</th>
                     <th className="py-2.5 px-3 w-[18%]">Range / Model</th>
                     <th className="py-2.5 px-3 w-16">Qty *</th>
                     <th className="py-2.5 px-3 w-28">Rate (₹) *</th>

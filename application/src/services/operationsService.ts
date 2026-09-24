@@ -2092,21 +2092,26 @@ export async function routeRequestItems(payload: RouteRequestItemsPayload): Prom
   const { tenantId, requestId, items, actorUserId, actorName } = payload;
   const now = new Date().toISOString();
 
-  // 1. Update in Supabase if connected
+  // 1. Update in Supabase
   try {
     for (const it of items) {
+      const updateData: Record<string, any> = {
+        destination: it.destination,
+        vendor_id: it.vendorId || null,
+        vendor_name: it.vendorName || null,
+      };
+      if (it.remarks) updateData.remarks = it.remarks;
+      if (it.expectedReturnDate) updateData.expected_return_date = it.expectedReturnDate;
+      if (it.estimatedCost !== undefined) updateData.estimated_cost = it.estimatedCost;
+
       await supabase
         .from('request_items')
-        .update({
-          destination: it.destination,
-          vendor_id: it.vendorId || null,
-          remarks: it.remarks || null,
-        })
+        .update(updateData)
         .eq('id', it.itemId)
         .eq('tenant_id', tenantId);
     }
-  } catch (_err) {
-    // fallback
+  } catch (err) {
+    console.error('Failed to update request_items in Supabase:', err);
   }
 
   // 2. Update local store
@@ -2158,6 +2163,13 @@ export async function routeRequestItems(payload: RouteRequestItemsPayload): Prom
     },
     remarks: `Segregated items: ${inHouseCount} In-House, ${vendorCount} External Vendor Outsource.`,
   });
+
+  try {
+    const fresh = await getCalibrationRequestById(requestId, tenantId);
+    if (fresh) return fresh;
+  } catch (_e) {
+    // fallback
+  }
 
   if (updatedRequest) return updatedRequest;
   return getCalibrationRequestById(requestId, tenantId);

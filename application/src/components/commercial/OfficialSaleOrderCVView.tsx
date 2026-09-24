@@ -27,7 +27,7 @@ export const OfficialSaleOrderCVView: React.FC<OfficialSaleOrderCVViewProps> = (
   const printableRef = useRef<HTMLDivElement>(null);
   const { labProfile, updateLabProfile, resetToDefault } = useLabProfile();
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const { tenantId, organizationId } = useAuthContext();
+  const { tenantId } = useAuthContext();
 
   // Local invoice-pending toggle state (keyed by item ID)
   const [pendingInvoiceItems, setPendingInvoiceItems] = useState<Record<string, boolean>>(() => {
@@ -242,7 +242,7 @@ export const OfficialSaleOrderCVView: React.FC<OfficialSaleOrderCVViewProps> = (
             <thead>
               <tr className="border-b border-black bg-gray-50 text-[10px] uppercase font-bold text-center">
                 <th className="py-2 px-2 border-r border-black w-10">Sl No.</th>
-                <th className="py-2 px-3 border-r border-black text-left">Description of Services</th>
+                <th className="py-2 px-3 border-r border-black text-left">Description of Calibration Service</th>
                 <th className="py-2 px-2 border-r border-black w-20">HSN/SAC</th>
                 <th className="py-2 px-2 border-r border-black w-20">Quantity</th>
                 <th className="py-2 px-2 border-r border-black w-20 text-right">Rate</th>
@@ -263,10 +263,7 @@ export const OfficialSaleOrderCVView: React.FC<OfficialSaleOrderCVViewProps> = (
                       {idx + 1}
                     </td>
                     <td className="py-2.5 px-3 border-r border-black space-y-0.5">
-                      <div className="font-bold text-[11px]">
-                        Calibration Charges
-                      </div>
-                      <div className="italic text-gray-800 font-medium">
+                      <div className="font-bold text-[11px] text-gray-900">
                         {itemMaster?.item_name || 'Instrument'}
                         {itemMaster?.measurement_range && ` (${itemMaster.measurement_range})`}
                       </div>

@@ -28,9 +28,26 @@ export default function LoginPage() {
     navigate(from, { replace: true });
   }
 
+  const operationalEmails = [
+    'labentry@nethra.com',
+    'labapprover@nethra.com',
+    'backoffice@nethra.com',
+    'collectionagent@nethra.com',
+  ];
+
+  const isOperationalEmail = operationalEmails.includes(email.trim().toLowerCase());
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (isOperationalEmail) {
+      setError(
+        'Account is for Operational Application. Please switch to port 5174 (http://localhost:5174/login).'
+      );
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -106,6 +123,23 @@ export default function LoginPage() {
                 className="w-full bg-slate-950/80 border border-slate-800 rounded-[4px] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-[#0274BB] focus:ring-1 focus:ring-[#0274BB] transition-all outline-none"
               />
             </div>
+
+            {isOperationalEmail && (
+              <div className="p-3.5 rounded-[6px] bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex flex-col gap-2">
+                <div className="font-semibold flex items-center gap-1.5 text-amber-400">
+                  <span>⚠️ Operational Staff Account Detected</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  <strong>{email}</strong> is for the <strong>Operational Application</strong> on port <strong>5174</strong> (not the Super-Admin Governance Portal).
+                </p>
+                <a
+                  href="http://localhost:5174/login"
+                  className="w-full text-center py-2 px-3 rounded-[4px] bg-[#0274BB] hover:bg-[#003B8C] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                >
+                  Open Operational App (localhost:5174) &rarr;
+                </a>
+              </div>
+            )}
 
             {error && (
               <div className="flex items-start gap-2.5 p-3 rounded-[4px] bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">

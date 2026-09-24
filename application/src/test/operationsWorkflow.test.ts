@@ -989,7 +989,7 @@ describe('Calibration Operational Lifecycle Workflow Tests', () => {
         tenantId,
         organizationId,
         clientId: existingClientId,
-        quotationType: 'EXISTING_CUSTOMER',
+        quotationType: 'CLIENT_ESTIMATE',
         subtotal: 600,
         discount: 0,
         taxAmount: 108,
@@ -1004,7 +1004,7 @@ describe('Calibration Operational Lifecycle Workflow Tests', () => {
         ],
       });
 
-      expect(quote.quotation_type).toBe('EXISTING_CUSTOMER');
+      expect(quote.quotation_type).toBe('CLIENT_ESTIMATE');
       expect(quote.client_id).toBe(existingClientId);
       expect(quote.request_id).toBeUndefined();
       expect(quote.total_amount).toBe(708);
@@ -1018,7 +1018,7 @@ describe('Calibration Operational Lifecycle Workflow Tests', () => {
         tenantId,
         organizationId,
         clientId: newClientId,
-        quotationType: 'NEW_CLIENT_ESTIMATE',
+        quotationType: 'CLIENT_ESTIMATE',
         subtotal: 1200,
         discount: 100,
         taxAmount: 198,
@@ -1033,7 +1033,7 @@ describe('Calibration Operational Lifecycle Workflow Tests', () => {
         ],
       });
 
-      expect(quote.quotation_type).toBe('NEW_CLIENT_ESTIMATE');
+      expect(quote.quotation_type).toBe('CLIENT_ESTIMATE');
       expect(quote.client_id).toBe(newClientId);
       expect(quote.request_id).toBeUndefined();
       expect(quote.items?.length).toBe(1);
@@ -1044,7 +1044,7 @@ describe('Calibration Operational Lifecycle Workflow Tests', () => {
       const allQuotes = await getQuotations(tenantId);
       const found = allQuotes.find((q) => q.id === quote.id);
       expect(found).toBeDefined();
-      expect(found?.quotation_type).toBe('NEW_CLIENT_ESTIMATE');
+      expect(found?.quotation_type).toBe('CLIENT_ESTIMATE');
     });
   });
 });

@@ -296,7 +296,7 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
               <thead>
                 <tr className="border-b border-black text-center font-bold bg-[#F9FAFB]">
                   <th className="border-r border-black p-1 w-[6%]">Sl No.</th>
-                  <th className="border-r border-black p-1 w-[46%] text-left">Description of Services</th>
+                  <th className="border-r border-black p-1 w-[46%] text-left">Description of Calibration Service</th>
                   <th className="border-r border-black p-1 w-[12%]">Due on</th>
                   <th className="border-r border-black p-1 w-[10%]">Quantity</th>
                   <th className="border-r border-black p-1 w-[10%] text-right">Rate</th>
@@ -316,9 +316,8 @@ export const OfficialVendorPOView: React.FC<OfficialVendorPOViewProps> = ({
                   <tr key={it.id || idx} className="align-top leading-tight">
                     <td className="border-r border-black p-1.5 text-center font-mono">{idx + 1}</td>
                     <td className="border-r border-black p-1.5 text-left">
-                      <div className="font-bold text-black">Calibration Charges</div>
-                      <div className="italic text-gray-800 pl-2">
-                        {it.description.replace(/^Calibration Charges\s*[-–]?\s*/i, '')}
+                      <div className="font-bold text-black">
+                        {it.description.replace(/^Calibration Charges\s*[-–:]?\s*/i, '') || it.description}
                       </div>
                     </td>
                     <td className="border-r border-black p-1.5 text-center font-mono">

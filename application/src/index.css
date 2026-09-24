@@ -84,52 +84,87 @@
   }
 }
 
-/* Print Rules for Official Tax Invoice PDF Export */
+/* Print Rules for Official Tax Invoice, PO, Quotation & Document Exports */
 @media print {
   @page {
     size: A4 portrait;
     margin: 6mm;
   }
   
-  body {
-    background: white !important;
-    color: black !important;
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: visible !important;
   }
 
-  body * {
-    visibility: hidden;
+  /* Hide app navigation, sidebars, buttons, modals outside printable */
+  nav,
+  aside,
+  header,
+  footer,
+  .no-print,
+  button,
+  [role="navigation"],
+  [data-no-print="true"] {
+    display: none !important;
   }
 
+  /* Reset layout wrappers to avoid clipping */
+  #root,
+  main,
+  div[class*="min-h-screen"],
+  div[class*="overflow-"] {
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Printable target styling */
   #official-tax-invoice-printable,
-  #official-tax-invoice-printable *,
   #official-vendor-po-printable,
-  #official-vendor-po-printable *,
   #official-quotation-printable,
-  #official-quotation-printable * {
-    visibility: visible;
-  }
-
-  #official-tax-invoice-printable,
-  #official-vendor-po-printable,
-  #official-quotation-printable {
-    position: absolute;
-    left: 0;
-    top: 0;
+  #official-sale-order-printable {
+    display: block !important;
+    visibility: visible !important;
+    position: relative !important;
     width: 100% !important;
     max-width: 100% !important;
-    min-height: 100% !important;
-    margin: 0 !important;
-    padding: 12px !important;
+    min-height: auto !important;
+    margin: 0 auto !important;
+    padding: 4mm !important;
     box-shadow: none !important;
-    border: 1.5px solid black !important;
-    background: white !important;
-    color: black !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    border: 1.5px solid #000000 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
-  .no-print {
-    display: none !important;
+  #official-tax-invoice-printable *,
+  #official-vendor-po-printable *,
+  #official-quotation-printable *,
+  #official-sale-order-printable * {
+    visibility: visible !important;
+    color: #000000 !important;
+  }
+
+  #official-tax-invoice-printable th,
+  #official-vendor-po-printable th,
+  #official-quotation-printable th {
+    background-color: #f3f4f6 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 

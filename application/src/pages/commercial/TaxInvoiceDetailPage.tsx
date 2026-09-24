@@ -288,7 +288,7 @@ export const TaxInvoiceDetailPage: React.FC = () => {
                           <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-2">
                             <div className="sm:col-span-6">
                               <label className="text-[10px] text-gray-500 font-semibold block mb-0.5">
-                                Description of Services
+                                Description of Calibration Service
                               </label>
                               <input
                                 type="text"

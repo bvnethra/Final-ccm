@@ -139,6 +139,18 @@ export const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
+                  setEmail('collectionagent@nethra.com');
+                  setPassword('Collection@2026!');
+                  setError(null);
+                }}
+                className="text-left p-2 rounded bg-white hover:bg-[#F0F9FF] border border-[#E2E8F0] hover:border-[#0274BB] transition cursor-pointer"
+              >
+                <div className="font-semibold text-[#0F172A]">Collection Agent</div>
+                <div className="text-[10px] text-[#64748B] truncate">collectionagent@nethra.com</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   setEmail('labentry@nethra.com');
                   setPassword('LabEntry@2026!');
                   setError(null);
@@ -179,7 +191,7 @@ export const LoginPage: React.FC = () => {
                   setPassword('SuperAdmin@2026!');
                   setError(null);
                 }}
-                className="text-left p-2 rounded bg-white hover:bg-[#F0F9FF] border border-[#E2E8F0] hover:border-[#0274BB] transition cursor-pointer"
+                className="col-span-2 text-left p-2 rounded bg-white hover:bg-[#F0F9FF] border border-[#E2E8F0] hover:border-[#0274BB] transition cursor-pointer"
               >
                 <div className="font-semibold text-[#0274BB]">Super Admin</div>
                 <div className="text-[10px] text-[#64748B] truncate">superadmin@nethra.com</div>

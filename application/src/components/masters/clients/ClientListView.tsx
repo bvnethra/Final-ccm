@@ -1,6 +1,6 @@
 // application/src/components/masters/clients/ClientListView.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Client } from '../../../types/domain';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/UIPrimitives';
@@ -111,6 +111,7 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
   onImportBulk,
   onImportSuccess,
 }) => {
+  const navigate = useNavigate();
   const { canPerform, isSuperAdmin, tenantName, organizationName } = useAuthContext();
   const canCreateMaster = isSuperAdmin || canPerform('CLIENT_VENDOR_ITEM_MASTER', 'CREATE');
   const canEditMaster =
@@ -428,7 +429,9 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
                   return (
                     <tr
                       key={client.id}
-                      className="hover:bg-slate-50/70 transition-colors group"
+                      onClick={() => navigate(`/masters/clients/${client.id}`)}
+                      className="hover:bg-blue-50/50 transition-colors group cursor-pointer"
+                      title={`Open detailed profile for ${client.client_name}`}
                     >
                       {/* CLIENT INFO */}
                       <td className="px-5 py-4">
@@ -533,7 +536,7 @@ export const ClientListView: React.FC<ClientListViewProps> = ({
                       </td>
 
                       {/* ACTIONS */}
-                      <td className="px-5 py-4 text-right relative">
+                      <td className="px-5 py-4 text-right relative" onClick={(e) => e.stopPropagation()}>
                         <div className="inline-block">
                           <button
                             type="button"

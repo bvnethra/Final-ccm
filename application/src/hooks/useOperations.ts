@@ -398,9 +398,13 @@ export function useRouteRequestItems() {
 
   return useMutation({
     mutationFn: (payload: RouteRequestItemsPayload) => routeRequestItems(payload),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['calibrationRequests', tenantId] });
-      queryClient.invalidateQueries({ queryKey: ['calibrationRequest', variables.requestId, tenantId] });
+    onSuccess: (updatedRequest, variables) => {
+      if (updatedRequest) {
+        queryClient.setQueryData(['calibrationRequest', variables.requestId, tenantId], updatedRequest);
+      }
+      queryClient.invalidateQueries({ queryKey: ['calibrationRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['calibrationRequest', variables.requestId] });
+      queryClient.invalidateQueries({ queryKey: ['labQueue'] });
     },
   });
 }

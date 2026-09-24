@@ -11,8 +11,6 @@ import {
 } from '../../hooks/useOperations';
 import { useAuthContext } from '../../contexts/AuthContext';
 import {
-  Card,
-  CardContent,
   Button,
   Badge,
   Input,
@@ -46,6 +44,7 @@ import {
   ShieldCheck,
   Search,
   MoreVertical,
+  ChevronLeft,
   ChevronRight,
   Building2,
 } from 'lucide-react';
@@ -94,22 +93,13 @@ export const DispatchListPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'ALL' | 'DELIVERED' | 'IN_TRANSIT' | 'DISPATCHED' | 'APPROVED' | 'PENDING'>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(10);
   const [activeActionMenuId, setActiveActionMenuId] = useState<string | null>(null);
 
   const deliveredDispatches = dispatches.filter((d) => d.status === 'DELIVERED');
   const inTransitDispatches = dispatches.filter((d) => d.status === 'IN_TRANSIT');
   const dispatchedOnly = dispatches.filter((d) => d.status === 'DISPATCHED');
   const activeMovementCount = inTransitDispatches.length + dispatchedOnly.length;
-  const dcApprovedDispatches = dispatches.filter((d) => d.approval_status === 'APPROVED');
-  const dcPendingDispatches = dispatches.filter((d) => d.approval_status === 'PENDING_APPROVAL' || !d.approval_status);
-
-  const avatarStyles = [
-    'bg-blue-50 text-[#0274BB] border border-blue-200',
-    'bg-emerald-50 text-emerald-700 border border-emerald-200',
-    'bg-purple-50 text-purple-700 border border-purple-200',
-    'bg-amber-50 text-amber-700 border border-amber-200',
-  ];
 
   const getRequestInfo = (requestId: string) => {
     return requests.find((r) => r.id === requestId);

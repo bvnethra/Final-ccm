@@ -9,7 +9,9 @@ import {
   useCreateInvoice,
   useDispatches,
   useDeliveries,
+  useRouteRequestItems,
 } from '../../hooks/useOperations';
+import { useVendors } from '../../hooks/useVendorMaster';
 import {
   Card,
   CardHeader,
@@ -60,7 +62,81 @@ import { OfficialSaleOrderCVView } from '../../components/commercial/OfficialSal
 export const RequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isSuperAdmin, canPerform, getPermissionLevel } = useAuthContext();
+  const { tenantId, organizationId, user, isSuperAdmin, canPerform, getPermissionLevel } = useAuthContext();
+  const canRouteItems =
+    isSuperAdmin ||
+    canPerform('LAB_VERIFICATION_RECEIPT', 'CREATE_EDIT') ||
+    canPerform('RECORD_CALIBRATION_FREQUENCY', 'CREATE') ||
+    canPerform('CREATE_REQUEST', 'CREATE_EDIT');
+  const routeMutation = useRouteRequestItems();
+  const { data: vendors = [] } = useVendors();
+  const [localItemRoutes, setLocalItemRoutes] = useState<Record<string, { destination: 'IN_HOUSE' | 'VENDOR_OUTSOURCE'; vendorId?: string }>>({});
+
+  const handleRoutingChange = async (itemId: string, destination: 'IN_HOUSE' | 'VENDOR_OUTSOURCE') => {
+    if (!tenantId || !request?.id) return;
+    setLocalItemRoutes((prev) => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        destination,
+        vendorId: destination === 'IN_HOUSE' ? '' : prev[itemId]?.vendorId,
+      },
+    }));
+
+    const currentItem = request.request_items?.find((i: any) => i.id === itemId);
+    try {
+      await routeMutation.mutateAsync({
+        tenantId,
+        organizationId: organizationId || undefined,
+        requestId: request.id,
+        actorUserId: user?.id,
+        actorName: user?.fullName || 'Operations Manager',
+        items: [
+          {
+            itemId,
+            destination,
+            vendorId: destination === 'IN_HOUSE' ? undefined : (localItemRoutes[itemId]?.vendorId || currentItem?.vendor_id),
+            vendorName: destination === 'IN_HOUSE' ? undefined : currentItem?.vendor_name,
+          },
+        ],
+      });
+    } catch (err) {
+      console.error('Failed to update routing:', err);
+    }
+  };
+
+  const handleVendorChange = async (itemId: string, vendorId: string) => {
+    if (!tenantId || !request?.id) return;
+    const vendor = vendors.find((v) => v.id === vendorId);
+    setLocalItemRoutes((prev) => ({
+      ...prev,
+      [itemId]: {
+        destination: 'VENDOR_OUTSOURCE',
+        vendorId,
+      },
+    }));
+
+    try {
+      await routeMutation.mutateAsync({
+        tenantId,
+        organizationId: organizationId || undefined,
+        requestId: request.id,
+        actorUserId: user?.id,
+        actorName: user?.fullName || 'Operations Manager',
+        items: [
+          {
+            itemId,
+            destination: 'VENDOR_OUTSOURCE',
+            vendorId,
+            vendorName: vendor?.vendor_name,
+          },
+        ],
+      });
+    } catch (err) {
+      console.error('Failed to update vendor:', err);
+    }
+  };
+
   const canCreateInvoice = isSuperAdmin || canPerform('CREATE_INVOICE', 'CREATE');
   const canCreateQuotation = isSuperAdmin || (getPermissionLevel('CREATE_QUOTATION') !== 'APPROVE' && canPerform('CREATE_QUOTATION', 'CREATE'));
   const backToQueue = !canPerform('CREATE_REQUEST', 'VIEW') && (canPerform('LAB_VERIFICATION_RECEIPT', 'VIEW') || canPerform('RECORD_CALIBRATION_FREQUENCY', 'VIEW'));
@@ -809,22 +885,69 @@ export const RequestDetailPage: React.FC = () => {
                     <td className="px-4 py-3.5">
                       {getConditionBadge(item.item_condition)}
                     </td>
-                    <td className="px-4 py-3.5">
-                      {item.destination === 'VENDOR_OUTSOURCE' ? (
-                        <div className="space-y-0.5">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
-                            <Truck className="size-3 text-amber-700" /> Outsource
+                    <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      {!canRouteItems ? (
+                        item.destination === 'VENDOR_OUTSOURCE' ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
+                              <Truck className="size-3 text-amber-700" /> Outsourcing
+                            </span>
+                            {item.vendor_name && (
+                              <div className="text-[10px] text-amber-800 font-medium truncate max-w-[140px]">
+                                {item.vendor_name}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
+                            <Building className="size-3 text-blue-600" /> In-House
                           </span>
-                          {item.vendor_name && (
-                            <div className="text-[10px] text-amber-800 font-medium truncate max-w-[140px]">
-                              {item.vendor_name}
-                            </div>
-                          )}
-                        </div>
+                        )
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
-                          <Building className="size-3 text-blue-600" /> In-House
-                        </span>
+                        <div className="space-y-1.5 min-w-[145px]">
+                          {(() => {
+                            const effectiveDestination = localItemRoutes[item.id]?.destination ?? (item.destination || 'IN_HOUSE');
+                            const effectiveVendorId = localItemRoutes[item.id]?.vendorId !== undefined ? localItemRoutes[item.id]?.vendorId : (item.vendor_id || '');
+
+                            return (
+                              <>
+                                <select
+                                  value={effectiveDestination}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    handleRoutingChange(item.id, e.target.value as 'IN_HOUSE' | 'VENDOR_OUTSOURCE');
+                                  }}
+                                  className={`w-full text-xs font-semibold rounded-md border px-2 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors ${
+                                    effectiveDestination === 'VENDOR_OUTSOURCE'
+                                      ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                                      : 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100'
+                                  }`}
+                                >
+                                  <option value="IN_HOUSE">🏢 In-House</option>
+                                  <option value="VENDOR_OUTSOURCE">🚚 Outsourcing</option>
+                                </select>
+
+                                {effectiveDestination === 'VENDOR_OUTSOURCE' && (
+                                  <select
+                                    value={effectiveVendorId}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      handleVendorChange(item.id, e.target.value);
+                                    }}
+                                    className="w-full text-[11px] rounded-md border border-amber-300 bg-white px-2 py-1 text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500 truncate"
+                                  >
+                                    <option value="">Select Vendor...</option>
+                                    {vendors.map((v) => (
+                                      <option key={v.id} value={v.id}>
+                                        {v.vendor_name} {v.vendor_code ? `(${v.vendor_code})` : ''}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3.5 text-xs text-[#4B5563]">

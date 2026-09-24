@@ -1,6 +1,6 @@
 // application/src/pages/requests/RequestListPage.tsx
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCalibrationRequests } from '../../hooks/useOperations';
 import { Button } from '../../components/ui/UIPrimitives';
 import type { CalibrationRequest } from '../../types/domain';
@@ -32,6 +32,7 @@ const AVATAR_PALETTES = [
 ];
 
 export const RequestListPage: React.FC = () => {
+  const navigate = useNavigate();
   const { canPerform, isSuperAdmin } = useAuthContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -460,7 +461,9 @@ export const RequestListPage: React.FC = () => {
                   return (
                     <tr
                       key={req.id}
-                      className="hover:bg-slate-50/70 transition-colors group"
+                      onClick={() => navigate(`/requests/${req.id}`)}
+                      className="hover:bg-blue-50/50 transition-colors group cursor-pointer"
+                      title={`Open detailed view for ${req.request_number}`}
                     >
                       {/* REQUEST INFO */}
                       <td className="px-5 py-4">
@@ -476,13 +479,12 @@ export const RequestListPage: React.FC = () => {
                             <ClipboardList className="size-5" />
                           </div>
                           <div>
-                            <Link
-                              to={`/requests/${req.id}`}
-                              className="font-semibold text-slate-900 text-sm hover:text-[#0274BB] transition-colors leading-tight line-clamp-1"
+                            <span
+                              className="font-semibold text-slate-900 text-sm group-hover:text-[#0274BB] transition-colors leading-tight line-clamp-1"
                               title={req.request_number}
                             >
                               {req.request_number}
-                            </Link>
+                            </span>
                             <span className="inline-block font-mono text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-[#0274BB] border border-blue-200 mt-1 whitespace-nowrap">
                               {req.clients?.client_code || 'CLIENT'}
                             </span>
@@ -495,7 +497,7 @@ export const RequestListPage: React.FC = () => {
                         <div className="space-y-0.5">
                           <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                             <Building2 className="size-3.5 text-slate-400 shrink-0" />
-                            <span className="truncate max-w-[170px]">
+                            <span className="truncate max-w-[170px] group-hover:text-[#0274BB] transition-colors">
                               {req.clients?.client_name || 'Direct Enterprise Client'}
                             </span>
                           </div>
@@ -555,10 +557,10 @@ export const RequestListPage: React.FC = () => {
                       </td>
 
                       {/* ACTIONS */}
-                      <td className="px-5 py-4 text-right relative whitespace-nowrap">
+                      <td className="px-5 py-4 text-right relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="inline-flex items-center gap-2 justify-end">
                           {req.status === 'CREATED' ? (
-                            <Link to={`/lab/verification/${req.id}`}>
+                            <Link to={`/lab/verification/${req.id}`} onClick={(e) => e.stopPropagation()}>
                               <button
                                 type="button"
                                 className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-[#0274BB] hover:bg-blue-100 border border-blue-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
@@ -567,7 +569,7 @@ export const RequestListPage: React.FC = () => {
                               </button>
                             </Link>
                           ) : req.status === 'VERIFIED' ? (
-                            <Link to={`/lab/calibration/${req.id}`}>
+                            <Link to={`/lab/calibration/${req.id}`} onClick={(e) => e.stopPropagation()}>
                               <button
                                 type="button"
                                 className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
@@ -580,13 +582,16 @@ export const RequestListPage: React.FC = () => {
                           {/* CV Full View Button */}
                           <button
                             type="button"
-                            onClick={() => setViewingCVRequest(req)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingCVRequest(req);
+                            }}
                             title="View & Print Sale Order / CV"
                             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#EFF6FF] text-[#0274BB] hover:bg-blue-100 border border-[#BFDBFE] transition-colors inline-flex items-center gap-1 cursor-pointer"
                           >
                             <FileCheck className="size-3" /> CV
                           </button>
-                          <div className="inline-block">
+                          <div className="inline-block" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               onClick={(e) => {

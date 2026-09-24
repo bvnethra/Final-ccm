@@ -16,7 +16,7 @@ interface ClientDetailPresenterProps {
   client?: Client;
   isLoading: boolean;
   errorMessage?: string | null;
-  clientInvoices: Quotation[];
+  clientInvoices: Invoice[];
   isLoadingInvoices: boolean;
   pastServicedItems: PastServicedItem[];
   isLoadingItems: boolean;

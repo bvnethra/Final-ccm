@@ -29,12 +29,9 @@ import {
   Receipt,
   Wrench,
   Building2,
-  Calendar,
-  DollarSign,
   ChevronDown,
   ChevronUp,
   FileText,
-  AlertCircle,
   Tag,
 } from 'lucide-react';
 import type { AuditLogEntry } from '../../services/auditLogService';
@@ -96,8 +93,6 @@ const AuditLogInspector: React.FC<AuditLogInspectorProps> = ({
     : matchedInvoice;
 
   const isInvoiceLog = log.entity === 'INVOICE' || Boolean(matchedInvoice);
-  const isClientLog = log.entity === 'CLIENT' || Boolean(matchedClient && !isInvoiceLog && log.entity !== 'CALIBRATION_REQUEST');
-  const isRequestLog = log.entity === 'CALIBRATION_REQUEST' || Boolean(matchedRequest && !isInvoiceLog && !isClientLog);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-6 backdrop-blur-xs overflow-y-auto">
@@ -322,7 +317,7 @@ const AuditLogInspector: React.FC<AuditLogInspectorProps> = ({
                       {matchedClient.client_name}
                     </h4>
                     <span className="text-[11px] text-gray-500 font-mono">
-                      Code: {matchedClient.client_code} | GST: {matchedClient.gst_number || 'N/A'}
+                      Code: {matchedClient.client_code} | GST: {matchedClient.gst_tax_number || 'N/A'}
                     </span>
                   </div>
                 </div>

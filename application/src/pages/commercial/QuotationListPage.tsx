@@ -567,7 +567,9 @@ export const QuotationListPage: React.FC = () => {
                   return (
                     <tr
                       key={q.id}
-                      className="hover:bg-slate-50/70 transition-colors group"
+                      onClick={() => navigate(`/commercial/quotations/${q.id}`)}
+                      className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                      title={`Open detailed quotation ${q.quotation_number}`}
                     >
                       {/* QUOTATION INFO */}
                       <td className="px-5 py-4">
@@ -666,12 +668,15 @@ export const QuotationListPage: React.FC = () => {
                       </td>
 
                       {/* ACTIONS */}
-                      <td className="px-5 py-4 text-right whitespace-nowrap">
+                      <td className="px-5 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="inline-flex items-center gap-2 justify-end">
                           {canApproveQuotation && q.status === 'DRAFT' && (
                             <button
                               type="button"
-                              onClick={() => handleOpenApprovalModal(q)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenApprovalModal(q);
+                              }}
                               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
                             >
                               <Check className="size-3" /> Approve PO
@@ -681,7 +686,10 @@ export const QuotationListPage: React.FC = () => {
                           {canCreateInvoice && unbilledCount > 0 && (
                             <button
                               type="button"
-                              onClick={() => handleOpenInvoiceModal(q)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenInvoiceModal(q);
+                              }}
                               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-[#0274BB] hover:bg-blue-100 border border-blue-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
                               title="Generate Tax Invoice from Quotation"
                             >

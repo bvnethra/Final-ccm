@@ -1,6 +1,6 @@
 // application/src/pages/commercial/InvoiceListPage.tsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   useInvoices,
   useCalibrationRequests,
@@ -66,6 +66,7 @@ export interface EditableInvoiceItem {
 }
 
 export const InvoiceListPage: React.FC = () => {
+  const navigate = useNavigate();
   const { tenantId, organizationId, canPerform, isSuperAdmin, user } = useAuthContext();
   const { data: invoices = [], isLoading } = useInvoices();
   const { data: requests = [] } = useCalibrationRequests();
@@ -73,7 +74,6 @@ export const InvoiceListPage: React.FC = () => {
   const createInvoiceMutation = useCreateInvoice();
   const approveInvoiceMutation = useApproveInvoice();
 
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [filterType, setFilterType] = useState<'ALL' | 'PARTIAL' | 'ACTUAL' | 'APPROVED' | 'PENDING'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -686,14 +686,25 @@ export const InvoiceListPage: React.FC = () => {
                     const avatarStyle = avatarStyles[idx % avatarStyles.length];
 
                     return (
-                      <tr key={inv.id} className="hover:bg-[#F8FAFC] transition-colors">
+                      <tr
+                        key={inv.id}
+                        onClick={() => navigate(`/commercial/invoices/${inv.id}`)}
+                        className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                        title={`Open detailed view for ${inv.invoice_number}`}
+                      >
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2.5">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${avatarStyle}`}>
                               <Receipt className="size-4" />
                             </div>
                             <div className="min-w-0">
-                              <span className="font-mono font-bold text-[#0274BB] block text-xs hover:underline cursor-pointer" onClick={() => setSelectedInvoice(inv)}>
+                              <span
+                                className="font-mono font-bold text-[#0274BB] block text-xs hover:underline cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/commercial/invoices/${inv.id}`);
+                                }}
+                              >
                                 {inv.invoice_number}
                               </span>
                               <div className="flex items-center gap-1.5 text-[11px] text-[#6B7280]">
@@ -770,12 +781,15 @@ export const InvoiceListPage: React.FC = () => {
                           {new Date(inv.invoice_date).toLocaleDateString()}
                         </td>
 
-                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                        <td className="px-5 py-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => setSelectedInvoice(inv)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/commercial/invoices/${inv.id}`);
+                              }}
                               className="h-7 text-xs px-2.5"
                             >
                               <Printer className="size-3 mr-1" /> View / Print
@@ -813,7 +827,7 @@ export const InvoiceListPage: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      setSelectedInvoice(inv);
+                                      navigate(`/commercial/invoices/${inv.id}`);
                                       setActiveActionMenuId(null);
                                     }}
                                     className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"
@@ -1389,179 +1403,7 @@ export const InvoiceListPage: React.FC = () => {
         );
       })()}
 
-      {/* ==================================================================== */}
-      {/* 2. Invoice Print & Preview Modal */}
-      {/* ==================================================================== */}
-      {selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
-          <div className="bg-white rounded-[4px] shadow-2xl max-w-2xl w-full overflow-hidden border border-[#E5E7EB]">
-            <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB] bg-[#F8FAFC]">
-              <div className="flex items-center gap-2">
-                <Receipt className="size-5 text-[#0274BB]" />
-                <h3 className="font-bold text-[#111827] text-base">
-                  {selectedInvoice.invoice_type === 'PARTIAL'
-                    ? 'Partial Tax Invoice Preview'
-                    : 'Actual Tax Invoice Preview'}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedInvoice(null)}
-                className="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded hover:bg-[#E2E8F0]"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
 
-            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto font-sans text-sm">
-              {/* Header */}
-              <div className="flex justify-between items-start border-b border-[#E5E7EB] pb-4">
-                <div>
-                  <h2 className="text-xl font-bold text-[#111827]">NETHRA CALIBRATION LABS</h2>
-                  <p className="text-xs text-[#6B7280]">
-                    ISO/IEC 17025 Accredited Metrology Laboratory<br />
-                    GSTIN: 29ABCDE1234F1Z5 • State: Karnataka, India
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="font-mono font-bold text-lg text-[#0274BB] block">
-                    {selectedInvoice.invoice_number}
-                  </span>
-                  <span className="text-xs text-[#6B7280] block">
-                    Date: {new Date(selectedInvoice.invoice_date).toLocaleDateString()}
-                  </span>
-                  <div className="mt-1">
-                    {selectedInvoice.invoice_type === 'PARTIAL' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 uppercase">
-                        Partial Tax Invoice
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 uppercase">
-                        Actual Tax Invoice (Full)
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Status Notice */}
-              {selectedInvoice.invoice_type === 'PARTIAL' ? (
-                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-center gap-2">
-                  <Split className="size-4 text-amber-600 shrink-0" />
-                  <span>
-                    <strong>Partial Invoice Notice:</strong> This invoice covers only the specific items checked and completed. Remaining outsourced or pending items will be billed under a separate subsequent invoice upon receipt.
-                  </span>
-                </div>
-              ) : (
-                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800 flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
-                  <span>
-                    <strong>Actual Invoice Notice:</strong> Full and final billing covering all items under this calibration service order.
-                  </span>
-                </div>
-              )}
-
-              {/* Billed To */}
-              <div className="grid grid-cols-2 gap-4 text-xs bg-[#F8FAFC] p-3 rounded border border-[#E2E8F0]">
-                <div>
-                  <span className="text-[#64748B] block font-semibold">BILLED TO:</span>
-                  <span className="font-bold text-[#1E293B] text-sm block">Client Account</span>
-                  <span className="text-[#64748B]">
-                    Client PO: <strong>{selectedInvoice.client_po_ref || 'N/A'}</strong>
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[#64748B] block font-semibold">PAYMENT STATUS:</span>
-                  <Badge variant="success">{selectedInvoice.invoice_status}</Badge>
-                </div>
-              </div>
-
-              {/* Line Items Table */}
-              <table className="w-full text-left text-xs border border-[#E2E8F0]">
-                <thead className="bg-[#F1F5F9] text-[#334155] font-semibold uppercase">
-                  <tr>
-                    <th className="p-2 border-b">#</th>
-                    <th className="p-2 border-b">Item Description</th>
-                    <th className="p-2 border-b text-center">HSN / SAC</th>
-                    <th className="p-2 border-b text-center">Qty</th>
-                    <th className="p-2 border-b text-right">Unit Rate</th>
-                    <th className="p-2 border-b text-right">Amount (₹)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E2E8F0]">
-                  {selectedInvoice.items && selectedInvoice.items.length > 0 ? (
-                    selectedInvoice.items.map((item, idx) => (
-                      <tr key={item.id || idx}>
-                        <td className="p-2 text-center text-[#64748B] font-mono">{idx + 1}</td>
-                        <td className="p-2 font-medium text-[#1E293B]">
-                          {item.description}
-                        </td>
-                        <td className="p-2 text-center font-mono text-[#64748B]">
-                          {item.hsn_sac_code || '998719'}
-                        </td>
-                        <td className="p-2 text-center font-mono">{item.quantity}</td>
-                        <td className="p-2 text-right font-mono">₹{(item.unit_price ?? item.unit_rate ?? 0).toFixed(2)}</td>
-                        <td className="p-2 text-right font-mono font-semibold text-[#111827]">
-                          ₹{item.total_price.toFixed(2)}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td className="p-2 text-center font-mono">1</td>
-                      <td className="p-2">Precision Metrology Calibration &amp; Certificate Services</td>
-                      <td className="p-2 text-center font-mono">998719</td>
-                      <td className="p-2 text-center font-mono">1</td>
-                      <td className="p-2 text-right font-mono">₹{selectedInvoice.subtotal.toFixed(2)}</td>
-                      <td className="p-2 text-right font-mono font-semibold">₹{selectedInvoice.subtotal.toFixed(2)}</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-
-              {/* Total Calculation */}
-              <div className="flex justify-end">
-                <div className="w-64 space-y-1 text-xs">
-                  <div className="flex justify-between text-[#64748B]">
-                    <span>Subtotal:</span>
-                    <span className="font-mono">₹{selectedInvoice.subtotal.toFixed(2)}</span>
-                  </div>
-                  {selectedInvoice.discount_amount > 0 && (
-                    <div className="flex justify-between text-emerald-600">
-                      <span>Discount:</span>
-                      <span className="font-mono">-₹{selectedInvoice.discount_amount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-[#64748B]">
-                    <span>GST Tax (18%):</span>
-                    <span className="font-mono">₹{selectedInvoice.tax_amount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm font-bold text-[#111827] border-t border-[#CBD5E1] pt-1.5">
-                    <span>Total Payable:</span>
-                    <span className="font-mono text-[#0274BB]">₹{selectedInvoice.total_amount.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 border-t border-[#E5E7EB] bg-[#F8FAFC] flex justify-between items-center">
-              <Link to="/logistics/dispatch/new">
-                <Button variant="primary" size="sm">
-                  Proceed to Gate Pass Dispatch (Step 12) <ArrowRight className="size-3.5" />
-                </Button>
-              </Link>
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm" onClick={() => window.print()}>
-                  <Printer className="size-3.5" /> Print Invoice
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => setSelectedInvoice(null)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 3. Invoice Formal Approval Modal */}
       {approvalModalInvoice && (
