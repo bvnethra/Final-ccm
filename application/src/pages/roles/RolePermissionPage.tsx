@@ -22,6 +22,7 @@ import {
   X,
   Info,
 } from 'lucide-react';
+import { Skeleton, TableBodySkeleton } from '../../components/ui/Skeleton';
 
 const PERMISSION_LEVELS: {
   value: PermissionLevel;
@@ -161,8 +162,33 @@ export const RolePermissionPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="py-24 text-center text-[#9CA3AF] font-mono text-xs animate-pulse">
-        Loading Role &amp; Permission Configuration Matrix from PostgreSQL...
+      <div className="space-y-6 max-w-7xl mx-auto pb-16">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <Skeleton className="h-9 w-36 rounded-lg" />
+        </div>
+        <Card className="p-0 overflow-hidden bg-white border-[#E5E7EB] rounded-[8px] shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[#E5E7EB] bg-[#F5F7FA]">
+                  <th className="py-3.5 px-4"><Skeleton className="h-4 w-32" /></th>
+                  <th className="py-3.5 px-4"><Skeleton className="h-4 w-28 mx-auto" /></th>
+                  <th className="py-3.5 px-4"><Skeleton className="h-4 w-28 mx-auto" /></th>
+                  <th className="py-3.5 px-4"><Skeleton className="h-4 w-28 mx-auto" /></th>
+                  <th className="py-3.5 px-4"><Skeleton className="h-4 w-28 mx-auto" /></th>
+                  <th className="py-3.5 px-4"><Skeleton className="h-4 w-28 mx-auto" /></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E5E7EB]">
+                <TableBodySkeleton rows={8} columns={6} hasAvatar={false} actionCol={false} />
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </div>
     );
   }

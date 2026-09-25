@@ -26,6 +26,7 @@ import {
   DialogBody,
   DialogFooter,
 } from '../../components/ui/UIPrimitives';
+import { TableBodySkeleton } from '../../components/ui/Skeleton';
 import type { Invoice } from '../../types/domain';
 import {
   FileText,
@@ -638,9 +639,26 @@ export const InvoiceListPage: React.FC = () => {
       <Card className="border border-[#E5E7EB] overflow-hidden">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-12 text-center text-sm text-[#6B7280]">
-              <div className="size-6 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              Loading tax invoices...
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F8FAFC] border-b border-[#E5E7EB] text-[#475569] font-semibold text-[11px] uppercase tracking-wider">
+                  <tr>
+                    <th className="px-5 py-3 whitespace-nowrap">Invoice &amp; Work Order</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Type</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Client PO Ref</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Subtotal</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Tax (GST 18%)</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Grand Total</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Approval</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Invoice Date</th>
+                    <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5E7EB]">
+                  <TableBodySkeleton rows={6} columns={10} hasAvatar avatarShape="circle" />
+                </tbody>
+              </table>
             </div>
           ) : filteredInvoices.length === 0 ? (
             <div className="p-12 text-center text-[#6B7280] space-y-3">

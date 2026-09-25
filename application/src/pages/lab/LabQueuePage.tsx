@@ -27,6 +27,7 @@ import {
   AlertTriangle,
   Ban,
 } from 'lucide-react';
+import { TableBodySkeleton } from '../../components/ui/Skeleton';
 import { cn } from '../../lib/utils';
 
 function formatBytes(bytes: number, decimals = 1) {
@@ -472,14 +473,7 @@ export const LabQueuePage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="px-5 py-16 text-center text-slate-500">
-                    <div className="flex flex-col items-center justify-center gap-2.5">
-                      <div className="size-7 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm font-medium">Loading lab queue orders...</span>
-                    </div>
-                  </td>
-                </tr>
+                <TableBodySkeleton rows={6} columns={8} hasAvatar avatarShape="square" />
               ) : pagedLabQueue.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-5 py-16 text-center text-slate-500">

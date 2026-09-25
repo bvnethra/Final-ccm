@@ -29,6 +29,7 @@ import {
   Field,
   FieldLabel,
   Badge,
+  DetailViewSkeleton,
 } from '../../components/ui/UIPrimitives';
 import type { CalibrationResult, OutsourcePO } from '../../types/domain';
 import {
@@ -363,12 +364,7 @@ export const CalibrationPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-12 text-center text-sm text-[#6B7280]">
-        <div className="size-6 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-        Loading metrology bench &amp; calibration workflows...
-      </div>
-    );
+    return <DetailViewSkeleton columns={7} rows={4} cardsCount={4} />;
   }
 
   if (!request || !currentItem) {

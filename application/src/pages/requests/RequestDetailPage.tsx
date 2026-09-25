@@ -28,6 +28,7 @@ import {
   DialogDescription,
   DialogBody,
   DialogFooter,
+  DetailViewSkeleton,
 } from '../../components/ui/UIPrimitives';
 import {
   ArrowLeft,
@@ -164,12 +165,7 @@ export const RequestDetailPage: React.FC = () => {
   const [clientPoRefDirect, setClientPoRefDirect] = useState<string>('');
 
   if (isLoading) {
-    return (
-      <div className="p-12 text-center text-sm text-[#6B7280]">
-        <div className="size-6 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-        Loading request details...
-      </div>
-    );
+    return <DetailViewSkeleton columns={8} rows={5} cardsCount={4} />;
   }
 
   if (error || !request) {

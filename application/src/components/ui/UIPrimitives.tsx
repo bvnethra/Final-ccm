@@ -548,3 +548,17 @@ export const FormSection: React.FC<FormSectionProps> = ({
   </Card>
 );
 
+// ==========================================
+// 12. Skeleton Loading Primitives
+// ==========================================
+export {
+  Skeleton,
+  TableBodySkeleton,
+  DetailViewSkeleton,
+  type SkeletonProps,
+  type TableBodySkeletonProps,
+  type DetailViewSkeletonProps,
+} from './Skeleton';
+
+
+

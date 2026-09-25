@@ -30,6 +30,7 @@ import {
   CheckCircle2,
   Lock,
 } from 'lucide-react';
+import { TableBodySkeleton } from '../../../components/ui/Skeleton';
 import { cn } from '../../../lib/utils';
 
 const AVATAR_PALETTES = [
@@ -275,8 +276,24 @@ export const PlatformUserTable: React.FC = () => {
       {/* 3. Table Container matching Tenant Directory */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
         {isLoading ? (
-          <div className="py-24 text-center text-slate-400 font-mono text-xs animate-pulse">
-            Querying platform_users from multi-tenant PostgreSQL database...
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#F8FAFC] border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-semibold">
+                  <th className="px-5 py-3.5 whitespace-nowrap">Operator Info</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Email &amp; Identity</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Platform Role</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Account Status</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Registered Date</th>
+                  {isSuperAdmin && (
+                    <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                <TableBodySkeleton rows={6} columns={isSuperAdmin ? 6 : 5} hasAvatar avatarShape="square" />
+              </tbody>
+            </table>
           </div>
         ) : error ? (
           <div className="py-12 text-center text-rose-600 text-sm">

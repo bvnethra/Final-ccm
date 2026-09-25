@@ -16,6 +16,7 @@ import {
   Select,
   Badge,
 } from '../../components/ui/UIPrimitives';
+import { TableBodySkeleton } from '../../components/ui/Skeleton';
 import {
   History,
   Search,
@@ -738,12 +739,7 @@ export const AuditLogsPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
               {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-[#64748B]">
-                    <div className="size-6 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    Loading audit trail records...
-                  </td>
-                </tr>
+                <TableBodySkeleton rows={6} columns={7} hasAvatar={false} />
               ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-[#64748B]">

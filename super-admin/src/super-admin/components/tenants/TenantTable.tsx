@@ -25,6 +25,7 @@ import {
   Clock,
   Calendar,
 } from 'lucide-react';
+import { TableBodySkeleton } from '../../../components/ui/Skeleton';
 import { cn } from '../../../lib/utils';
 
 const AVATAR_PALETTES = [
@@ -233,8 +234,24 @@ export const TenantTable: React.FC = () => {
       {/* 3. Table Content matching localhost:5174 */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
         {isLoading ? (
-          <div className="py-24 text-center text-slate-400 font-mono text-xs animate-pulse">
-            Querying PostgreSQL multi-tenant database...
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#F8FAFC] border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-semibold">
+                  <th className="px-5 py-3.5 whitespace-nowrap">Tenant Info</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Admin Account</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Onboarded Date</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Scope &amp; Facilities</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Classification</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Lifecycle Status</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">System Audit</th>
+                  <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                <TableBodySkeleton rows={6} columns={8} hasAvatar avatarShape="square" />
+              </tbody>
+            </table>
           </div>
         ) : error ? (
           <div className="py-12 text-center text-rose-600 text-sm">

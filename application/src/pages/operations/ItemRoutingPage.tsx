@@ -16,6 +16,7 @@ import { useAuthContext } from '../../contexts/AuthContext';
 import { useCalibrationRequest, useRouteRequestItems } from '../../hooks/useOperations';
 import { useVendors } from '../../hooks/useVendorMaster';
 import type { ItemRouteAssignment } from '../../services/operationsService';
+import { DetailViewSkeleton } from '../../components/ui/UIPrimitives';
 
 export const ItemRoutingPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -141,12 +142,7 @@ export const ItemRoutingPage: React.FC = () => {
   };
 
   if (isLoadingReq || isLoadingVendors) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-[400px] text-gray-500 text-sm">
-        <div className="size-6 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin mr-3" />
-        Loading inward request and vendor routing data...
-      </div>
-    );
+    return <DetailViewSkeleton columns={6} rows={5} cardsCount={4} />;
   }
 
   if (!request) {

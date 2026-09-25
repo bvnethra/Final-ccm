@@ -15,6 +15,7 @@ import {
   Field,
   FieldLabel,
   Badge,
+  DetailViewSkeleton,
 } from '../../components/ui/UIPrimitives';
 import type { VerificationResult, RequestAttachment } from '../../types/domain';
 import {
@@ -294,12 +295,7 @@ export const VerificationPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-12 text-center text-sm text-[#6B7280]">
-        <div className="size-6 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-        Loading verification workspace...
-      </div>
-    );
+    return <DetailViewSkeleton columns={7} rows={5} cardsCount={4} />;
   }
 
   if (!request || items.length === 0) {

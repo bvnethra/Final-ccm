@@ -18,6 +18,7 @@ import {
   Gauge,
 } from 'lucide-react';
 import type { CalibrationDueItem } from '../../types/domain';
+import { TableBodySkeleton } from '../../components/ui/Skeleton';
 import { cn } from '../../lib/utils';
 
 const AVATAR_PALETTES = [
@@ -431,14 +432,7 @@ export const CalibrationDueListPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="px-5 py-16 text-center text-slate-500">
-                    <div className="flex flex-col items-center justify-center gap-2.5">
-                      <div className="size-7 border-2 border-[#0274BB] border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm font-medium">Loading calibration due directory...</span>
-                    </div>
-                  </td>
-                </tr>
+                <TableBodySkeleton rows={6} columns={8} hasAvatar avatarShape="square" />
               ) : pagedItems.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-5 py-16 text-center text-slate-500">

@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Info,
 } from 'lucide-react';
+import { TableBodySkeleton } from '../../../components/ui/Skeleton';
 import { cn } from '../../../lib/utils';
 
 const AVATAR_PALETTES = [
@@ -243,8 +244,21 @@ export const PlatformAuditTable: React.FC = () => {
       {/* 3. Table Container matching Tenant Directory */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
         {isLoading ? (
-          <div className="py-24 text-center text-slate-400 font-mono text-xs animate-pulse">
-            Querying immutable audit log from platform_audit_logs...
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#F8FAFC] border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-semibold">
+                  <th className="px-5 py-3.5 whitespace-nowrap">Timestamp</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Governance Actor</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Action Type</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Target / Reference</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Reason &amp; Remarks</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                <TableBodySkeleton rows={6} columns={5} hasAvatar={false} actionCol={false} />
+              </tbody>
+            </table>
           </div>
         ) : error ? (
           <div className="py-12 text-center text-rose-600 text-sm">
