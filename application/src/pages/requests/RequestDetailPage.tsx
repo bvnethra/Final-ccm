@@ -216,14 +216,14 @@ export const RequestDetailPage: React.FC = () => {
 
   // Stepper steps
   const steps = [
-    { key: 'CREATED', label: '1. Inward' },
-    { key: 'VERIFIED', label: '2. Verification' },
-    { key: 'CALIBRATED', label: '3. Calibration' },
-    { key: 'CERTIFICATE', label: '4. Certificate' },
-    { key: 'QUOTATION', label: '5. Quotation (Optional)' },
-    { key: 'INVOICED', label: '6. Tax Invoice' },
-    { key: 'DISPATCHED', label: '7. Gate Pass Dispatch' },
-    { key: 'COMPLETED', label: '8. Delivery & Completed' },
+    { key: 'CREATED', label: 'Inward' },
+    { key: 'VERIFIED', label: 'Verification' },
+    { key: 'CALIBRATED', label: 'Calibration' },
+    { key: 'CERTIFICATE', label: 'Certificate' },
+    { key: 'QUOTATION', label: 'Quotation' },
+    { key: 'INVOICED', label: 'Tax Invoice' },
+    { key: 'DISPATCHED', label: 'Dispatch' },
+    { key: 'COMPLETED', label: 'Completed' },
   ];
 
   const getStepState = (stepKey: string) => {
@@ -368,20 +368,20 @@ export const RequestDetailPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-lg border border-slate-200/80 shadow-xs">
+        <div className="flex items-start gap-3.5">
           <Link to={backToQueue ? "/lab/queue" : "/requests"}>
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" className="mt-0.5">
               <ArrowLeft className="size-4" /> Back
             </Button>
           </Link>
-          <div>
+          <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-bold text-[#111827] font-mono">
+              <h1 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
                 {request.request_number}
               </h1>
               {request.voucher_no && (
-                <span className="font-mono text-xs font-bold text-[#0274BB] bg-[#EFF6FF] border border-[#BFDBFE] px-2.5 py-0.5 rounded shadow-xs">
+                <span className="font-mono text-xs font-bold text-[#0274BB] bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded shadow-2xs">
                   CV #{request.voucher_no}
                 </span>
               )}
@@ -400,10 +400,22 @@ export const RequestDetailPage: React.FC = () => {
                 <Badge variant="error">URGENT (24H)</Badge>
               )}
             </div>
-            <p className="text-sm text-[#6B7280]">
-              Client: <span className="font-semibold text-[#111827]">{request.clients?.client_name || 'N/A'}</span> • Inward Date:{' '}
-              {new Date(request.collection_date || request.created_at).toLocaleDateString()}
-              {request.dc_number && <span className="ml-2 font-mono text-xs text-[#0274BB]">({request.dc_number})</span>}
+            <p className="text-xs sm:text-sm text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>Client:</span>
+              <strong className="text-slate-800">{request.clients?.client_name || 'N/A'}</strong>
+              <span className="text-slate-300">•</span>
+              <span>Inward Date:</span>
+              <span className="text-slate-700 font-medium">
+                {new Date(request.collection_date || request.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
+              </span>
+              {request.dc_number && (
+                <>
+                  <span className="text-slate-300">•</span>
+                  <span className="font-mono text-xs text-[#0274BB] bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
+                    DC: {request.dc_number}
+                  </span>
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -413,62 +425,50 @@ export const RequestDetailPage: React.FC = () => {
           <Button
             variant="outline"
             onClick={() => setShowCVDocument(true)}
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-1.5 text-xs font-semibold"
             title="View & Print Official SALE ORDER / CV matching physical document"
           >
             <FileCheck className="size-4 text-[#0274BB]" /> View / Print Sale Order (CV)
           </Button>
 
           <Link to={`/requests/${request.id}/routing`}>
-            <Button variant="secondary" className="flex items-center gap-1.5 border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100">
-              <Layers className="size-3.5" /> Item Routing (Step 2)
+            <Button variant="secondary" className="flex items-center gap-1.5 text-xs font-semibold border-blue-200 text-blue-700 bg-blue-50/80 hover:bg-blue-100">
+              <Layers className="size-3.5" /> Routing Matrix
             </Button>
           </Link>
 
-          {request.status === 'CREATED' && (
-            <Link to={`/lab/verification/${request.id}`}>
-              <Button variant="primary">
-                Proceed to Lab Verification <ArrowRight className="size-4" />
-              </Button>
-            </Link>
-          )}
-          {request.status === 'VERIFIED' && (
-            <Link to={`/lab/calibration/${request.id}`}>
-              <Button variant="primary">
-                Perform Metrology Calibration (Step 8) <ArrowRight className="size-4" />
-              </Button>
-            </Link>
-          )}
+          {/* Contextual Secondary Actions (Primary action is highlighted in workflow tracker below) */}
           {(request.status === 'FAULTY' || request.status === 'REPAIR_IN_PROGRESS') && (
             <Link to={`/lab/calibration/${request.id}`}>
-              <Button variant="outlineInk">
+              <Button variant="outlineInk" className="text-xs font-semibold">
                 <Wrench className="size-4" /> Manage In-Lab Repair
               </Button>
             </Link>
           )}
           {request.status === 'OUTSOURCED' && (
             <Link to={`/lab/calibration/${request.id}`}>
-              <Button variant="outlineInk">
-                <Truck className="size-4" /> Manage Vendor Outsource PO
+              <Button variant="outlineInk" className="text-xs font-semibold">
+                <Truck className="size-4" /> Manage Outsource PO
               </Button>
             </Link>
-          )}          {(request.status === 'CALIBRATED' || request.status === 'PARTIALLY_INVOICED') && (
+          )}
+          {(request.status === 'CALIBRATED' || request.status === 'PARTIALLY_INVOICED') && (
             <div className="flex items-center gap-2">
               {canCreateInvoice && (
-                <Button variant="primary" onClick={handleOpenDirectInvoice}>
+                <Button variant="primary" onClick={handleOpenDirectInvoice} className="text-xs font-semibold shadow-xs">
                   <Receipt className="size-4" />
                   {request.status === 'PARTIALLY_INVOICED' ? 'Invoice Remaining Items' : 'Generate Tax Invoice Directly'}
                 </Button>
               )}
               {canCreateQuotation ? (
                 <Link to={`/commercial/quotations/new?requestId=${request.id}`}>
-                  <Button variant="outlineInk">
+                  <Button variant="outlineInk" className="text-xs font-semibold">
                     <FileText className="size-4" /> Create Quotation (Optional)
                   </Button>
                 </Link>
               ) : (
                 <Link to="/commercial/quotations">
-                  <Button variant="outlineInk">
+                  <Button variant="outlineInk" className="text-xs font-semibold">
                     <FileText className="size-4" /> View Quotations
                   </Button>
                 </Link>
@@ -478,12 +478,12 @@ export const RequestDetailPage: React.FC = () => {
           {request.status === 'QUOTATION' && (
             <div className="flex items-center gap-2">
               {canCreateInvoice && (
-                <Button variant="primary" onClick={handleOpenDirectInvoice}>
+                <Button variant="primary" onClick={handleOpenDirectInvoice} className="text-xs font-semibold shadow-xs">
                   <Receipt className="size-4" /> Generate Tax Invoice Directly
                 </Button>
               )}
               <Link to="/commercial/quotations">
-                <Button variant="outlineInk">
+                <Button variant="outlineInk" className="text-xs font-semibold">
                   <FileText className="size-4" /> View Quotations
                 </Button>
               </Link>
@@ -492,12 +492,12 @@ export const RequestDetailPage: React.FC = () => {
           {request.status === 'APPROVED' && (
             <div className="flex items-center gap-2">
               {canCreateInvoice && (
-                <Button variant="primary" onClick={handleOpenDirectInvoice}>
+                <Button variant="primary" onClick={handleOpenDirectInvoice} className="text-xs font-semibold shadow-xs">
                   <Receipt className="size-4" /> Generate Tax Invoice
                 </Button>
               )}
               <Link to="/commercial/quotations">
-                <Button variant="outlineInk">
+                <Button variant="outlineInk" className="text-xs font-semibold">
                   <FileText className="size-4" /> View Quotations
                 </Button>
               </Link>
@@ -505,15 +505,15 @@ export const RequestDetailPage: React.FC = () => {
           )}
           {request.status === 'INVOICED' && (
             <Link to="/logistics/dispatch/new">
-              <Button variant="primary">
-                <Truck className="size-4" /> Create Gate Pass Dispatch (Step 12)
+              <Button variant="primary" className="text-xs font-semibold shadow-xs">
+                <Truck className="size-4" /> Create Gate Pass Dispatch
               </Button>
             </Link>
           )}
           {request.status === 'DISPATCHED' && (
             <Link to="/logistics/dispatch">
-              <Button variant="primary">
-                <Truck className="size-4" /> Track Dispatch & Record Delivery (Step 13)
+              <Button variant="primary" className="text-xs font-semibold shadow-xs">
+                <Truck className="size-4" /> Track Dispatch &amp; Delivery
               </Button>
             </Link>
           )}
@@ -523,8 +523,8 @@ export const RequestDetailPage: React.FC = () => {
                 <CheckCircle2 className="size-4 text-[#16A34A]" /> Lifecycle Completed
               </span>
               <Link to="/logistics/dispatch">
-                <Button variant="outlineInk">
-                  <FileCheck className="size-4" /> View Delivery & POD
+                <Button variant="outlineInk" className="text-xs font-semibold">
+                  <FileCheck className="size-4" /> View Delivery &amp; POD
                 </Button>
               </Link>
             </div>
@@ -532,38 +532,155 @@ export const RequestDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Lifecycle Stepper */}
-      <Card className="bg-white p-4">
-        <div className="flex items-center justify-between overflow-x-auto gap-2 text-xs">
-          {steps.map((st, i) => {
-            const state = getStepState(st.key);
-            return (
-              <div key={st.key} className="flex items-center gap-2 shrink-0">
-                <div
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] font-semibold border ${
-                    state === 'done'
-                      ? 'bg-[#F0FDF4] text-[#16A34A] border-[#86EFAC]'
-                      : state === 'current'
-                      ? 'bg-[#EBF5FF] text-[#0274BB] border-[#0274BB] shadow-xs'
-                      : state === 'warning'
-                      ? 'bg-[#FFF7ED] text-[#EA580C] border-[#FDBA74]'
-                      : state === 'info'
-                      ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#93C5FD]'
-                      : 'bg-[#F9FAFB] text-[#9CA3AF] border-[#E5E7EB]'
-                  }`}
-                >
-                  {state === 'done' ? (
-                    <CheckCircle2 className="size-3.5" />
-                  ) : (
-                    <Clock className="size-3.5" />
+      {/* Lifecycle Workflow Stepper */}
+      <Card className="bg-white border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="p-4 sm:p-5">
+          <div className="flex items-center justify-between relative overflow-x-auto gap-2 py-1">
+            {/* Background Connector Bar */}
+            <div className="absolute left-8 right-8 top-5 h-0.5 bg-slate-200 -z-0 hidden md:block" />
+
+            {steps.map((st, i) => {
+              const state = getStepState(st.key);
+              const isCompleted = state === 'done';
+              const isCurrent = state === 'current';
+              const isWarning = state === 'warning';
+              const isInfo = state === 'info';
+
+              return (
+                <div key={st.key} className="relative z-10 flex flex-col items-center group flex-1 min-w-[70px]">
+                  <div
+                    className={`size-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
+                      isCompleted
+                        ? 'bg-emerald-600 text-white ring-4 ring-emerald-50 shadow-xs'
+                        : isCurrent
+                        ? 'bg-[#0274BB] text-white ring-4 ring-blue-50 shadow-sm scale-105'
+                        : isWarning
+                        ? 'bg-amber-500 text-white ring-4 ring-amber-50 shadow-xs'
+                        : isInfo
+                        ? 'bg-sky-500 text-white ring-4 ring-sky-50 shadow-xs'
+                        : 'bg-slate-100 text-slate-400 border border-slate-200'
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <CheckCircle2 className="size-4 stroke-[2.5]" />
+                    ) : (
+                      <span>{i + 1}</span>
+                    )}
+                  </div>
+                  <span
+                    className={`mt-2 text-[11px] font-semibold text-center whitespace-nowrap transition-colors ${
+                      isCurrent
+                        ? 'text-[#0274BB] font-bold'
+                        : isCompleted
+                        ? 'text-slate-700'
+                        : 'text-slate-400'
+                    }`}
+                  >
+                    {st.label}
+                  </span>
+                  {isCurrent && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 text-[#0274BB] bg-blue-50 rounded-full mt-0.5 border border-blue-200">
+                      Active
+                    </span>
                   )}
-                  <span>{st.label}</span>
                 </div>
-                {i < steps.length - 1 && <span className="text-[#CBD5E1]">→</span>}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
+
+        {/* Integrated Contextual Next Action Bar */}
+        {request.status === 'CREATED' && (
+          <div className="bg-blue-50/90 border-t border-blue-200/80 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex size-7 items-center justify-center rounded-full bg-[#0274BB] text-white text-xs font-bold shrink-0 shadow-2xs">
+                2
+              </span>
+              <div>
+                <span className="font-bold text-slate-900 text-sm">
+                  Next Step: Lab Physical Verification
+                </span>
+                <span className="text-xs text-slate-600 ml-2 hidden md:inline">
+                  Instruments received at lab. Confirm serial numbers and condition to start calibration.
+                </span>
+              </div>
+            </div>
+            <Link to={`/lab/verification/${request.id}`} className="shrink-0">
+              <Button variant="primary" className="text-xs font-semibold py-2 px-4 shadow-sm w-full sm:w-auto">
+                Start Lab Verification <ArrowRight className="size-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {request.status === 'VERIFIED' && (
+          <div className="bg-emerald-50/90 border-t border-emerald-200/80 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex size-7 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-bold shrink-0 shadow-2xs">
+                3
+              </span>
+              <div>
+                <span className="font-bold text-slate-900 text-sm">
+                  Next Step: Metrology Calibration Testing
+                </span>
+                <span className="text-xs text-slate-600 ml-2 hidden md:inline">
+                  Instruments verified. Mount on benches and record precision measurement readings.
+                </span>
+              </div>
+            </div>
+            <Link to={`/lab/calibration/${request.id}`} className="shrink-0">
+              <Button variant="primary" className="text-xs font-semibold py-2 px-4 shadow-sm w-full sm:w-auto">
+                Perform Calibration Test <ArrowRight className="size-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {request.status === 'INVOICED' && (
+          <div className="bg-amber-50/90 border-t border-amber-200/80 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex size-7 items-center justify-center rounded-full bg-amber-600 text-white text-xs font-bold shrink-0 shadow-2xs">
+                7
+              </span>
+              <div>
+                <span className="font-bold text-slate-900 text-sm">
+                  Next Step: Gate Pass Dispatch
+                </span>
+                <span className="text-xs text-slate-600 ml-2 hidden md:inline">
+                  Invoice generated. Package instruments and issue dispatch gate pass.
+                </span>
+              </div>
+            </div>
+            <Link to="/logistics/dispatch/new" className="shrink-0">
+              <Button variant="primary" className="text-xs font-semibold py-2 px-4 shadow-sm w-full sm:w-auto">
+                Create Gate Pass Dispatch <ArrowRight className="size-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {request.status === 'DISPATCHED' && (
+          <div className="bg-purple-50/90 border-t border-purple-200/80 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex size-7 items-center justify-center rounded-full bg-purple-600 text-white text-xs font-bold shrink-0 shadow-2xs">
+                8
+              </span>
+              <div>
+                <span className="font-bold text-slate-900 text-sm">
+                  Next Step: Capture Client Delivery Signature (POD)
+                </span>
+                <span className="text-xs text-slate-600 ml-2 hidden md:inline">
+                  Shipment is out for handover. Capture digital signature upon delivery.
+                </span>
+              </div>
+            </div>
+            <Link to="/logistics/dispatch" className="shrink-0">
+              <Button variant="primary" className="text-xs font-semibold py-2 px-4 shadow-sm w-full sm:w-auto">
+                Record Delivery Signature <ArrowRight className="size-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
       </Card>
 
       {/* Delivery & Lifecycle Completed Banner */}
@@ -711,64 +828,80 @@ export const RequestDetailPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Section 1: Inward & Client Account Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Inward &amp; Client Account Details</CardTitle>
-          <CardDescription>Step 4 &amp; 5: Collection Metadata &amp; Logistics Overview</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-[#F9FAFB] rounded-[4px] border border-[#E5E7EB] text-xs">
-            <div>
-              <span className="text-[#6B7280] block font-medium">Priority Turnaround</span>
-              <span className="font-semibold text-[#111827] text-sm mt-0.5 block">{request.priority}</span>
-            </div>
-            <div>
-              <span className="text-[#6B7280] block font-medium flex items-center gap-1">
-                <Calendar className="size-3 text-[#6B7280]" /> Collection Date
-              </span>
-              <span className="font-semibold text-[#111827] text-sm mt-0.5 block">
-                {new Date(request.collection_date).toLocaleDateString()}
-              </span>
-            </div>
-            <div>
-              <span className="text-[#6B7280] block font-medium flex items-center gap-1">
-                <User className="size-3 text-[#6B7280]" /> Collection Agent
-              </span>
-              <span className="font-semibold text-[#111827] text-sm mt-0.5 block">
-                {request.collection_agent_name || 'Designated Collection Agent'}
-              </span>
-            </div>
-            <div>
-              <span className="text-[#6B7280] block font-medium flex items-center gap-1">
-                <FileText className="size-3 text-[#6B7280]" /> Client Reference / PO #
-              </span>
-              <span className="font-semibold text-[#0274BB] font-mono text-sm mt-0.5 block">
-                {request.client_po_ref || 'None Specified'}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs pt-1">
-            <div className="md:col-span-1">
-              <span className="text-[#6B7280] block font-medium">Client Account</span>
-              <span className="font-semibold text-[#111827] text-sm mt-0.5 block">
+      {/* Section 1: Inward Intake & Client Overview - Streamlined & Compact */}
+      <Card className="border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
+          {/* Left: Client info */}
+          <div className="space-y-1 min-w-[240px]">
+            <div className="flex items-center gap-2">
+              <Building className="size-4 text-[#0274BB]" />
+              <span className="font-bold text-slate-900 text-base">
                 {request.clients?.client_name || 'N/A'}
               </span>
               {request.clients?.client_code && (
-                <span className="text-[11px] text-[#6B7280] block font-mono mt-0.5">
-                  Code: {request.clients.client_code}
+                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-blue-50 text-[#0274BB] border border-blue-200 shadow-2xs">
+                  {request.clients.client_code}
                 </span>
               )}
             </div>
-            <div className="md:col-span-2">
-              <span className="text-[#6B7280] block font-medium">Inward &amp; Handling Notes</span>
-              <span className="text-[#374151] italic text-sm mt-0.5 block">
-                {request.remarks || 'No special handling instructions provided.'}
-              </span>
+            <p className="text-xs text-slate-500">
+              {[request.clients?.city, request.clients?.state].filter(Boolean).join(', ') || 'Client Facility'}
+              {request.clients?.contact_person && ` • Contact: ${request.clients.contact_person}`}
+              {request.clients?.phone && ` (${request.clients.phone})`}
+            </p>
+          </div>
+
+          {/* Right: Key Metadata Chips in 1 row */}
+          <div className="flex flex-wrap items-center gap-2.5 text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200/80">
+              <Clock className="size-3.5 text-slate-400" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">Turnaround</span>
+                <span className={`font-semibold ${request.priority === 'URGENT' ? 'text-rose-600' : 'text-slate-800'}`}>
+                  {request.priority === 'URGENT' ? 'Urgent 24h' : 'Standard 5-7d'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200/80">
+              <Calendar className="size-3.5 text-emerald-500" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">Collected</span>
+                <span className="font-semibold text-slate-800">
+                  {new Date(request.collection_date).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200/80">
+              <User className="size-3.5 text-purple-500" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">Agent</span>
+                <span className="font-semibold text-slate-800 truncate max-w-[120px]">
+                  {request.collection_agent_name || 'Designated'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200/80">
+              <FileText className="size-3.5 text-sky-500" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">Client PO Ref</span>
+                <span className="font-mono font-semibold text-[#0274BB] truncate max-w-[120px]">
+                  {request.client_po_ref || request.dc_number || 'None'}
+                </span>
+              </div>
             </div>
           </div>
-        </CardContent>
+        </div>
+
+        {/* Handling Remarks Strip (if any) */}
+        {request.remarks && (
+          <div className="px-5 py-2.5 bg-amber-50/60 border-t border-amber-200/60 text-xs flex items-center gap-2 text-slate-700">
+            <span className="font-bold text-amber-800 uppercase text-[10px] shrink-0">Customer Instructions:</span>
+            <span className="italic truncate">{request.remarks}</span>
+          </div>
+        )}
       </Card>
 
       {/* Section 2: Attached Proof Documents (if any) */}
@@ -816,30 +949,42 @@ export const RequestDetailPage: React.FC = () => {
       )}
 
       {/* Section 3: Equipment Line Items Matrix */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      {/* Section 3: Equipment Line Items Matrix */}
+      <Card className="border border-slate-200/80 shadow-xs overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between bg-slate-50/60 border-b border-slate-100 py-3.5 px-5">
           <div>
-            <CardTitle>Equipment Line Items ({request.request_items?.length || 0})</CardTitle>
-            <CardDescription>Customer instruments in this calibration inward batch</CardDescription>
+            <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Gauge className="size-4 text-[#0274BB]" />
+              Equipment Line Items ({request.request_items?.length || 0})
+            </CardTitle>
+            <CardDescription className="text-xs text-slate-500 mt-0.5">
+              Customer metrology instruments in this inward batch &amp; operational routing
+            </CardDescription>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-[#6B7280] bg-[#F5F7FA] px-2.5 py-1 rounded-[4px] border border-[#E5E7EB]">
-            <Gauge className="size-3.5 text-[#0274BB]" />
-            <span>Total Units: </span>
-            <span className="font-mono font-bold text-[#111827]">
-              {request.request_items?.reduce((sum, it) => sum + (it.quantity || 0), 0)}
-            </span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white px-3 py-1 rounded-md border border-slate-200 shadow-2xs">
+              <span className="text-slate-400">Total Units:</span>
+              <span className="font-mono font-bold text-slate-900">
+                {request.request_items?.reduce((sum, it) => sum + (it.quantity || 0), 0)}
+              </span>
+            </div>
+            <Link to={`/requests/${request.id}/routing`}>
+              <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-1.5 text-xs font-semibold">
+                <Layers className="size-3.5 text-[#0274BB]" /> Routing Matrix
+              </Button>
+            </Link>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#F5F7FA] border-b border-[#E5E7EB] text-[#374151] font-semibold text-xs uppercase">
+              <thead className="bg-[#F8FAFC] border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3">Equipment / Specs</th>
                   <th className="px-4 py-3">Serial # / Asset Tag</th>
                   <th className="px-3 py-3 w-16 text-center">Qty</th>
                   <th className="px-4 py-3">Condition</th>
-                  <th className="px-4 py-3">Routing (Step 2)</th>
+                  <th className="px-4 py-3">Routing &amp; Allocation</th>
                   <th className="px-4 py-3">Accessories / Notes</th>
                   <th className="px-4 py-3">Status</th>
                 </tr>
@@ -886,7 +1031,7 @@ export const RequestDetailPage: React.FC = () => {
                         item.destination === 'VENDOR_OUTSOURCE' ? (
                           <div className="space-y-0.5">
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
-                              <Truck className="size-3 text-amber-700" /> Outsourcing
+                              <Truck className="size-3 text-amber-700" /> Outsourced
                             </span>
                             {item.vendor_name && (
                               <div className="text-[10px] text-amber-800 font-medium truncate max-w-[140px]">
@@ -896,11 +1041,11 @@ export const RequestDetailPage: React.FC = () => {
                           </div>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
-                            <Building className="size-3 text-blue-600" /> In-House
+                            <Building className="size-3 text-blue-600" /> In-House Lab
                           </span>
                         )
                       ) : (
-                        <div className="space-y-1.5 min-w-[145px]">
+                        <div className="space-y-1.5 min-w-[160px]">
                           {(() => {
                             const effectiveDestination = localItemRoutes[item.id]?.destination ?? (item.destination || 'IN_HOUSE');
                             const effectiveVendorId = localItemRoutes[item.id]?.vendorId !== undefined ? localItemRoutes[item.id]?.vendorId : (item.vendor_id || '');
@@ -913,13 +1058,13 @@ export const RequestDetailPage: React.FC = () => {
                                     e.stopPropagation();
                                     handleRoutingChange(item.id, e.target.value as 'IN_HOUSE' | 'VENDOR_OUTSOURCE');
                                   }}
-                                  className={`w-full text-xs font-semibold rounded-md border px-2 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors ${
+                                  className={`w-full text-xs font-semibold rounded-md border px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#0274BB] shadow-2xs transition-all ${
                                     effectiveDestination === 'VENDOR_OUTSOURCE'
-                                      ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
-                                      : 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100'
+                                      ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100/80'
+                                      : 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100/80'
                                   }`}
                                 >
-                                  <option value="IN_HOUSE">🏢 In-House</option>
+                                  <option value="IN_HOUSE">🏢 In-House Lab</option>
                                   <option value="VENDOR_OUTSOURCE">🚚 Outsourcing</option>
                                 </select>
 
@@ -930,7 +1075,7 @@ export const RequestDetailPage: React.FC = () => {
                                       e.stopPropagation();
                                       handleVendorChange(item.id, e.target.value);
                                     }}
-                                    className="w-full text-[11px] rounded-md border border-amber-300 bg-white px-2 py-1 text-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500 truncate"
+                                    className="w-full text-[11px] rounded-md border border-amber-300 bg-white px-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-500 truncate shadow-2xs"
                                   >
                                     <option value="">Select Vendor...</option>
                                     {vendors.map((v) => (
@@ -988,7 +1133,7 @@ export const RequestDetailPage: React.FC = () => {
               </div>
               <div className="flex-1 bg-gray-50 border border-gray-200 rounded p-3 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-gray-900">Step 1: Equipment Inward Intake</span>
+                  <span className="font-bold text-gray-900">Equipment Inward Intake</span>
                   <span className="text-gray-400 font-mono text-[11px]">
                     {new Date(request.created_at).toLocaleString()}
                   </span>
@@ -1013,7 +1158,7 @@ export const RequestDetailPage: React.FC = () => {
               </div>
               <div className="flex-1 bg-gray-50 border border-gray-200 rounded p-3 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-gray-900">Step 2: Routing &amp; Lab Segregation</span>
+                  <span className="font-bold text-gray-900">Routing &amp; Lab Allocation</span>
                   <Link
                     to={`/requests/${request.id}/routing`}
                     className="text-[#0274BB] hover:underline font-semibold text-[11px]"
